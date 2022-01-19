@@ -2,7 +2,10 @@ import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import fs from "fs";
 import Web3 from "web3";
-import { getBytecodeWithoutMetadata } from "./libs/utils";
+import {
+  opCodeCodeVerification,
+  runtimeCodeVerification,
+} from "./libs/verifications";
 
 yargs(hideBin(process.argv))
   .usage("Usage: $0 <cmd> [args]")
@@ -33,7 +36,7 @@ yargs(hideBin(process.argv))
       });
     },
     async (argv: any) => {
-      console.info(argv);
+      // console.info(argv);
       const web3 = new Web3("https://nodes.mewapi.io/rpc/eth");
       const liveCode = await web3.eth.getCode(argv.address);
       let compiledCode;
@@ -51,17 +54,13 @@ yargs(hideBin(process.argv))
       } else if (argv.mode === "single-file") {
         compiledCode = fs.readFileSync(argv.file);
       }
-      const stripMetaLiveCode = getBytecodeWithoutMetadata(
-        liveCode.replace("0x", "")
-      );
-      const stripMetaCompiledCode = getBytecodeWithoutMetadata(
-        compiledCode.toString()
-      );
-      console.log(compiledCode.toString());
       console.log(
-        stripMetaCompiledCode.length,
-        stripMetaLiveCode.length,
-        stripMetaLiveCode === stripMetaCompiledCode
+        "verified direct:",
+        runtimeCodeVerification(liveCode.replace("0x", ""), compiledCode)
+      );
+      console.log(
+        "verified opcodes:",
+        opCodeCodeVerification(liveCode.replace("0x", ""), compiledCode)
       );
     }
   )
