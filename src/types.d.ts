@@ -11,3 +11,8 @@ type CborDataType = {
   bzzr1?: string;
   solc?: string;
 };
+
+type OpCodeType = {
+  code: string;
+  data?: Buffer;
+};
