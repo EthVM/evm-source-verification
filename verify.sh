@@ -6,7 +6,7 @@ for dir in contracts/1/*/
 do
     echo "counter: $i"
     ((i++))
-    if [[ "$i" -lt 185 ]]; then
+    if [[ "$i" -lt 0 ]]; then
        continue
     fi
     dir=$dir*
