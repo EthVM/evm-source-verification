@@ -1,0 +1,30 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "bytecodeHash": "ipfs",
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "DetribesToken.sol": {
+      "content": "// SPDX-License-Identifier: GPL-3.0\r\n\r\npragma solidity =0.8.9;\r\n\r\ninterface IErc {\r\n    function name() external view returns (string memory);\r\n\r\n    function symbol() external view returns (string memory);\r\n\r\n    function decimals() external view returns (uint8);\r\n\r\n    function totalSupply() external view returns (uint256);\r\n\r\n    function balanceOf(address account) external view returns (uint256);\r\n\r\n    function transfer(address recipient, uint256 amount) external returns (bool);\r\n\r\n    function allowance(address owner, address spender) external view returns (uint256);\r\n\r\n    function approve(address spender, uint256 amount) external returns (bool);\r\n\r\n    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);\r\n\r\n    event Transfer(address indexed from, address indexed to, uint256 value);\r\n\r\n    event Approval(address indexed owner, address indexed spender, uint256 value);\r\n}\r\n\r\ncontract DetribesToken is IErc {\r\n\r\n    mapping(address => uint256) public balanceOf;\r\n\r\n    mapping(address => mapping(address => uint256)) private _allowances;\r\n\r\n    uint256 public totalSupply;\r\n\r\n    string public name = \"Detribes Token\";\r\n    string public symbol = \"DTT\";\r\n    uint8 public decimals = 18;\r\n\r\n    constructor() {\r\n        totalSupply = 1_000_000_000 * (10 ** 18);\r\n        balanceOf[msg.sender] = totalSupply;\r\n        emit Transfer(address(0), msg.sender, totalSupply);\r\n    }\r\n \r\n    function transfer(address recipient_, uint256 amount_)\r\n        public\r\n        returns (bool)\r\n    {\r\n        _transfer(msg.sender, recipient_, amount_);\r\n        return true;\r\n    }\r\n\r\n    function allowance(address owner_, address spender_)\r\n        public\r\n        view\r\n        returns (uint256)\r\n    {\r\n        return _allowances[owner_][spender_];\r\n    }\r\n\r\n    function approve(address spender_, uint256 amount_)\r\n        public\r\n        virtual\r\n        returns (bool)\r\n    {\r\n        _approve(msg.sender, spender_, amount_);\r\n        return true;\r\n    }\r\n\r\n    function transferFrom(\r\n        address sender_,\r\n        address recipient_,\r\n        uint256 amount_\r\n    ) public virtual returns (bool) {\r\n        _transfer(sender_, recipient_, amount_);\r\n        uint256 currentAllowance = _allowances[sender_][msg.sender];\r\n        require(\r\n            currentAllowance >= amount_,\r\n            \"ERC20: transfer amount exceeds allowance\"\r\n        );\r\n        _approve(sender_, msg.sender, currentAllowance - amount_);\r\n        return true;\r\n    }\r\n\r\n    function increaseAllowance(address spender_, uint256 addedValue_)\r\n        public\r\n        virtual\r\n        returns (bool)\r\n    {\r\n        _approve(\r\n            msg.sender,\r\n            spender_,\r\n            _allowances[msg.sender][spender_] + addedValue_\r\n        );\r\n        return true;\r\n    }\r\n\r\n    function decreaseAllowance(address spender_, uint256 subtractedValue_)\r\n        public\r\n        virtual\r\n        returns (bool)\r\n    {\r\n        uint256 currentAllowance = _allowances[msg.sender][spender_];\r\n        require(\r\n            currentAllowance >= subtractedValue_,\r\n            \"ERC20: decreased allowance below zero\"\r\n        );\r\n        _approve(msg.sender, spender_, currentAllowance - subtractedValue_);\r\n\r\n        return true;\r\n    }\r\n\r\n    function burn(uint256 amount) public returns (bool) {\r\n        require(balanceOf[msg.sender] >= amount, \"ERC20: burn amount exceeds balance\");\r\n        balanceOf[msg.sender] -= amount;\r\n        totalSupply -= amount;\r\n        emit Transfer(msg.sender, address(0), amount);\r\n        return true;\r\n    }\r\n\r\n    function _transfer(\r\n        address sender_,\r\n        address recipient_,\r\n        uint256 amount_\r\n    ) internal virtual {\r\n        require(sender_ != address(0), \"ERC20: transfer from the zero address\");\r\n        require(\r\n            recipient_ != address(0),\r\n            \"ERC20: transfer to the zero address\"\r\n        );\r\n\r\n        uint256 senderBalance = balanceOf[sender_];\r\n        require(\r\n            senderBalance >= amount_,\r\n            \"ERC20: transfer amount exceeds balance\"\r\n        );\r\n        balanceOf[sender_] = senderBalance - amount_;\r\n        balanceOf[recipient_] += amount_;\r\n\r\n        emit Transfer(sender_, recipient_, amount_);\r\n    }\r\n\r\n    function _approve(\r\n        address owner_,\r\n        address spender_,\r\n        uint256 amount_\r\n    ) internal virtual {\r\n        require(owner_ != address(0), \"ERC20: approve from the zero address\");\r\n        require(spender_ != address(0), \"ERC20: approve to the zero address\");\r\n\r\n        _allowances[owner_][spender_] = amount_;\r\n        emit Approval(owner_, spender_, amount_);\r\n    }\r\n}"
+    }
+  }
+}

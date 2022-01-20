@@ -1,0 +1,30 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "bytecodeHash": "ipfs",
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "DASDAOOWNER.sol": {
+      "content": "pragma solidity >=0.8.10;\r\n// SPDX-License-Identifier: MIT\r\n\r\n\r\ncontract DASDAOOWNER {\r\n    \r\n    address public owner;\r\n    address public backup;\r\n\r\n    event OwnerChanged(address indexed previousOwner, address indexed newOwner);\r\n    event BackupChanged(address indexed previousBackup, address indexed newBackup);\r\n\r\n    /**\r\n    * @param _backup is the backup owner to set\r\n    */\r\n    constructor(address _backup) {\r\n        owner = msg.sender;\r\n        backup = _backup;\r\n    }\r\n\r\n    // checks if the caller of the function is authorized to call it (current owner or backup)\r\n    modifier Auth {\r\n        require(msg.sender == owner || msg.sender == backup, \"UNAUTH SENDER\");\r\n        _;\r\n    }\r\n\r\n    /**\r\n    * @param _newOwner is the new owner address to change to\r\n    */\r\n    function changeOwner(address _newOwner) external Auth {\r\n        address old = owner;\r\n        owner = _newOwner;\r\n        emit OwnerChanged(old, _newOwner);\r\n    }\r\n\r\n    /**\r\n    * @param _newBackup is the new backup owner address to change to\r\n    */\r\n    function changeBackup(address _newBackup) external Auth {\r\n        address old = backup;\r\n        backup = _newBackup;\r\n        emit BackupChanged(old, _newBackup);\r\n    }\r\n\r\n}"
+    }
+  }
+}

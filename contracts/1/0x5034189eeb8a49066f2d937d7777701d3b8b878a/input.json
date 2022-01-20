@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "DexUtils.sol": {
+      "content": "pragma solidity 0.5.16;\r\n\r\n// SPDX-License-Identifier: MIT @GoPocketStudio\r\ninterface IFactory {\r\n    function getPair(address tokenA, address tokenB) external view returns (address pair);\r\n}\r\n\r\ninterface IPair {\r\n    function token0() external view returns (address);\r\n    function token1() external view returns (address);\r\n    function getReserves() external view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast);\r\n}\r\n\r\ninterface IERC20 {\r\n    function symbol() external view returns (string memory);\r\n    function decimals() external view returns (uint8);\r\n}\r\n\r\ncontract DexUtils {\r\n    \r\n    function findPairInDex(address factory, address token0, address[] memory token1Array) public view returns (address) {\r\n        IFactory factoryObj = IFactory(factory);\r\n        for(uint32 i = 0; i < token1Array.length; i++) {\r\n            address pair = factoryObj.getPair(token0, token1Array[i]);\r\n            if(pair != address(0)){\r\n                return pair;\r\n            }\r\n        }\r\n        return address(0);\r\n    }\r\n    \r\n    function getPairInfo(address pair) public view \r\n        returns (address token0, address token1, string memory symbol0, string memory symbol1, \r\n            uint8 decimals0, uint8 decimals1, uint112 reserve0, uint112 reserve1 ){\r\n        if(pair != address(0)){\r\n            IPair p = IPair(pair);\r\n            token0 = p.token0();\r\n            token1 = p.token1();\r\n            (reserve0, reserve1, ) = p.getReserves();\r\n            IERC20 t0 = IERC20(token0);\r\n            symbol0 = t0.symbol();\r\n            decimals0 = t0.decimals();\r\n            IERC20 t1 = IERC20(token1);\r\n            symbol1 = t1.symbol();\r\n            decimals1 = t1.decimals();\r\n        }\r\n    }\r\n    \r\n    function findPair(address factory, address token0, address[] memory token1Array) public view \r\n        returns (address _pair, address _token0, address _token1, string memory _symbol0, string memory _symbol1, \r\n            uint8 _decimals0, uint8 _decimals1, uint112 _reserve0, uint112 _reserve1 ){\r\n        _pair = findPairInDex(factory, token0, token1Array);\r\n        (_token0, _token1, _symbol0, _symbol1, _decimals0, _decimals1, _reserve0, _reserve1) = getPairInfo(_pair);\r\n    }\r\n}"
+    }
+  }
+}

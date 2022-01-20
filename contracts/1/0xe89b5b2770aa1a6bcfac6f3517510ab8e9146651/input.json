@@ -1,0 +1,30 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "bytecodeHash": "ipfs",
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "PriceOracle.sol": {
+      "content": "// SPDX-License-Identifier: MIT\r\npragma solidity ^0.8.11;\r\n\r\ninterface Pair {\r\n\tfunction getReserves() external view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast);\r\n}\r\n\r\n\r\ncontract PriceOracle {\r\n\tfunction getPrice() external view returns (uint256) {\r\n\t\tPair _ethUSDC = Pair(0xB4e16d0168e52d35CaCD2c6185b44281Ec28C9Dc);\r\n\t\t(uint256 _resUSDC, uint256 _resETH, ) = _ethUSDC.getReserves();\r\n\t\treturn 1e30 * _resUSDC / _resETH;\r\n\t}\r\n}"
+    }
+  }
+}

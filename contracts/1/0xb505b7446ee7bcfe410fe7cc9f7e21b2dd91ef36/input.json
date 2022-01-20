@@ -1,0 +1,30 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "bytecodeHash": "ipfs",
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "Proposal.sol": {
+      "content": "pragma solidity 0.6.7;\r\n\r\nabstract contract Auth {\r\n  function addAuthorization(address) public virtual;\r\n  function removeAuthorization(address) public virtual;\r\n}\r\n\r\nabstract contract Setter is Auth {\r\n  function modifyParameters(bytes32, address) public virtual;\r\n  function modifyParameters(bytes32, uint) public virtual;\r\n  function addFundedFunction(address, bytes4, uint) public virtual;\r\n  function removeFundedFunction(address, bytes4) public virtual;\r\n  function addFundingReceiver(address, bytes4, uint, uint, uint, uint) public virtual;\r\n  function removeFundingReceiver(address, bytes4) public virtual;\r\n  function toggleReimburser(address) public virtual;\r\n  function modifyParameters(bytes32, uint256, uint256, bytes4, address) public virtual;\r\n}\r\n\r\ncontract Proposal {\r\n  function execute(bool) public {\r\n    address deployer = 0x3E0139cE3533a42A7D342841aEE69aB2BfEE1d51;\r\n\r\n    // Swapping the surplus auction house\r\n    Setter accountingEngine = Setter(0xcEe6Aa1aB47d0Fb0f24f51A3072EC16E20F90fcE);\r\n    Setter newSurplusAuctionHouse = Setter(0x4EEfDaE928ca97817302242a851f317Be1B85C90);\r\n    Setter newAutoSurplusBuffer = Setter(0x9fe16154582ecCe3414536FdE57A201c17398b2A);\r\n    Setter newAutoSurplusBufferOverlay = Setter(0x7A2414F6b6Ee5D4a043E26127f29ca6D65ea31cd);\r\n    // set surplus auction house on accounting engine\r\n    accountingEngine.modifyParameters(\"surplusAuctionHouse\", address(newSurplusAuctionHouse));\r\n\r\n    // auth accounting engine on surplus auction house\r\n    newSurplusAuctionHouse.addAuthorization(address(accountingEngine));\r\n    // deauth deployer\r\n    newSurplusAuctionHouse.removeAuthorization(deployer);\r\n    // add prot receiver GEB_STAKING_REWARD_ADJUSTER\r\n    newSurplusAuctionHouse.modifyParameters(\"protocolTokenBidReceiver\", 0x03da3D5E0b13b6f0917FA9BC3d65B46229d7Ef47);\r\n\r\n\r\n    // Swapping the auto surplus buffer\r\n    // params\r\n    newAutoSurplusBuffer.modifyParameters(\"bufferInflationDelay\", 31536000); // 1 year\r\n    newAutoSurplusBuffer.modifyParameters(\"bufferTargetInflation\", 7);       // 7%\r\n    newAutoSurplusBuffer.modifyParameters(\"maxRewardIncreaseDelay\", 10800);   // 3 hours\r\n\r\n    // auth in accounting engine\r\n    accountingEngine.addAuthorization(address(newAutoSurplusBuffer));\r\n\r\n    // deauth old auto surplus buffer in accounting engine\r\n    accountingEngine.removeAuthorization(0x1450f40E741F2450A95F9579Be93DD63b8407a25); // old GEB_AUTO_SURPLUS_BUFFER\r\n\r\n    // auth INCREASING_TREASURY_REIMBURSEMENT_OVERLAY on auto surplus buffer\r\n    newAutoSurplusBuffer.addAuthorization(0x1dCeE093a7C952260f591D9B8401318f2d2d72Ac);\r\n    Setter(0x1dCeE093a7C952260f591D9B8401318f2d2d72Ac).toggleReimburser(address(newAutoSurplusBuffer));\r\n    Setter(0x1dCeE093a7C952260f591D9B8401318f2d2d72Ac).toggleReimburser(0x1450f40E741F2450A95F9579Be93DD63b8407a25); // old GEB_AUTO_SURPLUS_BUFFER\r\n\r\n    // auth new AUTO_SURPLUS_BUFFER_SETTER_OVERLAY\r\n    newAutoSurplusBuffer.addAuthorization(address(newAutoSurplusBufferOverlay));\r\n\r\n    // deauth deployer\r\n    newAutoSurplusBuffer.removeAuthorization(deployer);\r\n\r\n    // remove deployer auth from new overlay\r\n    newAutoSurplusBufferOverlay.removeAuthorization(deployer);\r\n\r\n    // authing GEB_MINMAX_REWARDS_ADJUSTER\r\n    newAutoSurplusBuffer.addAuthorization(0xa937A6da2837Dcc91eB19657b051504C0D512a35);\r\n\r\n    // add/remove old from GEB_TREASURY_CORE_PARAM_ADJUSTER, adjustSurplusBuffer(address), current latestExpectedCalls\r\n    Setter(0x73FEb3C2DBb87c8E0d040A7CD708F7497853B787).addFundedFunction(address(newAutoSurplusBuffer), 0xbf1ad0db, 26);\r\n    Setter(0x73FEb3C2DBb87c8E0d040A7CD708F7497853B787).removeFundedFunction(0x1450f40E741F2450A95F9579Be93DD63b8407a25, 0xbf1ad0db);\r\n\r\n    // add/remove old from GEB_MINMAX_REWARDS_ADJUSTER, same params\r\n    Setter(0xa937A6da2837Dcc91eB19657b051504C0D512a35).addFundingReceiver(address(newAutoSurplusBuffer), 0xbf1ad0db, 86400, 1000, 100, 200);\r\n    Setter(0xa937A6da2837Dcc91eB19657b051504C0D512a35).removeFundingReceiver(0x1450f40E741F2450A95F9579Be93DD63b8407a25, 0xbf1ad0db);\r\n\r\n    // adding new contract to GEB_REWARD_ADJUSTER_BUNDLER\r\n    Setter(0x7F55e74C25647c100256D87629dee379D68bdCDe).modifyParameters(\"addFunction\", 0, 1, bytes4(0xbf1ad0db), address(newAutoSurplusBuffer));\r\n\r\n    // removing old contract from GEB_REWARD_ADJUSTER_BUNDLER\r\n    Setter(0x7F55e74C25647c100256D87629dee379D68bdCDe).modifyParameters(\"removeFunction\", 9, 1, 0x0, address(0));\r\n  }\r\n}"
+    }
+  }
+}

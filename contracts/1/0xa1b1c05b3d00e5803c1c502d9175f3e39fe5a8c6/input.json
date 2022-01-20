@@ -1,0 +1,30 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "bytecodeHash": "ipfs",
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "MockedPool.sol": {
+      "content": "//SPDX-License-Identifier: Unlicense\r\npragma solidity ^0.8.0;\r\n\r\n/**\r\n * @title Mocked Pool contract.\r\n * \r\n * @dev Simulates a core pool, with the set weight function to be called\r\n * by the pool factory. It receives some weight so the total weight registered\r\n * by the factory contract is higher than 0, and allows ILV emissions to be\r\n * stopped and users are able to execute actions in the v1 contracts.\r\n */\r\ncontract MockedPool {\r\n    /**\r\n     * @dev Pool factory deployed instance.\r\n     */\r\n    address public factory;\r\n    /**\r\n     * @dev Weight registered by the factory\r\n     */\r\n    uint32 public weight;\r\n\r\n    /**\r\n     * @param _factory pool factory address\r\n     */\r\n    constructor(address _factory) {\r\n        factory = _factory;\r\n    }\r\n\r\n    /**\r\n     * @dev Called by the factory, just stores the received weight\r\n     * in order to mock a v1 core pool.\r\n     */\r\n    function setWeight(uint32 _weight) external {\r\n        require(msg.sender == factory, \"invalid sender\");\r\n        weight = _weight;\r\n    }\r\n}"
+    }
+  }
+}

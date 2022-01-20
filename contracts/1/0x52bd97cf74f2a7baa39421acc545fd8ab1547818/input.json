@@ -1,0 +1,33 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "bytecodeHash": "ipfs",
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "BatchCigClaim.sol": {
+      "content": "// SPDX-License-Identifier: MIT\n\npragma solidity ^0.8.0;\n\nimport \"./IClaim.sol\";\n\ncontract BatchCigClaim {\n\n    IClaim claimContract = IClaim(0x5A35A6686db167B05E2Eb74e1ede9fb5D9Cdb3E0);\n\n    function batchClaim(uint256[] calldata _punkIndexes) external {\n        for (uint i = 0; i < _punkIndexes.length; i++) {\n            claimContract.claim(_punkIndexes[i]);\n        }\n    }\n}\n"
+    },
+    "IClaim.sol": {
+      "content": "// SPDX-License-Identifier: MIT\n\npragma solidity ^0.8.0;\n\ninterface IClaim {\n\n    function claim(uint256 _punkIndex) external returns(bool);\n}\n"
+    }
+  }
+}

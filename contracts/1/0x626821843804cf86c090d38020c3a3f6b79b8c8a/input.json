@@ -1,0 +1,30 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "bytecodeHash": "ipfs",
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "CfgRewardRate.sol": {
+      "content": "/**\r\n *Submitted for verification at Etherscan.io on 2021-09-14\r\n*/\r\n\r\n// SPDX-License-Identifier: AGPL-3.0-only\r\npragma solidity >=0.4.23 >=0.5.15;\r\n\r\n// Copyright (C) Centrifuge 2020, based on MakerDAO dss https://github.com/makerdao/dss\r\n\r\ncontract Auth {\r\n    mapping (address => uint256) public wards;\r\n    \r\n    event Rely(address indexed usr);\r\n    event Deny(address indexed usr);\r\n\r\n    function rely(address usr) external auth {\r\n        wards[usr] = 1;\r\n        emit Rely(usr);\r\n    }\r\n    function deny(address usr) external auth {\r\n        wards[usr] = 0;\r\n        emit Deny(usr);\r\n    }\r\n\r\n    modifier auth {\r\n        require(wards[msg.sender] == 1, \"not-authorized\");\r\n        _;\r\n    }\r\n\r\n}\r\n\r\ncontract CfgRewardRate is Auth {\r\n\r\n    uint256 public dropInvestorRewardRate;\r\n    uint256 public tinInvestorRewardRate;\r\n    uint256 public aoRewardRate;\r\n\r\n    event RateUpdate(uint256 newDropInvestorRewardRate, uint256 newTinInvestorRewardRate, uint256 newAoRewardRate);\r\n\r\n    constructor() {\r\n        wards[msg.sender] = 1;\r\n        emit Rely(msg.sender);\r\n    }\r\n\r\n    function get() public view returns (uint256, uint256, uint256) {\r\n        return (dropInvestorRewardRate, tinInvestorRewardRate, aoRewardRate);\r\n    }\r\n    \r\n    function set(uint256 dropInvestorRewardRate_, uint256 tinInvestorRewardRate_, uint256 aoRewardRate_) public auth {\r\n        dropInvestorRewardRate = dropInvestorRewardRate_;\r\n        tinInvestorRewardRate = tinInvestorRewardRate_;\r\n        aoRewardRate = aoRewardRate_;\r\n        emit RateUpdate(dropInvestorRewardRate, tinInvestorRewardRate, aoRewardRate);\r\n    }\r\n\r\n}"
+    }
+  }
+}

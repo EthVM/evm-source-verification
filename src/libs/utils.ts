@@ -4,19 +4,6 @@ import { bytesToHex } from "web3-utils";
 
 // https://github.com/ethereum/sourcify
 /**
- * Removes post-fixed metadata from a bytecode string
- * (for partial bytecode match comparisons )
- * @param  {string} bytecode
- * @return {string} bytecode minus metadata
- */
-export function getBytecodeWithoutMetadata(bytecode: string): string {
-  // Last 4 chars of bytecode specify byte size of metadata component,
-  const metadataSize = parseInt(bytecode.slice(-4), 16) * 2 + 4;
-  return bytecode.slice(0, bytecode.length - metadataSize);
-}
-
-// https://github.com/ethereum/sourcify
-/**
  * Extracts cbor encoded segement from bytecode
  * @example
  *   const bytes = Web3.utils.hexToBytes(evm.deployedBytecode);
@@ -73,4 +60,24 @@ export function cborParse(cborData: CborDecodedType): CborDataType {
  */
 export function getByteCodeMetaData(bytecode: Buffer): CborDataType {
   return cborParse(cborDecode(bytecode));
+}
+
+// https://github.com/ethereum/sourcify
+/**
+ * Removes post-fixed metadata from a bytecode string
+ * (for partial bytecode match comparisons )
+ * @param  {string} bytecode
+ * @return {string} bytecode minus metadata
+ */
+export function getBytecodeWithoutMetadata(bytecode: string): string {
+  // Last 4 chars of bytecode specify byte size of metadata component,
+  try {
+    getByteCodeMetaData(Buffer.from(bytecode, "hex"));
+    const metadataSize = parseInt(bytecode.slice(-4), 16) * 2 + 4;
+    return getBytecodeWithoutMetadata(
+      bytecode.slice(0, bytecode.length - metadataSize)
+    );
+  } catch (e) {
+    return bytecode;
+  }
 }
