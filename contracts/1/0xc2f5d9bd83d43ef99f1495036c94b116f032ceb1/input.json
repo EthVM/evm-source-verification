@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "BLOCKSMultiSender.sol": {
+      "content": "// SPDX-License-Identifier: MIT\r\n\r\npragma solidity ^0.8.0;\r\n\r\ninterface IERC777 {\r\n    function name() external view returns (string memory);\r\n    function symbol() external view returns (string memory);\r\n    function totalSupply() external view returns (uint256);\r\n    function balanceOf(address owner) external view returns (uint256);\r\n    function granularity() external view returns (uint256);\r\n\r\n    function defaultOperators() external view returns (address[] memory);\r\n    function authorizeOperator(address operator) external;\r\n    function revokeOperator(address operator) external;\r\n    function isOperatorFor(address operator, address tokenHolder) external view returns (bool);\r\n\r\n    function send(address to, uint256 amount, bytes calldata data) external;\r\n    function operatorSend(address from, address to, uint256 amount, bytes calldata data, bytes calldata operatorData) external;\r\n\r\n    function burn(uint256 amount, bytes calldata data) external;\r\n    function operatorBurn(address from, uint256 amount, bytes calldata data, bytes calldata operatorData) external;\r\n\r\n    event Sent(address indexed operator, address indexed from, address indexed to, uint256 amount, bytes data, bytes operatorData);\r\n    event Minted(address indexed operator, address indexed to, uint256 amount, bytes data, bytes operatorData);\r\n    event Burned(address indexed operator, address indexed from, uint256 amount, bytes data, bytes operatorData);\r\n    event AuthorizedOperator(address indexed operator, address indexed tokenHolder);\r\n    event RevokedOperator(address indexed operator, address indexed tokenHolder);\r\n}\r\n\r\ncontract BLOCKSMultiSender {\r\n\r\n    function send(IERC777 _token, address[] memory _recipients, uint256 _amount, bytes memory _data) public {\r\n        for (uint256 i = 0; i < _recipients.length; i++) {\r\n            _token.operatorSend(msg.sender, _recipients[i], _amount, _data, \"\");\r\n        }\r\n    }\r\n\r\n    function sendAmounts(IERC777 _token, address[] memory _recipients, uint256[] memory _amounts, bytes memory _data) public {\r\n        for (uint256 i = 0; i < _recipients.length; i++) {\r\n            _token.operatorSend(msg.sender, _recipients[i], _amounts[i], _data, \"\");\r\n        }\r\n    }\r\n}"
+    }
+  }
+}

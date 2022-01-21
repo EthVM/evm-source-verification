@@ -1,0 +1,36 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "evmVersion": "istanbul",
+    "libraries": {},
+    "metadata": {
+      "bytecodeHash": "ipfs",
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "evm.bytecode",
+          "evm.deployedBytecode",
+          "devdoc",
+          "userdoc",
+          "metadata",
+          "abi"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/traists/Trait2.sol": {
+      "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.0;\n\nimport \"./TraitBase.sol\";\n\n// Body Color\ncontract Trait2 is TraitBase {\n\tconstructor(address factory) TraitBase(\"Body Color\", factory) {\n\t\titems.push(Item(\"Brown\", \"#FDA78B\"));\n\t\titems.push(Item(\"Pink\", \"#F9BBDC\"));\n\t\titems.push(Item(\"Blue\", \"#A4A4F4\"));\n\t\titems.push(Item(\"Sky\", \"#69DCFF\"));\n\t\titems.push(Item(\"Green\", \"#79E8B3\"));\n\t\titems.push(Item(\"Yellow\", \"#F4DA5B\"));\n\t\titems.push(Item(\"Black\", \"#4F4F4F\"));\n\t\titemCount = items.length;\n\t}\n}\n"
+    },
+    "contracts/traists/TraitBase.sol": {
+      "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.0;\n\ninterface IFactory {\n\tfunction owner() external view returns (address);\n}\n\ncontract TraitBase {\n\tstruct Item {\n\t\tstring name;\n\t\tstring content;\n\t}\n\n\tstring public name;\n\tIFactory public factory;\n\n\tuint256 public itemCount;\n\tItem[] items;\n\n\tconstructor(string memory _name, address _factory) {\n\t\tname = _name;\n\t\tfactory = IFactory(_factory);\n\t}\n\n\tfunction totalItems() external view returns (uint256) {\n\t\treturn items.length;\n\t}\n\n\tfunction getTraitName(uint16 traitId) external view returns (string memory traitName) {\n\t\ttraitName = items[traitId].name;\n\t}\n\n\tfunction getTraitContent(uint16 traitId) external view returns (string memory traitContent) {\n\t\ttraitContent = items[traitId].content;\n\t}\n\n\tfunction addItems(string[] memory names, string[] memory contents) external {\n\t\trequire(msg.sender == factory.owner());\n\t\trequire(names.length == contents.length);\n\t\tfor (uint16 i = 0; i < names.length; i++) {\n\t\t\titems.push(Item(names[i], contents[i]));\n\t\t}\n\t}\n\n\tfunction updateItem(uint16 traitId, string memory traitName, string memory traitContent) external {\n\t\trequire(msg.sender == factory.owner());\n\t\trequire(traitId < items.length);\n\t\titems[traitId].name = traitName;\n\t\titems[traitId].content = traitContent;\n\t}\n\n\tfunction setFactory(address _factory) external {\n\t\trequire(msg.sender == factory.owner());\n\t\tfactory = IFactory(_factory);\n\t}\n}\n"
+    }
+  }
+}

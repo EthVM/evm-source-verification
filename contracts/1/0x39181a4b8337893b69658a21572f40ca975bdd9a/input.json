@@ -1,0 +1,33 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "evmVersion": "berlin",
+    "libraries": {},
+    "metadata": {
+      "bytecodeHash": "ipfs",
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "evm.bytecode",
+          "evm.deployedBytecode",
+          "devdoc",
+          "userdoc",
+          "metadata",
+          "abi"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/libraries/Utils.sol": {
+      "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.0;\n\nlibrary Utils {\n  using Utils for Unlock;\n  using Utils for Vest;\n\n  struct Vest {\n    uint256 shortAmnt;\n    uint256 longAmnt;\n    uint256 lastUpdate;\n  }\n\n  struct Unlock {\n    uint256 unlockAmnt;\n    uint256 unlockTime;\n  }\n\n  // note: we should be able to unlock all tokens (including vested tokens)\n  function unlock(\n    Unlock storage self,\n    uint256 amount,\n    uint256 lockTime\n  ) internal {\n    self.unlockAmnt = amount;\n    self.unlockTime = block.timestamp + lockTime;\n  }\n\n  function useUnlocked(Unlock storage self, uint256 amount) internal {\n    require(self.unlockTime <= block.timestamp, \"sRelU: tokens are not unlocked yet\");\n    require(self.unlockAmnt >= amount, \"sRelU: tokens should be unlocked before transfer\");\n\n    self.unlockAmnt -= amount; // update locked amount;\n  }\n\n  function resetLock(Unlock storage self) internal {\n    self.unlockAmnt = 0;\n    self.unlockTime = 0;\n  }\n\n  function transferUnvestedTokens(Vest storage self, Vest storage vestTo) internal {\n    require(self.shortAmnt | self.longAmnt != 0, \"sRelU: nothing to transfer\");\n\n    require(\n      vestTo.shortAmnt | vestTo.longAmnt == 0,\n      \"sRelU: cannot transfer to account with unvested tokens\"\n    );\n\n    vestTo.shortAmnt = self.shortAmnt;\n    vestTo.longAmnt = self.longAmnt;\n    vestTo.lastUpdate = self.lastUpdate;\n\n    // reset initial vest\n    self.shortAmnt = 0;\n    self.longAmnt = 0;\n    self.lastUpdate = 0;\n  }\n\n  function setUnvestedAmount(\n    Vest storage self,\n    uint256 shortAmnt,\n    uint256 longAmnt\n  ) public {\n    require(self.shortAmnt + self.longAmnt == 0, \"sRelU: account has unvested tokens\");\n    if (shortAmnt > 0) self.shortAmnt = shortAmnt;\n\n    if (longAmnt > 0) self.longAmnt = longAmnt;\n\n    self.lastUpdate = 0;\n  }\n\n  function unvested(Vest storage self) internal view returns (uint256) {\n    return self.shortAmnt + self.longAmnt;\n  }\n\n  // this method updates long and short unvested amounts and returns vested amount\n  function updateUnvestedAmount(\n    Vest storage self,\n    uint256 vestShort,\n    uint256 vestLong,\n    uint256 vestBegin\n  ) public returns (uint256 amount) {\n    if (block.timestamp <= vestBegin) return 0;\n    uint256 shortAmnt = self.shortAmnt;\n    uint256 longAmnt = self.longAmnt;\n    uint256 last = self.lastUpdate < vestBegin ? vestBegin : self.lastUpdate;\n\n    if (shortAmnt > 0 && last < vestShort) {\n      uint256 sAmnt = block.timestamp < vestShort\n        ? (shortAmnt * (block.timestamp - last)) / (vestShort - last)\n        : shortAmnt;\n      self.shortAmnt = shortAmnt - sAmnt;\n      amount += sAmnt;\n    }\n\n    if (longAmnt > 0 && last < vestLong) {\n      uint256 lAmnt = block.timestamp < vestLong\n        ? (longAmnt * (block.timestamp - last)) / (vestLong - last)\n        : longAmnt;\n      self.longAmnt = longAmnt - lAmnt;\n      amount += lAmnt;\n    }\n\n    self.lastUpdate = block.timestamp;\n    return amount;\n  }\n}\n"
+    }
+  }
+}

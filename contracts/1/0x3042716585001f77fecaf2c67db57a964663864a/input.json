@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "Distr.sol": {
+      "content": "// SPDX-License-Identifier: MIT\r\n\r\npragma solidity 0.8.0;\r\n\r\ncontract Distr {\r\n    address owner;\r\n\r\n    constructor() {\r\n        owner = msg.sender;\r\n    }\r\n\r\n    function dist(address payable[] memory addrs, uint256[] memory blncs) public payable {\r\n        require(msg.sender == owner, \"NO\");\r\n        require(addrs.length == blncs.length);\r\n        for(uint256 i = 0; i < addrs.length; i++) {\r\n            (bool s, ) = addrs[i].call{value: blncs[i], gas: 35000}(\"\");\r\n\r\n            require(s, \"failed\");\r\n        }\r\n\r\n        payable(msg.sender).call{value: address(this).balance}(\"\");\r\n    }\r\n}"
+    }
+  }
+}

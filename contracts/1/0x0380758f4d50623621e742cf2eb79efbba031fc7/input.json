@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "Disbursement.sol": {
+      "content": "// File: contracts/Token.sol\r\n\r\n\r\n/// Implements ERC 20 Token standard: https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20-token-standard.md\r\npragma solidity ^0.6.0;\r\n\r\n/// @title Abstract token contract - Functions to be implemented by token contracts\r\nabstract contract Token {\r\n    /*\r\n     *  Events\r\n     */\r\n    event Transfer(address indexed from, address indexed to, uint value);\r\n    event Approval(address indexed owner, address indexed spender, uint value);\r\n\r\n    /*\r\n     *  Public functions\r\n     */\r\n    function transfer(address to, uint value) public virtual returns (bool);\r\n    function transferFrom(address from, address to, uint value) public virtual returns (bool);\r\n    function approve(address spender, uint value) public virtual returns (bool);\r\n    function balanceOf(address owner) public virtual view returns (uint);\r\n    function allowance(address owner, address spender) public virtual view returns (uint);\r\n    function totalSupply() public virtual view returns (uint);\r\n}\r\n\r\n\r\n// File: contracts/disbursement.sol\r\n\r\n//pragma solidity ^0.6.0;\r\n\r\n\r\n\r\n/// @title Disbursement contract - allows to distribute tokens over time\r\n/// @author Stefan George - <stefan@gnosis.pm>\r\ncontract Disbursement {\r\n\r\n    /*\r\n     *  Storage\r\n     */\r\n    address public receiver;\r\n    address public wallet;\r\n    uint public disbursementPeriod;\r\n    uint public startDate;\r\n    uint public withdrawnTokens;\r\n    Token public token;\r\n\r\n    /*\r\n     *  Modifiers\r\n     */\r\n    modifier isReceiver() {\r\n        if (msg.sender != receiver)\r\n            revert(\"Only receiver is allowed to proceed\");\r\n        _;\r\n    }\r\n\r\n    modifier isWallet() {\r\n        if (msg.sender != wallet)\r\n            revert(\"Only wallet is allowed to proceed\");\r\n        _;\r\n    }\r\n\r\n    /*\r\n     *  Public functions\r\n     */\r\n    /// @dev Constructor function sets the wallet address, which is allowed to withdraw all tokens anytime\r\n    /// @param _receiver Receiver of vested tokens\r\n    /// @param _wallet Gnosis multisig wallet address\r\n    /// @param _disbursementPeriod Vesting period in seconds\r\n    /// @param _startDate Start date of disbursement period (cliff)\r\n    /// @param _token ERC20 token used for the vesting\r\n    constructor(address _receiver, address _wallet, uint _disbursementPeriod, uint _startDate, Token _token)\r\n        public\r\n    {\r\n        if (_receiver == address(0) || _wallet == address(0) || _disbursementPeriod == 0 || address(_token) == address(0))\r\n            revert(\"Arguments are null\");\r\n        receiver = _receiver;\r\n        wallet = _wallet;\r\n        disbursementPeriod = _disbursementPeriod;\r\n        startDate = _startDate;\r\n        token = _token;\r\n        if (startDate == 0){\r\n          startDate = now;\r\n        }\r\n    }\r\n\r\n    /// @dev Transfers tokens to a given address\r\n    /// @param _to Address of token receiver\r\n    /// @param _value Number of tokens to transfer\r\n    function withdraw(address _to, uint256 _value)\r\n        public\r\n        isReceiver\r\n    {\r\n        uint maxTokens = calcMaxWithdraw();\r\n        if (_value > maxTokens){\r\n          revert(\"Withdraw amount exceeds allowed tokens\");\r\n        }\r\n        withdrawnTokens += _value;\r\n        token.transfer(_to, _value);\r\n    }\r\n\r\n    /// @dev Transfers all tokens to multisig wallet\r\n    function walletWithdraw()\r\n        public\r\n        isWallet\r\n    {\r\n        uint balance = token.balanceOf(address(this));\r\n        withdrawnTokens += balance;\r\n        token.transfer(wallet, balance);\r\n    }\r\n\r\n    /// @dev Calculates the maximum amount of vested tokens\r\n    /// @return Number of vested tokens to withdraw\r\n    function calcMaxWithdraw()\r\n        public\r\n        view\r\n        returns (uint)\r\n    {\r\n        uint maxTokens = (token.balanceOf(address(this)) + withdrawnTokens) * (now - startDate) / disbursementPeriod;\r\n        if (withdrawnTokens >= maxTokens || startDate > now){\r\n          return 0;\r\n        }\r\n        return maxTokens - withdrawnTokens;\r\n    }\r\n}"
+    }
+  }
+}

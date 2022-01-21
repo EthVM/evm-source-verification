@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "ChangeScoreAndRewards.sol": {
+      "content": "// SPDX-License-Identifier: MIT\r\n\r\npragma solidity ^0.8.3;\r\n\r\ninterface IEthemerals {\r\n  function changeRewards(uint _tokenId, uint32 offset, bool add, uint8 action) external;\r\n  function changeScore(uint _tokenId, uint16 offset, bool add, uint32 amount) external;\r\n}\r\n\r\ncontract ChangeScoreAndRewards {\r\n\r\n  address private admin;\r\n  IEthemerals private coreContract;\r\n\r\n  constructor(address _ethemeralsAddress) {\r\n    admin = msg.sender;\r\n    coreContract = IEthemerals(_ethemeralsAddress);\r\n  }\r\n\r\n  function changeRewards(uint256[] memory tokenIndices, uint32 offset, bool add, uint8 action) external {// ADMIN\r\n    require(msg.sender == admin, 'no');\r\n    for (uint i = 0; i < tokenIndices.length; i++) {\r\n      coreContract.changeRewards(tokenIndices[i], offset, add, action);\r\n    }\r\n  }\r\n\r\n  function changeScore(uint256[] memory tokenIndices, uint16 offset, bool add, uint32 amount) external {// ADMIN\r\n    require(msg.sender == admin, 'no');\r\n    for (uint i = 0; i < tokenIndices.length; i++) {\r\n      coreContract.changeScore(tokenIndices[i], offset, add, amount);\r\n    }\r\n  }\r\n\r\n\r\n}"
+    }
+  }
+}

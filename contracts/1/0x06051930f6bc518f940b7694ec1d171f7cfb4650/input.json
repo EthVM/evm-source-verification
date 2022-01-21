@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "Fee.sol": {
+      "content": "pragma solidity ^0.7.0;\r\n\r\nlibrary SafeMath {\r\n\r\n    function add(uint256 a, uint256 b) internal pure returns (uint256) {\r\n        uint256 c = a + b;\r\n        require(c >= a, \"SafeMath: addition overflow\");\r\n\r\n        return c;\r\n    }\r\n\r\n    function sub(uint256 a, uint256 b) internal pure returns (uint256) {\r\n        return sub(a, b, \"SafeMath: subtraction overflow\");\r\n    }\r\n\r\n    function sub(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {\r\n        require(b <= a, errorMessage);\r\n        uint256 c = a - b;\r\n\r\n        return c;\r\n    }\r\n\r\n    function mul(uint256 a, uint256 b) internal pure returns (uint256) {\r\n        if (a == 0) {\r\n            return 0;\r\n        }\r\n\r\n        uint256 c = a * b;\r\n        require(c / a == b, \"SafeMath: multiplication overflow\");\r\n\r\n        return c;\r\n    }\r\n\r\n    function div(uint256 a, uint256 b) internal pure returns (uint256) {\r\n        return div(a, b, \"SafeMath: division by zero\");\r\n    }\r\n\r\n    function div(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {\r\n        // Solidity only automatically asserts when dividing by 0\r\n        require(b > 0, errorMessage);\r\n        uint256 c = a / b;\r\n\r\n        return c;\r\n    }\r\n\r\n    function mod(uint256 a, uint256 b) internal pure returns (uint256) {\r\n        return mod(a, b, \"SafeMath: modulo by zero\");\r\n    }\r\n    \r\n    function mod(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {\r\n        require(b != 0, errorMessage);\r\n        return a % b;\r\n    }\r\n}\r\n\r\nlibrary Address {\r\n    function isContract(address account) internal view returns (bool) {\r\n        bytes32 codehash;\r\n        bytes32 accountHash = 0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470;\r\n        // solhint-disable-next-line no-inline-assembly\r\n        assembly { codehash := extcodehash(account) }\r\n        return (codehash != 0x0 && codehash != accountHash);\r\n    }\r\n    function toPayable(address account) internal pure returns (address payable) {\r\n        return address(uint160(account));\r\n    }\r\n    function sendValue(address payable recipient, uint256 amount) internal {\r\n        require(address(this).balance >= amount, \"Address: insufficient balance\");\r\n\r\n        // solhint-disable-next-line avoid-call-value\r\n        (bool success, ) = recipient.call{ value : amount }(\"\");\r\n        require(success, \"Address: unable to send value, recipient may have reverted\");\r\n    }\r\n}\r\n\r\ncontract Fee {\r\n    using Address for address;\r\n    using SafeMath for uint256;\r\n\r\n    address payable public feeAddress;\r\n    uint32 public feePermill = 10;\r\n    \r\n    address public gov;\r\n\r\n    constructor (address payable _feeAddress) {\r\n        feeAddress = _feeAddress;\r\n        gov = msg.sender;\r\n    }\r\n\r\n    modifier onlyGov() {\r\n        require(msg.sender == gov, \"!governance\");\r\n        _;\r\n    }\r\n\r\n    function setFeePermill(uint32 _feePermill)\r\n        public\r\n        onlyGov\r\n    {\r\n        feePermill = _feePermill;\r\n    }\r\n\r\n    function setGovernance(address _gov)\r\n        public\r\n        onlyGov\r\n    {\r\n        gov = _gov;\r\n    }\r\n\r\n    function setFeeAddress(address payable _feeAddress)\r\n        public\r\n        onlyGov\r\n    {\r\n        feeAddress = _feeAddress;\r\n    }\r\n\r\n    function takeFee(address payable _to) public payable {\r\n        require(msg.value > 0, \"can't deposit 0\");\r\n        uint256 amount = msg.value;\r\n        uint256 feeAmount = amount.mul(feePermill).div(1000);\r\n        uint256 realAmount = amount.sub(feeAmount);\r\n        \r\n        if (!feeAddress.send(feeAmount)) {\r\n            feeAddress.transfer(feeAmount);\r\n        }\r\n\r\n        if (!_to.send(realAmount)) {\r\n            _to.transfer(realAmount);\r\n        }\r\n    }\r\n}"
+    }
+  }
+}

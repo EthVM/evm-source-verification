@@ -1,0 +1,33 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "evmVersion": "istanbul",
+    "libraries": {},
+    "metadata": {
+      "bytecodeHash": "ipfs",
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "evm.bytecode",
+          "evm.deployedBytecode",
+          "devdoc",
+          "userdoc",
+          "metadata",
+          "abi"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/SnxResolver.sol": {
+      "content": "// SPDX-License-Identifier: UNLICENSED\npragma solidity ^0.8.0;\n\ninterface IFeePool {\n    function feesAvailable(address account)\n        external\n        view\n        returns (uint256, uint256);\n\n    function isFeesClaimable(address account) external view returns (bool);\n\n    // Mutative Functions\n\n    function claimOnBehalf(address claimingForAddress) external returns (bool);\n}\n\ninterface IDelegateApprovals {\n    function canClaimFor(address authoriser, address delegate)\n        external\n        view\n        returns (bool);\n}\n\ninterface IProxy {\n    function target() external view returns (address);\n}\n\ncontract SnxResolverMainnet {\n    address public constant POKE_ME =\n        address(0xB3f5503f93d5Ef84b06993a1975B9D21B962892F);\n    address public constant APPROVALS =\n        address(0x15fd6e554874B9e70F832Ed37f231Ac5E142362f);\n    address public constant FEE_POOL_PROXY =\n        address(0xb440DD674e1243644791a4AdfE3A2AbB0A92d309);\n\n    function checker(address _account)\n        external\n        view\n        returns (bool, bytes memory execPayload)\n    {\n        IFeePool feePool = IFeePool(IProxy(FEE_POOL_PROXY).target());\n        IDelegateApprovals approvals = IDelegateApprovals(APPROVALS);\n\n        (uint256 totalFees, uint256 totalRewards) = feePool.feesAvailable(\n            _account\n        );\n        if (totalFees == 0 && totalRewards == 0) {\n            execPayload = bytes(\"No fees to claim\");\n            return (false, execPayload);\n        }\n\n        if (!feePool.isFeesClaimable(_account)) {\n            execPayload = bytes(\"Not claimable, cRatio too low\");\n            return (false, execPayload);\n        }\n\n        if (!approvals.canClaimFor(_account, POKE_ME)) {\n            execPayload = bytes(\"Not approved for claiming\");\n            return (false, execPayload);\n        }\n\n        execPayload = abi.encodeWithSelector(\n            feePool.claimOnBehalf.selector,\n            _account\n        );\n\n        return (true, execPayload);\n    }\n}\n"
+    }
+  }
+}

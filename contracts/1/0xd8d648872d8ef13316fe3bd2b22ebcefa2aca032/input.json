@@ -1,0 +1,33 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "evmVersion": "istanbul",
+    "libraries": {},
+    "metadata": {
+      "bytecodeHash": "ipfs",
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "evm.bytecode",
+          "evm.deployedBytecode",
+          "devdoc",
+          "userdoc",
+          "metadata",
+          "abi"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/traists/TraitSpecial.sol": {
+      "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.0;\n\ninterface IFactory {\n\tfunction owner() external view returns (address);\n}\n\ncontract TraitSpecial {\n\tstring public constant name = \"Special\";\n\tIFactory public factory;\n\n\tuint256 public itemCount;\n\tstring[] items;\n\n\tconstructor(address _factory) {\n\t\tfactory = IFactory(_factory);\n\t\titems.push(\"None\");\n\t\titems.push(\"Furry\");\n\t\titemCount = items.length;\n\t\titems.push(\"Gang\");\n\t\titems.push(\"Sports\");\n\t\titems.push(\"Traveler\");\n\t\titems.push(\"Adventurer\");\n\t\titems.push(\"Model\");\n\t\titems.push(\"Singer\");\n\t\titems.push(\"Dancer\");\n\t\titems.push(\"Engineer\");\n\t\titems.push(\"Entrepreneur\");\n\t\titems.push(\"General\");\n\t}\n\n\tfunction totalItems() external view returns (uint256) {\n\t\treturn items.length;\n\t}\n\n\tfunction getTraitName(uint16 traitId) external view returns (string memory traitName) {\n\t\ttraitName = items[traitId];\n\t}\n\n\tfunction addTraits(string[] memory names) external {\n\t\trequire(msg.sender == factory.owner());\n\t\tfor (uint16 i = 0; i < names.length; i++) {\n\t\t\titems.push(names[i]);\n\t\t}\n\t}\n\n\tfunction updateItem(uint16 traitId, string memory traitName) external {\n\t\trequire(msg.sender == factory.owner());\n\t\trequire(traitId < items.length);\n\t\titems[traitId] = traitName;\n\t}\n\n\tfunction setFactory(address _factory) external {\n\t\trequire(msg.sender == factory.owner());\n\t\tfactory = IFactory(_factory);\n\t}\n}\n"
+    }
+  }
+}

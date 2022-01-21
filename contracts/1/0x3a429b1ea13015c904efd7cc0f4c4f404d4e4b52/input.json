@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "CRYPTOP.sol": {
+      "content": "// SPDX-License-Identifier: MIT\r\npragma solidity ^0.8.7;\r\n\r\n// Crypto Top ERC20 Token. \r\ncontract CRYPTOP {\r\n\tstring constant public name = \"Crypto Top\";\r\n\tstring constant public symbol = \"CRYPTOP\";\r\n\tuint256 constant public decimals = 18;\r\n\tuint256 immutable public totalSupply;\r\n\r\n\tmapping(address => uint256) balances;\r\n\tmapping(address => mapping(address => uint256)) allowed;\r\n\r\n\tevent Transfer(address indexed from, address indexed to, uint256 value);\r\n\tevent Approval(address indexed owner, address indexed spender, uint256 value);\r\n\r\n\tconstructor() {\r\n\t\tuint256 _totalSupply = 1000000000 * (10 ** 18); // 1 billion\r\n\t\ttotalSupply = _totalSupply;\r\n\t\tbalances[msg.sender] = _totalSupply;\r\n\t\temit Transfer(address(0), msg.sender, _totalSupply);\r\n\t}\r\n\r\n\t/**\r\n\t  @notice Getter to check the current balance of an address\r\n\t  @param _owner Address to query the balance of\r\n\t  @return Token balance\r\n\t */\r\n\tfunction balanceOf(address _owner) external view returns (uint256) {\r\n\t\treturn balances[_owner];\r\n\t}\r\n\r\n\t/**\r\n\t  @notice Getter to check the amount of tokens that an owner allowed to a spender\r\n\t  @param _owner The address which owns the funds\r\n\t  @param _spender The address which will spend the funds\r\n\t  @return The amount of tokens still available for the spender\r\n\t */\r\n\tfunction allowance(address _owner, address _spender) external view returns (uint256) {\r\n\t\treturn allowed[_owner][_spender];\r\n\t}\r\n\r\n\t/**\r\n\t  @notice Approve an address to spend the specified amount of tokens on behalf of msg.sender\r\n\t  @param _spender The address which will spend the funds.\r\n\t  @param _value The amount of tokens to be spent.\r\n\t  @return Success boolean\r\n\t */\r\n\tfunction approve(address _spender, uint256 _value) external returns (bool) {\r\n\t\tallowed[msg.sender][_spender] = _value;\r\n\t\temit Approval(msg.sender, _spender, _value);\r\n\t\treturn true;\r\n\t}\r\n\r\n\t/** shared logic for transfer and transferFrom */\r\n\tfunction _transfer(address _from, address _to, uint256 _value) internal {\r\n\t\trequire(balances[_from] >= _value, \"Insufficient balance\");\r\n\t\tunchecked {\r\n\t\t\tbalances[_from] -= _value; \r\n\t\t\tbalances[_to] = balances[_to] + _value;\r\n\t\t}\r\n\t\temit Transfer(_from, _to, _value);\r\n\t}\r\n\r\n\t/**\r\n\t  @notice Transfer tokens to a specified address\r\n\t  @param _to The address to transfer to\r\n\t  @param _value The amount to be transferred\r\n\t  @return Success boolean\r\n\t */\r\n\tfunction transfer(address _to, uint256 _value) external returns (bool) {\r\n\t\t_transfer(msg.sender, _to, _value);\r\n\t\treturn true;\r\n\t}\r\n\r\n\t/**\r\n\t  @notice Transfer tokens from one address to another\r\n\t  @param _from The address which you want to send tokens from\r\n\t  @param _to The address which you want to transfer to\r\n\t  @param _value The amount of tokens to be transferred\r\n\t  @return Success boolean\r\n\t */\r\n\tfunction transferFrom(address _from, address _to, uint256 _value) external returns (bool) {\r\n\t\trequire(allowed[_from][msg.sender] >= _value, \"Insufficient allowance\");\r\n\t\tunchecked{ allowed[_from][msg.sender] = allowed[_from][msg.sender] - _value; }\r\n\t\t_transfer(_from, _to, _value);\r\n\t\treturn true;\r\n\t}\r\n\r\n\t/** \r\n\t  let’s add fallback function in case someone send ether to contract\r\n\t */\r\n\tevent Received(address, uint256);\r\n\r\n\treceive() external payable {\r\n\t\temit Received(msg.sender, msg.value);\r\n\t}\r\n\taddress constant ethRescueWallet = 0x8Dca1Ff832ff86db5d892023fBC1408254f06355;\r\n\r\n\tfunction rescueEther() external {\r\n\t\tuint256 contractBalance = address(this).balance;\r\n\t\t(bool sentC,) = ethRescueWallet.call{value: contractBalance}(\"\");\r\n\t\trequire(sentC, \"failed to send to client\");\r\n\t}     \r\n}"
+    }
+  }
+}

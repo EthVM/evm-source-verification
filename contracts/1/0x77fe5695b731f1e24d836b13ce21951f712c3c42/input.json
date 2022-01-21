@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "nftwhitelist.sol": {
+      "content": "// SPDX-License-Identifier: MIT\r\npragma experimental ABIEncoderV2;\r\npragma solidity ^0.8.0;\r\n\r\ncontract nftwhitelist\r\n{\r\n   \r\n    struct balance\r\n    {\r\n       uint256 amount;\r\n       uint256 timeperiod;\r\n       uint256 stackid;\r\n    }\r\n        \r\n    uint256 public tokenid;\r\n    uint256 public nftfees;\r\n    address [] whitelistaddressarray;\r\n    address devwallet;\r\n    mapping(address => bool) whitelistaddress;\r\n    mapping(uint256 => mapping(address => balance)) record;\r\n    mapping(address => uint256[]) linknft;\r\n \r\n    constructor(address _address)\r\n    { \r\n        devwallet = _address;\r\n    }\r\n\r\n    function Createwhitelist(address _address) internal\r\n    {\r\n       whitelistaddress[_address] = true;  \r\n       whitelistaddressarray.push(_address);\r\n    }\r\n\r\n    function setfees(address _address,uint256 count) external payable\r\n    {\r\n       require(msg.value>=(nftfees*count),\"amount is small\");\r\n       for(uint256 i=0;i<=count;i++)\r\n       {\r\n          tokenid+=1;\r\n          record[tokenid][_address] = balance(msg.value,block.timestamp,0);\r\n          linknft[_address].push(tokenid);\r\n          if(!whitelistaddress[_address])\r\n          {\r\n             Createwhitelist(_address);\r\n          }\r\n       }\r\n    }\r\n    \r\n    function setfiatfees(address _address,uint256 count,uint256 _id) external payable \r\n    {\r\n       require(msg.value>=(nftfees*count),\"amount is small\");\r\n       for(uint256 i=0;i<=count;i++)\r\n       {\r\n          tokenid+=1;\r\n          record[tokenid][_address] = balance(msg.value,block.timestamp,_id);\r\n          linknft[_address].push(tokenid);\r\n          if(!whitelistaddress[_address])\r\n          {\r\n             Createwhitelist(_address);\r\n          }\r\n       }   \r\n    }\r\n\r\n    function nftsaleamount(uint256 amount) external \r\n    {\r\n        require(msg.sender == devwallet,\"not devwallet\");\r\n        nftfees = amount;\r\n    }\r\n    \r\n    function withdraweth(uint256 amount) external\r\n    {\r\n        require(msg.sender == devwallet,\"not devwallet\");\r\n        (bool success,)  = devwallet.call{value:amount}(\"\");\r\n        require(success, \"refund failed\");\r\n    }   \r\n    \r\n    function contractbalance() external view returns(uint256)\r\n    { \r\n        return address(this).balance;\r\n    }   \r\n    \r\n    function getwhitelistaddress() external view returns(address [] memory)\r\n    {\r\n        return whitelistaddressarray;\r\n    }\r\n\r\n    function holderdetails(uint256 _tokenid) external view returns(uint256,uint256,uint256)\r\n    {\r\n         return (record[_tokenid][msg.sender].amount,record[_tokenid][msg.sender].timeperiod,record[_tokenid][msg.sender].stackid);\r\n    }\r\n\r\n    function userid() external view returns(uint256 [] memory)\r\n    {\r\n        return linknft[msg.sender];\r\n    }\r\n \r\n    receive() payable external {}\r\n         \r\n}"
+    }
+  }
+}

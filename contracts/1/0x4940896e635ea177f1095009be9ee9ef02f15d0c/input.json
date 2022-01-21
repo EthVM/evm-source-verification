@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "ClaimVecrvFees.sol": {
+      "content": "// File: contracts\\ClaimVecrvFees.sol\r\n\r\n// SPDX-License-Identifier: MIT\r\npragma solidity 0.6.12;\r\n\r\ninterface IFeeClaim{\r\n    function claim(address) external;\r\n    function claim_many(address[20] calldata ) external;\r\n    function last_token_time() external view returns(uint256);\r\n    function time_cursor() external view returns(uint256);\r\n    function time_cursor_of(address) external view returns(uint256);\r\n    function user_epoch_of(address) external view returns(uint256);\r\n    function user_point_epoch(address) external view returns(uint256);\r\n    function earmarkFees() external returns(bool);\r\n    function balanceOf(address) external view returns(uint256);\r\n}\r\n\r\n//Claim vecrv fees and distribute\r\ncontract ClaimVecrvFees{\r\n\r\n    address public constant booster = address(0xF403C135812408BFbE8713b5A23a04b3D48AAE31);\r\n    address public constant vecrv = address(0x5f3b5DfEb7B28CDbD7FAba78963EE202a494e2A2);\r\n    address public constant feeClaim = address(0xA464e6DCda8AC41e03616F95f4BC98a13b8922Dc);\r\n    address public constant account = address(0x989AEb4d175e16225E39E87d0D97A3360524AD80);\r\n    address public constant tokenaddress = address(0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490);\r\n\r\n    uint256 public lastTokenTime;\r\n\r\n    constructor() public {}\r\n\r\n    function getName() external pure returns (string memory) {\r\n        return \"ClaimVecrvFees V1.0\";\r\n    }\r\n\r\n    function claimFees() external {\r\n        uint256 tokenTime = IFeeClaim(feeClaim).last_token_time();\r\n        require(tokenTime > lastTokenTime, \"not time yet\");\r\n        uint256 bal = IFeeClaim(tokenaddress).balanceOf(account);\r\n        IFeeClaim(feeClaim).claim(account);\r\n\r\n        while(IFeeClaim(tokenaddress).balanceOf(account) <= bal){\r\n            IFeeClaim(feeClaim).claim(account);\r\n        }\r\n\r\n        IFeeClaim(booster).earmarkFees();\r\n        lastTokenTime = tokenTime;\r\n    }\r\n\r\n}"
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "MultiDao.sol": {
+      "content": "// SPDX-License-Identifier: GPL-3.0-or-later\r\n\r\npragma solidity ^0.8.6;\r\n\r\n// helper methods for interacting with ERC20 tokens\r\nlibrary TransferHelper {\r\n    function safeTransfer(address token, address to, uint value) internal {\r\n        // bytes4(keccak256(bytes('transfer(address,uint256)')));\r\n        (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0xa9059cbb, to, value));\r\n        require(success && (data.length == 0 || abi.decode(data, (bool))), 'TransferHelper: TRANSFER_FAILED');\r\n    }\r\n}\r\n\r\ncontract MultiDao {\r\n    address public immutable token;\r\n\r\n    uint256 public latestWithdrawRequestTime;\r\n    uint256 public latestWithdrawRequestAmount;\r\n    uint256 public constant minWithdrawApprovalInterval = 7 days;\r\n\r\n    address public owner;\r\n    modifier onlyOwner() {\r\n        require(msg.sender == owner, \"only owner\");\r\n        _;\r\n    }\r\n\r\n    event WithdrawRequest(uint256 indexed amount, uint256 indexed timestamp);\r\n    event Withdraw(address indexed to, uint256 indexed amount, uint256 indexed timestamp);\r\n\r\n    constructor(address _token) {\r\n        token = _token;\r\n        owner = msg.sender;\r\n    }\r\n\r\n    function transferOwnership(address newOwner) external onlyOwner {\r\n        require(newOwner != address(0), \"the new owner is the zero address\");\r\n        owner = newOwner;\r\n    }\r\n\r\n    function withdrawRequest(uint256 amount) external onlyOwner {\r\n        if (amount > 0) {\r\n            latestWithdrawRequestTime = block.timestamp;\r\n            latestWithdrawRequestAmount = amount;\r\n        } else {\r\n            latestWithdrawRequestTime = 0;\r\n            latestWithdrawRequestAmount = 0;\r\n        }\r\n        emit WithdrawRequest(amount, block.timestamp);\r\n    }\r\n\r\n    function withdraw(address to) external onlyOwner {\r\n        require(\r\n            latestWithdrawRequestTime > 0 && latestWithdrawRequestAmount > 0,\r\n            \"please do withdraw request firstly\"\r\n        );\r\n        require(\r\n            latestWithdrawRequestTime + minWithdrawApprovalInterval < block.timestamp,\r\n            \"the minimum withdraw approval interval is not satisfied\"\r\n        );\r\n        uint256 amount = latestWithdrawRequestAmount;\r\n        latestWithdrawRequestTime = 0;\r\n        latestWithdrawRequestAmount = 0;\r\n        TransferHelper.safeTransfer(token, to, amount);\r\n        emit Withdraw(to, amount, block.timestamp);\r\n    }\r\n}"
+    }
+  }
+}

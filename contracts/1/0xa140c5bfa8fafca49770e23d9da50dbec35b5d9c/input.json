@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "SpriteRouter.sol": {
+      "content": "//SPDX-License-Identifier: AGPL-3.0-only\r\n\r\n// Dear Deer NFT sprite router\r\n\r\n// Provides 72x72 raster sprites for Dear Deer render functions from onchain storages\r\n\r\n// Main contract address: 0x108578c96C61f3e5a3a12d43d42A60346a6Bfcb2\r\n\r\n/*\r\n*     \\_\\_     _/_/\r\n*         \\___/\r\n*        ~(0 0)~\r\n*         (._.)\\_________\r\n*             \\          \\~\r\n*              \\  _____(  )\r\n*               ||      ||\r\n*               ||      ||\r\n*\r\n*/\r\n\r\npragma solidity 0.8.9;\r\n\r\ninterface ISpriteStorage {\r\n    function getSprite(uint8 partId, uint8 typeId, uint8 spriteId) external view returns (string memory);\r\n}\r\n\r\ncontract SpriteRouter {\r\n\r\n    address owner;\r\n\r\n    ISpriteStorage spriteStorage0;\r\n    ISpriteStorage spriteStorage1;\r\n    ISpriteStorage spriteStorage2;\r\n    ISpriteStorage spriteStorage3;\r\n    ISpriteStorage spriteStorage4;\r\n    ISpriteStorage spriteStorage5;\r\n    ISpriteStorage spriteStorage6;\r\n    ISpriteStorage spriteStorage7;\r\n\r\n    string constant PNG_HEADER = \"iVBORw0KGgoAAAANSUhEUgAAAEgAAABI\";\r\n    string constant PNG_HEADER_BG = \"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAQMAAAAl21bKAAAABGdBTUEAALGPC/xhBQAAAAFzUkdCAK7OHOkAAAADUExUR\";\r\n\r\n    constructor() {\r\n        owner = msg.sender;\r\n    }\r\n\r\n    function getSprite(uint8 partId, uint8 typeId, uint8 spriteId) external view returns (string memory) {\r\n        string memory spriteHeader;\r\n        string memory spriteData;\r\n        spriteHeader = partId == 0 ? PNG_HEADER_BG : PNG_HEADER;\r\n        \r\n        if (partId <= 2) {\r\n            spriteData = spriteStorage0.getSprite(partId, typeId, spriteId);\r\n        } else if (partId == 3) {\r\n            spriteData = spriteStorage1.getSprite(partId, typeId, spriteId);\r\n        } else if (partId == 4) {\r\n            if (typeId <= 4) {\r\n                spriteData = spriteStorage2.getSprite(partId, typeId, spriteId);\r\n            } else if (typeId >= 5 && typeId <= 10) {\r\n                spriteData = spriteStorage3.getSprite(partId, typeId, spriteId);\r\n            }\r\n        } else if (partId >= 5 && partId <= 7) {\r\n            spriteData = spriteStorage4.getSprite(partId, typeId, spriteId);\r\n        } else if (partId == 8) {\r\n            spriteData = spriteStorage5.getSprite(partId, typeId, spriteId);\r\n        } else if (partId == 9) {\r\n            spriteData = spriteStorage6.getSprite(partId, typeId, spriteId);\r\n        } else if (partId >= 10 && partId<= 13) {\r\n            spriteData = spriteStorage7.getSprite(partId, typeId, spriteId);\r\n        }\r\n\r\n        return string(\r\n            abi.encodePacked(\r\n                spriteHeader,\r\n                spriteData\r\n            )\r\n        );\r\n    }\r\n\r\n    function setStorages(address[8] memory storageAddresses) external onlyOwner {\r\n        // 0 background, 1 body, 2 freckles\r\n        spriteStorage0 = ISpriteStorage(storageAddresses[0]);\r\n\r\n        // 3 brows\r\n        spriteStorage1 = ISpriteStorage(storageAddresses[1]);\r\n\r\n        // 4 hair: 0 black, 1 blonde, 2 brown, 3 bubblegum, 4 night\r\n        spriteStorage2 = ISpriteStorage(storageAddresses[2]);\r\n\r\n        // 4 hair: 5 purple, 6 red, 7 shameless, 8 shosa, 9 swampy, 10 white\r\n        spriteStorage3 = ISpriteStorage(storageAddresses[3]);\r\n\r\n        // 5 ears, 6 earrings, 7 eyes\r\n        spriteStorage4 = ISpriteStorage(storageAddresses[4]);\r\n\r\n        // 8 clothes\r\n        spriteStorage5 = ISpriteStorage(storageAddresses[5]);\r\n\r\n        // 9 beard\r\n        spriteStorage6 = ISpriteStorage(storageAddresses[6]);\r\n\r\n        // 10 mouth, 11 nose, 12 antlers, 13 antler_accessory \r\n        spriteStorage7 = ISpriteStorage(storageAddresses[7]);\r\n    }\r\n\r\n    modifier onlyOwner() {\r\n        require(msg.sender == owner, \"only owner lmao\");\r\n        _;\r\n    }\r\n\r\n}"
+    }
+  }
+}

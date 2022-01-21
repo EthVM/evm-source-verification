@@ -70,13 +70,24 @@ export function getByteCodeMetaData(bytecode: Buffer): CborDataType {
  * @return {string} bytecode minus metadata
  */
 export function getBytecodeWithoutMetadata(bytecode: string): string {
-  // Last 4 chars of bytecode specify byte size of metadata component,
+  // Usually last 4 chars of bytecode specify byte size of metadata component, however if the contract has create or create2 it is possible for metadata info to exist in the middle of the code
   try {
     getByteCodeMetaData(Buffer.from(bytecode, "hex"));
-    const metadataSize = parseInt(bytecode.slice(-4), 16) * 2 + 4;
-    return getBytecodeWithoutMetadata(
-      bytecode.slice(0, bytecode.length - metadataSize)
-    );
+    const suffix = bytecode.slice(-4); // Last 4 chars of bytecode specify byte size of metadata component
+    let index = 0;
+    while (bytecode.indexOf(suffix, index) > -1) {
+      const metapos = bytecode.indexOf(suffix, index);
+      const metadataSize =
+        parseInt(bytecode.slice(metapos, metapos + 4), 16) * 2;
+      const metadata = bytecode.slice(metapos - metadataSize, metapos + 4);
+      try {
+        getByteCodeMetaData(Buffer.from(metadata, "hex")); // fail safe to make sure we are not removing anything other than metadata
+        bytecode = bytecode.replace(metadata, "");
+      } catch (e) {
+        index = metapos + 4;
+      }
+    }
+    return bytecode;
   } catch (e) {
     return bytecode;
   }

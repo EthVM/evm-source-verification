@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "Proxy.sol": {
+      "content": "// SPDX-License-Identifier: MIT\r\npragma solidity 0.8.6;\r\n\r\nlibrary AddressUtils {\r\n\tfunction isContract(address addr) internal view returns (bool) {\r\n\t\tuint256 size;\r\n\t\t// solium-disable-next-line security/no-inline-assembly\r\n\t\tassembly { size := extcodesize(addr) }\r\n\t\treturn size > 0;\r\n\t}\r\n}\r\n\r\ncontract Proxy {\r\n\tusing AddressUtils for address;\r\n\r\n\tbytes32 private constant ADMIN_SLOT = 0xde50c0ef4724e938441b7d87888451dee5481c5f4cdb090e8051ee74ce71c31c;\r\n\tbytes32 private constant IMPLEMENTATION_SLOT = 0x454e447e72dbaa44ab6e98057df04d15461fc11a64ce58e5e1472346dea4223f;\r\n\r\n\tconstructor (address _i) {\r\n\t\trequire(_i.isContract());\r\n\r\n\t\t_setImplementation(_i);\r\n\t\t_setAdmin(msg.sender);\r\n\t}\r\n\r\n\tevent AdminChanged (address admin);\r\n\tevent Upgraded (address implementation);\r\n\r\n\tmodifier onlyAdmin () {\r\n\t\trequire(msg.sender == _admin());\r\n\t\t_;\r\n\t}\r\n\r\n\t /// @dev 更换Proxy合约的管理者\r\n\t /// @param _newAdmin 新的管理者地址\r\n\tfunction proxyChangeAdmin(address _newAdmin) external onlyAdmin {\r\n\t\trequire(_newAdmin != address(0));\r\n\t\t_setAdmin(_newAdmin);\r\n\t\temit AdminChanged(_newAdmin);\r\n\t}\r\n\r\n\t/// @dev 升级使用的Bounty合约\r\n\t/// @param _newImplementation 新的合约地址\r\n\tfunction proxyUpgradeTo(address _newImplementation) public onlyAdmin {\r\n\t\trequire(_newImplementation.isContract());\r\n\t\t_setImplementation(_newImplementation);\r\n\t\temit Upgraded(_newImplementation);\r\n\t}\r\n\r\n\t /// @dev 升级使用的Bounty合约并且直接执行调用\r\n\t /// @param _newImplementation 新的合约地址\r\n\t /// @param _data 需要在新合约上调用的方法编码\r\n\tfunction proxyUpgradeToAndCall(\r\n\t\taddress _newImplementation,\r\n\t\tbytes calldata _data\r\n\t) external payable onlyAdmin returns (bytes memory) {\r\n\t\tproxyUpgradeTo(_newImplementation);\r\n\t\t(bool success, bytes memory data) = address(this).call{value:msg.value}(_data);\r\n\t\trequire(success);\r\n\t\treturn data;\r\n\t}\r\n\r\n\tfunction _admin () internal view returns (address a) {\r\n\t\tbytes32 slot = ADMIN_SLOT;\r\n\t\tassembly {\r\n\t\t\ta := sload(slot)\r\n\t\t}\r\n\t}\r\n\r\n\tfunction _implementation () internal view returns (address i) {\r\n\t\tbytes32 slot = IMPLEMENTATION_SLOT;\r\n\t\tassembly {\r\n\t\t\ti := sload(slot)\r\n\t\t}\r\n\t}\r\n\r\n\tfunction admin() external view onlyAdmin returns (address) {\r\n\t\treturn _admin();\r\n\t}\r\n\r\n\tfunction implementation() external view onlyAdmin returns (address) {\r\n\t\treturn _implementation();\r\n\t}\r\n\r\n\tfunction _setAdmin (address newAdmin) internal {\r\n\t\tbytes32 slot = ADMIN_SLOT;\r\n\t\tassembly {\r\n\t\t\tsstore(slot, newAdmin)\r\n\t\t}\r\n\t}\r\n\r\n\tfunction _setImplementation (address newImplementation) internal {\r\n\t\tbytes32 slot = IMPLEMENTATION_SLOT;\r\n\t\tassembly {\r\n\t\t\tsstore(slot, newImplementation)\r\n\t\t}\r\n\t}\r\n\r\n\t /// @dev fallback函数，除了proxyChangeAdmin和proxyUpgradeTo方法以外的所有\r\n\t /// 对合约的调用均会最终会被执行该方法。函数会将所有调用的data直接转发至Bounty合\r\n\t /// 约，并返回对应的结果。\r\n\tfallback () external payable {\r\n\t\taddress i = _implementation();\r\n\t\t// solium-disable-next-line security/no-inline-assembly\r\n\t\tassembly {\r\n\t\t\tcalldatacopy(0, 0, calldatasize())\r\n\r\n\t\t\tlet result := delegatecall(gas(), i, 0, calldatasize(), 0, 0)\r\n\r\n\t\t\treturndatacopy(0, 0, returndatasize())\r\n\r\n\t\t\tswitch result\r\n\t\t\tcase 0 { revert(0, returndatasize()) }\r\n\t\t\tdefault { return(0, returndatasize()) }\r\n\t\t}\r\n\t}\r\n\r\n\treceive () external payable {\r\n    revert();\r\n  }\r\n}"
+    }
+  }
+}

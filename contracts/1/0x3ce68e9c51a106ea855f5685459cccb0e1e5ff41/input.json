@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 1000
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "NearProver.sol": {
+      "content": "// SPDX-License-Identifier: GPL-3.0-or-later\r\npragma solidity ^0.6.12;\r\n\r\ncontract AdminControlled {\r\n    address public admin;\r\n    uint public paused;\r\n\r\n    constructor(address _admin, uint flags) public {\r\n        admin = _admin;\r\n        paused = flags;\r\n    }\r\n\r\n    modifier onlyAdmin {\r\n        require(msg.sender == admin);\r\n        _;\r\n    }\r\n\r\n    modifier pausable(uint flag) {\r\n        require((paused & flag) == 0 || msg.sender == admin);\r\n        _;\r\n    }\r\n\r\n    function adminPause(uint flags) public onlyAdmin {\r\n        paused = flags;\r\n    }\r\n\r\n    function adminSstore(uint key, uint value) public onlyAdmin {\r\n        assembly {\r\n            sstore(key, value)\r\n        }\r\n    }\r\n\r\n    function adminSstoreWithMask(\r\n        uint key,\r\n        uint value,\r\n        uint mask\r\n    ) public onlyAdmin {\r\n        assembly {\r\n            let oldval := sload(key)\r\n            sstore(key, xor(and(xor(value, oldval), mask), oldval))\r\n        }\r\n    }\r\n\r\n    function adminSendEth(address payable destination, uint amount) public onlyAdmin {\r\n        destination.transfer(amount);\r\n    }\r\n\r\n    function adminReceiveEth() public payable onlyAdmin {}\r\n\r\n    function adminDelegatecall(address target, bytes memory data) public payable onlyAdmin returns (bytes memory) {\r\n        (bool success, bytes memory rdata) = target.delegatecall(data);\r\n        require(success);\r\n        return rdata;\r\n    }\r\n}\r\n\r\ncontract NearProver is AdminControlled {\r\n    address public bridge;\r\n\r\n    constructor(\r\n        address _bridge,\r\n        address _admin,\r\n        uint _pausedFlags\r\n    ) public AdminControlled(_admin, _pausedFlags) {\r\n        bridge = _bridge;\r\n    }\r\n}"
+    }
+  }
+}

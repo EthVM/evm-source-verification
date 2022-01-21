@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "ElectionManager.sol": {
+      "content": "// SPDX-License-Identifier: MIT\r\n\r\n/**\r\n *Submitted for verification at Etherscan.io on 2020-11-24\r\n*/\r\n\r\npragma solidity ^0.7.0;\r\npragma experimental ABIEncoderV2;\r\n\r\ncontract ElectionManager{\r\n    \r\n    struct Election{\r\n        uint id;\r\n        uint total;\r\n        string name;\r\n        uint optionsCount;\r\n        string[] options;\r\n        string json;\r\n        uint[] optionVotes;\r\n        mapping(address => uint) userVotes;\r\n    }\r\n\r\n    struct VoteOption{\r\n        string name;\r\n        uint id;\r\n    }\r\n\r\n    mapping(address => bool) public voters;\r\n\r\n    mapping(address => bool) public admins;\r\n    address[] public adminsList;\r\n\r\n    mapping(uint => Election) public elections;\r\n\r\n\r\n    uint public lastElectionId = 1;\r\n    uint public lastAdminId = 1;\r\n\r\n    uint256 public voteFee = 0.01 ether;\r\n\r\n    event NewElection(string name, uint id);\r\n    event UserVoteEvent(address user, uint electionId, \r\n        string electionName, uint vote, string voteName);\r\n\r\n\r\n    constructor(){\r\n        admins[msg.sender] = true;\r\n        adminsList.push(msg.sender);\r\n    }\r\n\r\n    receive () external payable {\r\n\r\n    }\r\n\r\n    modifier isAdmin(){\r\n        require(admins[msg.sender], \"You are not admin\");\r\n        _;\r\n    }\r\n\r\n    modifier isVoter(){\r\n        require(voters[msg.sender], \"You are not voter\");\r\n        _;\r\n    }\r\n\r\n    function adminAddVoter(address _addr) isAdmin public payable{\r\n        voters[_addr] = true;\r\n        require(msg.value > 0, \"The transaction amount should be over 0.\");\r\n        require(msg.value == voteFee, \"The transaction amount is not matched with contract amount.\");\r\n\r\n        payable(_addr).transfer(msg.value);    \r\n\r\n    }\r\n\r\n    function adminRemoveVoter(address _addr) isAdmin public{\r\n        voters[_addr] = false;\r\n    }\r\n\r\n    function adminAddAdmin(address _addr) isAdmin public{\r\n        admins[_addr] = true;\r\n        lastAdminId++;\r\n        adminsList.push(_addr);\r\n    }\r\n\r\n    function adminSetVoteFee(uint256 _fee) isAdmin public{\r\n        voteFee = _fee;\r\n    }\r\n\r\n    function adminAddElection(string memory _name, string[] memory _options, string memory _json) isAdmin public{\r\n        Election storage e = elections[lastElectionId++];\r\n        e.name = _name;\r\n        e.id = lastElectionId;\r\n        e.json = _json;\r\n        for(uint i = 0; i< _options.length; i++){\r\n            e.options.push(_options[i]);\r\n            e.optionVotes.push(0);\r\n        }\r\n        emit NewElection(_name, lastElectionId-1);\r\n    }\r\n\r\n    function vote(uint _electionId, uint _vote) isVoter public{\r\n        require(elections[_electionId].id > 0, \"Invalid Election\");\r\n        require(elections[_electionId].userVotes[msg.sender] <= 0, \"Already voted\");\r\n        elections[_electionId].total += 1;\r\n        elections[_electionId].optionVotes[_vote] += 1;\r\n        elections[_electionId].userVotes[msg.sender] = _vote;\r\n\r\n        emit UserVoteEvent(msg.sender, _electionId, \r\n            elections[_electionId].name, \r\n            _vote, elections[_electionId].options[_vote-1]);\r\n    }\r\n\r\n    function userVote(address _addr, uint _electionId) public view returns(uint _vote){\r\n        _vote = elections[_electionId].userVotes[_addr];\r\n    }\r\n\r\n    function getAdmins() public view returns(address[] memory _admins){\r\n        _admins = adminsList;\r\n    }\r\n\r\n    function electionInfo(uint _id) public view returns(\r\n        string[] memory _options,\r\n        uint[] memory _optionVotes,\r\n        uint _total,\r\n        string memory _name,\r\n        string memory _json\r\n    ){\r\n        _options = elections[_id].options;\r\n        _total = elections[_id].total;\r\n        _name = elections[_id].name;\r\n        _optionVotes = elections[_id].optionVotes;\r\n        _json = elections[_id].json;\r\n    }\r\n}"
+    }
+  }
+}

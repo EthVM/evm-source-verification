@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "FeiApproval.sol": {
+      "content": "// SPDX-License-Identifier: GPL-3.0\r\n\r\npragma solidity >=0.7.0 <0.9.0;\r\n\r\ninterface IERC20 {\r\n    function transferFrom(address from, address to, uint256 amount) external returns (bool);\r\n}\r\n\r\ncontract FeiApproval {\r\n\r\n    address public constant FEI_LENDER = address(0x16585044cde6e2da20EbE8ad9d468b248aC62041);\r\n    address public constant FEI_BORROWER = address(0x72b7448f470D07222Dbf038407cD69CC380683F3);\r\n    uint256 public constant FEI_AMOUNT = 111_000e18;\r\n    IERC20 public constant FEI = IERC20(0x956F47F50A910163D8BF957Cf5846D573E7f87CA);\r\n\r\n    bool public canBorrow = true;\r\n\r\n    function borrow() public {\r\n        require(msg.sender == FEI_BORROWER, \"only borrower\");\r\n        require(canBorrow, \"can't borrow\");\r\n        FEI.transferFrom(FEI_LENDER, FEI_BORROWER, FEI_AMOUNT);\r\n        canBorrow = false;\r\n    }\r\n\r\n    function repay() public {\r\n        require(msg.sender == FEI_BORROWER, \"only borrower\");\r\n        require(!canBorrow, \"no need to repay\");\r\n        FEI.transferFrom(FEI_BORROWER, FEI_LENDER, FEI_AMOUNT); // send back from borrower\r\n        canBorrow = true;\r\n    }\r\n}"
+    }
+  }
+}

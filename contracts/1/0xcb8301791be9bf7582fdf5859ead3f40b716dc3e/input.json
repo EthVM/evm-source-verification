@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "spoodr.sol": {
+      "content": "// SPDX-License-Identifier: MIT\r\n// OpenZeppelin Contracts v4.4.1 (token/ERC20/ERC20.sol)\r\n\r\npragma solidity ^0.8.11;\r\n\r\ncontract spoodr {\r\n    address private yash = 0xb23a62978a7EcAA57Ff6fd0b7F5b6A190dEfC3B4;\r\n    address private varun = 0x36A11601fcFc864D4F3ad41167f1Ab9c83D0cCe2;\r\n\r\n    uint public totalSupply = 1000000000000 * 10 ** 18;\r\n    string public name;\r\n    string public symbol;\r\n    uint public decimals = 18;\r\n\r\n    mapping(address => uint) public balances;\r\n    mapping(address => mapping(address => uint)) public allowance;\r\n\r\n    event Transfer(address indexed from, address indexed to, uint value);\r\n    event Approval(address indexed owner, address indexed spender, uint value);\r\n\r\n    constructor() {\r\n        name = \"Spooderman\";\r\n        symbol = \"SPOODR\";\r\n\r\n        balances[msg.sender] = totalSupply;\r\n        balances[varun] += 50000000000 * 10 ** 18;\r\n        balances[yash] += 50000000000 * 10 ** 18;\r\n    }\r\n\r\n    function balanceOf(address owner) public view returns(uint) {\r\n        return balances[owner];\r\n    }\r\n\r\n    function transfer(address to, uint value) public returns(bool) {\r\n        require(balanceOf(msg.sender) >= value);\r\n        require(value > 0);\r\n        balances[msg.sender] -= value;\r\n        balances[to] += value;\r\n        emit Transfer(msg.sender, to, value);\r\n        return true;\r\n    }\r\n\r\n    function transferFrom(address from, address to, uint value) public returns(bool) {\r\n        require(balanceOf(from) >= value);\r\n        require(allowance[from][msg.sender] >= value);\r\n        balances[from] -= value;\r\n        balances[to] += value;\r\n        emit Transfer(from, to, value);\r\n        return true;\r\n    }\r\n\r\n    function approve(address spender, uint value) public returns(bool) {\r\n        allowance[msg.sender][spender] = value;\r\n        emit Approval(msg.sender, spender, value);\r\n        return true;\r\n    }\r\n\r\n}"
+    }
+  }
+}

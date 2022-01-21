@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "PegExchangerDripper.sol": {
+      "content": "pragma solidity ^0.8.4;\r\n\r\n// import \"./PegExchanger.sol\";\r\n\r\ncontract PegExchangerDripper {\r\n\r\n    IERC20 public constant TRIBE = IERC20(0xc7283b66Eb1EB5FB86327f08e1B5816b0720212B);\r\n    address public constant CORE = 0x8d5ED43dCa8C2F7dFB20CF7b53CC7E593635d7b9;\r\n    address public constant PEG_EXCHANGER = 0xc09BB5ECf865e6f69Fe62A43c27f036A426909f7;\r\n    \r\n    uint256 public constant THRESHOLD = 5_000_000e18; // 5M TRIBE cutoff for dripping\r\n    uint256 public constant DRIP_AMOUNT = 20_000_000e18; // drip 20M TRIBE\r\n \r\n    function drip() external {\r\n        require(!PegExchanger(PEG_EXCHANGER).isExpired(), \"expired\"); // ensure pegExchanger live\r\n        require(TRIBE.balanceOf(PEG_EXCHANGER) <= THRESHOLD, \"over threshold\"); // ensure under drip threshold\r\n        TRIBE.transfer(PEG_EXCHANGER, DRIP_AMOUNT);\r\n    }\r\n\r\n    function isEligible() external view returns (bool) {\r\n        return !PegExchanger(PEG_EXCHANGER).isExpired() && TRIBE.balanceOf(PEG_EXCHANGER) <= THRESHOLD;\r\n    }\r\n\r\n    function recover() external {\r\n        require(PegExchanger(PEG_EXCHANGER).isExpired(), \"still live\"); // ensure pegExchanger is expired\r\n        TRIBE.transfer(CORE, TRIBE.balanceOf(address(this))); // transfer everything back to treasury\r\n    }\r\n}\r\n\r\ninterface PegExchanger {\r\n    function isExpired() external view returns (bool);\r\n}\r\n\r\ninterface IERC20 {\r\n    function balanceOf(address account) external view returns (uint);\r\n\r\n    function transfer(address to, uint amount) external returns(bool);\r\n}"
+    }
+  }
+}

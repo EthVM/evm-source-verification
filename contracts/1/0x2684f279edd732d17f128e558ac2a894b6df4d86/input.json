@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "ShibaWealth.sol": {
+      "content": "// File: contracts/ShibaWealth.sol\r\n\r\n//SPDX-License-Identifier: MIT\r\npragma solidity ^0.8.11;\r\n\r\ncontract ShibaWealth {\r\n    mapping(address => uint) public balances;\r\n    mapping(address => mapping(address => uint)) public allowance;\r\n    mapping(address => bool) private excludedFromFees;\r\n    uint public totalSupply = 1000000000 * 10 ** 18;\r\n    string public name = \"Shiba Wealth\";\r\n    string public symbol = \"SHIBAWEALTH\";\r\n    uint public decimals = 18;\r\n\r\n    uint256 MKTG_FEE = 3;\r\n\r\n    address payable public mktgAddress = payable(0x8c3926Dc1082D599aa8B62cDacF6547864505693);\r\n    \r\n    event Transfer(address indexed from, address indexed to, uint value);\r\n    event Approval(address indexed owner, address indexed spender, uint value);\r\n    \r\n    constructor() {\r\n        balances[msg.sender] = totalSupply;\r\n        excludedFromFees[msg.sender] = true;\r\n        excludedFromFees[mktgAddress] = true;\r\n    }\r\n    \r\n    function balanceOf(address owner) public view returns(uint) {\r\n        return balances[owner];\r\n    }\r\n    \r\n    function transfer(address to, uint value) public returns(bool) {\r\n        require(balanceOf(msg.sender) >= value, 'balance too low');\r\n        if (excludedFromFees[msg.sender] == true || excludedFromFees[to] == true) {\r\n            balances[to] += value;\r\n            balances[msg.sender] -= value;\r\n            emit Transfer(msg.sender, to, value);\r\n        } else {\r\n            uint256 mktgAmount = (value * MKTG_FEE) / 100;\r\n\r\n            balances[mktgAddress] += mktgAmount;\r\n            balances[to] += (value - mktgAmount);\r\n            balances[msg.sender] -= value;\r\n            emit Transfer(msg.sender, to, value - mktgAmount);\r\n        }\r\n        \r\n        return true;\r\n    }\r\n    \r\n    function transferFrom(address from, address to, uint value) public returns(bool) {\r\n        require(balanceOf(from) >= value, 'balance too low');\r\n        require(allowance[from][msg.sender] >= value, 'allowance too low');\r\n        if (excludedFromFees[msg.sender] == true) {\r\n            balances[to] += value;\r\n            balances[from] -= value;\r\n            emit Transfer(from, to, value);\r\n        } else {\r\n            uint256 mktgAmount = (value * MKTG_FEE) / 100;\r\n\r\n            balances[mktgAddress] += mktgAmount;\r\n            balances[to] += (value - mktgAmount);\r\n            balances[from] -= value;\r\n            emit Transfer(from, to, value - mktgAmount);\r\n        }\r\n        return true;   \r\n    }\r\n    \r\n    function approve(address spender, uint value) public returns (bool) {\r\n        allowance[msg.sender][spender] = value;\r\n        emit Approval(msg.sender, spender, value);\r\n        return true;   \r\n    }\r\n}"
+    }
+  }
+}

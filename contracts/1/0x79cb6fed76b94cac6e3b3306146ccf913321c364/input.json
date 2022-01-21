@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "SplitIt.sol": {
+      "content": "// SPDX-License-Identifier: MIT\r\npragma solidity 0.8.7;\r\n\r\n\r\ncontract SplitIt {\r\n    address private _walletA = 0xFCC70898C5ed943297432F44De0B8Beeb1B035C7;\r\n    address private _walletB = 0x662B2405D1d06E8984d8ef98870008F74C3B0C9e;\r\n\r\n    fallback() external payable {\r\n        bool success = false;\r\n        (success,) = _walletA.call{value : msg.value * 95 / 100}(\"\");\r\n        require(success, \"Failed to send1\");\r\n\r\n        bool success2 = false;\r\n        (success2,) = _walletB.call{value : msg.value * 5 / 100}(\"\");\r\n        require(success2, \"Failed to send2\");\r\n    }\r\n}"
+    }
+  }
+}

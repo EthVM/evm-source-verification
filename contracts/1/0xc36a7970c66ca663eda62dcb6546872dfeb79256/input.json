@@ -1,0 +1,36 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "evmVersion": "istanbul",
+    "libraries": {},
+    "metadata": {
+      "bytecodeHash": "ipfs",
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "evm.bytecode",
+          "evm.deployedBytecode",
+          "devdoc",
+          "userdoc",
+          "metadata",
+          "abi"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/GelatoMakerJob.sol": {
+      "content": "// SPDX-License-Identifier: UNLICENSED\npragma solidity 0.8.0;\nimport {GelatoBytes} from \"./gelato/GelatoBytes.sol\";\n\ninterface IJob {\n    function getNextJob(bytes32 operator)\n        external\n        view\n        returns (\n            bool canExec,\n            address target,\n            bytes memory execPayload\n        );\n}\n\ncontract GelatoMakerJob {\n    using GelatoBytes for bytes;\n\n    address public immutable pokeMe;\n\n    constructor(address _pokeMe) {\n        pokeMe = _pokeMe;\n    }\n\n    function doJob(\n        address _target,\n        bytes memory _execPayload,\n        bool _shouldRevert\n    ) external {\n        require(msg.sender == pokeMe, \"GelatoMakerJob: Only PokeMe\");\n\n        (bool success, bytes memory returnData) = _target.call(_execPayload);\n        if (!success && _shouldRevert)\n            returnData.revertWithError(\"GelatoMakerJob.doJob:\");\n    }\n\n    function checker(\n        bytes32 _network,\n        address _job,\n        bool _shouldRevert\n    ) external view returns (bool canExec, bytes memory pokeMePayload) {\n        address target;\n        bytes memory execPayload;\n\n        (canExec, target, execPayload) = IJob(_job).getNextJob(_network);\n\n        pokeMePayload = abi.encodeWithSelector(\n            this.doJob.selector,\n            target,\n            execPayload,\n            _shouldRevert\n        );\n    }\n}\n"
+    },
+    "contracts/gelato/GelatoBytes.sol": {
+      "content": "// SPDX-License-Identifier: UNLICENSED\npragma solidity 0.8.0;\n\nlibrary GelatoBytes {\n    function calldataSliceSelector(bytes calldata _bytes)\n        internal\n        pure\n        returns (bytes4 selector)\n    {\n        selector =\n            _bytes[0] |\n            (bytes4(_bytes[1]) >> 8) |\n            (bytes4(_bytes[2]) >> 16) |\n            (bytes4(_bytes[3]) >> 24);\n    }\n\n    function memorySliceSelector(bytes memory _bytes)\n        internal\n        pure\n        returns (bytes4 selector)\n    {\n        selector =\n            _bytes[0] |\n            (bytes4(_bytes[1]) >> 8) |\n            (bytes4(_bytes[2]) >> 16) |\n            (bytes4(_bytes[3]) >> 24);\n    }\n\n    function revertWithError(bytes memory _bytes, string memory _tracingInfo)\n        internal\n        pure\n    {\n        // 68: 32-location, 32-length, 4-ErrorSelector, UTF-8 err\n        if (_bytes.length % 32 == 4) {\n            bytes4 selector;\n            assembly {\n                selector := mload(add(0x20, _bytes))\n            }\n            if (selector == 0x08c379a0) {\n                // Function selector for Error(string)\n                assembly {\n                    _bytes := add(_bytes, 68)\n                }\n                revert(string(abi.encodePacked(_tracingInfo, string(_bytes))));\n            } else {\n                revert(\n                    string(abi.encodePacked(_tracingInfo, \"NoErrorSelector\"))\n                );\n            }\n        } else {\n            revert(\n                string(abi.encodePacked(_tracingInfo, \"UnexpectedReturndata\"))\n            );\n        }\n    }\n\n    function returnError(bytes memory _bytes, string memory _tracingInfo)\n        internal\n        pure\n        returns (string memory)\n    {\n        // 68: 32-location, 32-length, 4-ErrorSelector, UTF-8 err\n        if (_bytes.length % 32 == 4) {\n            bytes4 selector;\n            assembly {\n                selector := mload(add(0x20, _bytes))\n            }\n            if (selector == 0x08c379a0) {\n                // Function selector for Error(string)\n                assembly {\n                    _bytes := add(_bytes, 68)\n                }\n                return string(abi.encodePacked(_tracingInfo, string(_bytes)));\n            } else {\n                return\n                    string(abi.encodePacked(_tracingInfo, \"NoErrorSelector\"));\n            }\n        } else {\n            return\n                string(abi.encodePacked(_tracingInfo, \"UnexpectedReturndata\"));\n        }\n    }\n}\n"
+    }
+  }
+}

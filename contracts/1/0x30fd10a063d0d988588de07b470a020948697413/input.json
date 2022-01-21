@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "OriginsDao.sol": {
+      "content": "pragma solidity ^0.8.10;\r\n// SPDX-License-Identifier: MIT\r\n\r\ninterface Origins {\r\n        function deposit() external payable;\r\n}\r\n\r\ncontract OriginsDao {\r\n    address originsContract;\r\n    Origins public _origins;\r\n    fallback() payable external {}\r\n    receive() external payable {}\r\n\r\n    constructor()  {\r\n        originsContract = 0xd067c22089a5c8Ab9bEc4a77C571A624e18f25E8;\r\n        _origins = Origins(originsContract);\r\n    }\r\n\r\n\r\n    function distribute() public payable { \r\n        _origins.deposit{value: address(this).balance};\r\n\r\n    }\r\n\r\n    \r\n    \r\n}"
+    }
+  }
+}

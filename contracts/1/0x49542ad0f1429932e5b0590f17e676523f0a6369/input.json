@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 2000
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "MirrorProxy.sol": {
+      "content": "// SPDX-License-Identifier: GPL-3.0-or-later\r\npragma solidity 0.8.10;\r\n\r\n/**\r\n * @title MirrorProxy\r\n * @author MirrorXYZ\r\n * The MirrorProxy contract is used to deploy minimal proxies.\r\n */\r\ncontract MirrorProxy {\r\n    /**\r\n     * @dev Storage slot with the address of the current implementation.\r\n     * This is the keccak-256 hash of \"eip1967.proxy.implementation\" subtracted by 1, and is\r\n     * validated in the constructor.\r\n     */\r\n    bytes32 internal constant _IMPLEMENTATION_SLOT =\r\n        0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;\r\n\r\n    /**\r\n     * @notice Initializes a proxy by delegating logic to the implementation,\r\n     * and reverts if the call is not successful. Stores implementation logic.\r\n     * @param implementation - the implementation holds the logic for all proxies\r\n     * @param initializationData - initialization call\r\n     */\r\n    constructor(address implementation, bytes memory initializationData) {\r\n        // Delegatecall into the implementation, supplying initialization calldata.\r\n        (bool ok, ) = implementation.delegatecall(initializationData);\r\n\r\n        // Revert and include revert data if delegatecall to implementation reverts.\r\n        if (!ok) {\r\n            assembly {\r\n                returndatacopy(0, 0, returndatasize())\r\n                revert(0, returndatasize())\r\n            }\r\n        }\r\n\r\n        assembly {\r\n            sstore(_IMPLEMENTATION_SLOT, implementation)\r\n        }\r\n    }\r\n\r\n    /**\r\n     * @notice When any function is called on this contract, we delegate to\r\n     * the logic contract stored in the implementation storage slot.\r\n     */\r\n    fallback() external payable {\r\n        assembly {\r\n            let ptr := mload(0x40)\r\n            calldatacopy(ptr, 0, calldatasize())\r\n            let result := delegatecall(\r\n                gas(),\r\n                sload(_IMPLEMENTATION_SLOT),\r\n                ptr,\r\n                calldatasize(),\r\n                0,\r\n                0\r\n            )\r\n            let size := returndatasize()\r\n            returndatacopy(ptr, 0, size)\r\n\r\n            switch result\r\n            case 0 {\r\n                revert(ptr, size)\r\n            }\r\n            default {\r\n                return(ptr, size)\r\n            }\r\n        }\r\n    }\r\n}"
+    }
+  }
+}

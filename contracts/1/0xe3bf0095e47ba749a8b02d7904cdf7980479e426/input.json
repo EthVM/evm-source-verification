@@ -1,0 +1,33 @@
+{
+  "language": "Solidity",
+  "sources": {
+    "SlippageIncinerator.sol": {
+      "content": "// SPDX-License-Identifier: GPL-3.0-only\n\npragma solidity 0.8.9;\n\nimport \"IUniswapRouter.sol\";\nimport \"IIncinerator.sol\";\n\ncontract SlippageIncinerator is IIncinerator {\n\n    // WETH(mainnet) 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;\n    // WETH(rinkeby) 0xc778417E063141139Fce010982780140Aa0cD5Ab;\n    address public WETH;\n    IUniswapRouter public router;\n    address public management;\n    mapping (address => uint) public tokensBurned;\n\n    event TokensIncinerated(address tokenAddr, uint amount);\n    event ManagementUpdated(address oldManagement, address newManagement);\n    event RouterUpdated(address oldRouter, address newRouter);\n\n    modifier managementOnly() {\n        require (msg.sender == management, 'Only management may call this');\n        _;\n    }\n\n    constructor(address routerAddr, address mgmt, address weth) {\n        router = IUniswapRouter(routerAddr);\n        management = mgmt;\n        WETH = weth;\n    }\n\n    // change which exchange we send tokens to\n    function setRouter(address newRouter) external managementOnly {\n        address oldRouter = address(router);\n        router = IUniswapRouter(newRouter);\n        emit RouterUpdated(oldRouter, newRouter);\n    }\n\n    // change the management key\n    function setManagement(address newMgmt) external managementOnly {\n        address oldMgmt =  management;\n        management = newMgmt;\n        emit ManagementUpdated(oldMgmt, newMgmt);\n    }\n\n    // buy tokens at market rate and burn them\n    // need to pass amountOutMin manually to avoid being frontrun :/\n    function incinerate(address tokenAddr, uint amountOutMin) external payable {\n        address[] memory path = new address[](2);\n        path[0] = WETH;\n        path[1] = tokenAddr;\n\n        address burnAddress = address(0);\n        uint deadline = block.timestamp + 1;\n        uint[] memory amounts = router.swapExactETHForTokens{value: msg.value}(amountOutMin, path, burnAddress, deadline);\n        tokensBurned[tokenAddr] += amounts[1];\n        emit TokensIncinerated(tokenAddr, amounts[1]);\n    }\n\n//    function incineratePath(address[] memory path, address inputToken) external payable {\n//        // set amountMin to 0 since we don't care how many tokens we burn\n//        uint amountOutMin = 0;\n//\n//        address burnAddress = address(0);\n//        uint deadline = block.timestamp + 1;\n//        uint[] memory amounts = router.swapTokensForExactTokens(amountOutMin, path, burnAddress, deadline);\n//        uint lastAmount = amounts[amounts.length - 1];\n//        address lastAddress = path[path.length - 1];\n//        tokensBurned[lastAddress] += lastAmount;\n//        emit TokensIncinerated(lastAddress, lastAmount);\n//    }\n\n}\n"
+    },
+    "IUniswapRouter.sol": {
+      "content": "// SPDX-License-Identifier: GPL-3.0-only\n\npragma solidity 0.8.9;\n\ninterface IUniswapRouter {\n\n    event LiquidityAdded(address token, uint amountTokenDesired, uint amountTokenMin, uint amountETHMin, address to, uint deadline);\n\n    function addLiquidityETH(\n        address token,\n        uint amountTokenDesired,\n        uint amountTokenMin,\n        uint amountETHMin,\n        address to,\n        uint deadline\n    ) external payable returns (uint amountToken, uint amountETH, uint liquidity);\n\n    function swapExactETHForTokens(uint amountOutMin, address[] calldata path, address to, uint deadline)\n        external\n//        virtual\n//        override\n        payable\n//        ensure(deadline)\n        returns (uint[] memory amounts);\n//    {\n//        require(path[0] == WETH, 'UniswapV2Router: INVALID_PATH');\n//        amounts = UniswapV2Library.getAmountsOut(factory, msg.value, path);\n//        require(amounts[amounts.length - 1] >= amountOutMin, 'UniswapV2Router: INSUFFICIENT_OUTPUT_AMOUNT');\n//        IWETH(WETH).deposit{value: amounts[0]}();\n//        assert(IWETH(WETH).transfer(UniswapV2Library.pairFor(factory, path[0], path[1]), amounts[0]));\n//        _swap(amounts, path, to);\n//    }\n\n        function swapTokensForExactTokens(\n            uint amountOut,\n            uint amountInMax,\n            address[] calldata path,\n            address to,\n            uint deadline)\n        external\n//        virtual\n//        override\n        returns (uint[] memory amounts);\n//    ) external virtual override ensure(deadline) returns (uint[] memory amounts) {\n//        amounts = UniswapV2Library.getAmountsIn(factory, amountOut, path);\n//        require(amounts[0] <= amountInMax, 'UniswapV2Router: EXCESSIVE_INPUT_AMOUNT');\n//        TransferHelper.safeTransferFrom(\n//            path[0], msg.sender, UniswapV2Library.pairFor(factory, path[0], path[1]), amounts[0]\n//        );\n//        _swap(amounts, path, to);\n//    }\n\n}\n"
+    },
+    "IIncinerator.sol": {
+      "content": "// SPDX-License-Identifier: GPL-3.0-only\n\npragma solidity 0.8.9;\n\ninterface IIncinerator {\n\n    function incinerate(address tokenAddr, uint amountOutMin) external payable;\n}\n"
+    }
+  },
+  "settings": {
+    "evmVersion": "istanbul",
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "outputSelection": {
+      "*": {
+        "*": [
+          "evm.bytecode",
+          "evm.deployedBytecode",
+          "devdoc",
+          "userdoc",
+          "metadata",
+          "abi"
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "metadata": {
+      "bytecodeHash": "none"
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 20000
+    },
+    "outputSelection": {
+      "*": {
+        "*": [
+          "evm.bytecode",
+          "evm.deployedBytecode",
+          "abi"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/CxipBugFix.sol": {
+      "content": "// SPDX-License-Identifier: UNLICENSED\n\npragma solidity ^0.8.4;\n\n/*______/\\\\\\\\__/\\_______/\\__/\\\\\\\\\\__/\\\\\\\\\\\\___\n _____/\\////////__///\\___/\\/__/////\\///__/\\/////////\\_\n  ___/\\/_____________///\\\\\\/________/\\_____/\\_______/\\_\n   __/\\_________________//\\\\__________/\\_____/\\\\\\\\\\\\/__\n    _/\\__________________/\\\\__________/\\_____/\\/////////____\n     _//\\_________________/\\\\\\_________/\\_____/\\_____________\n      __///\\_____________/\\////\\_______/\\_____/\\_____________\n       ____////\\\\\\\\__/\\/___///\\__/\\\\\\\\\\_/\\_____________\n        _______/////////__///_______///__///////////__///____________*/\n\n/**\n * @title CXIP Custom Bug Fix\n * @author CXIP-Labs\n * @notice This is a custom bug fix for a very specific token/contract.\n * @dev Functions are restricted to specific contract, and specific token.\n */\ncontract CxipBugFix {\n\n    /**\n     * @dev We are leaving constructor empty on purpose. To not disturb any existing data\n     */\n    constructor() {}\n\n    /**\n     * @dev Updating Arweave URI for token id #15\n     */\n    function fixUriEvanesceToken15 (bytes32 arweave, bytes32 arweave2) public {\n        require ((\n            msg.sender == 0xa8A7F79c4B7A7613044CA098fe408c40Ca75778d\n            || msg.sender == 0xa198FA5db682a2A828A90b42D3Cd938DAcc01ADE\n        ), \"CXIP: Unauthorized wallet\");\n        require (\n            address (this) == 0x0B8a1ec4891eFBbaC5Bc34046512f0743B63539D,\n            \"CXIP: Unauthorized contract\"\n        );\n        assembly {\n            sstore(\n                0x977a47af6886c81cccba9ceb5316ec9b4027c59ac276de3e2cb39ec8af72ee80,\n                arweave\n            )\n            sstore(\n                0x977a47af6886c81cccba9ceb5316ec9b4027c59ac276de3e2cb39ec8af72ee81,\n                arweave2\n            )\n        }\n    }\n\n    /**\n     * @dev Updating token id #15 payload signature, since it's slightly different.\n     */\n    function fixSignatureEvanesceToken15 (\n        bytes32 payloadHash,\n        bytes32 payloadSignatureR,\n        bytes32 payloadSignatureS,\n        bytes32 payloadSignatureV\n    ) public {\n        require ((\n            msg.sender == 0xa8A7F79c4B7A7613044CA098fe408c40Ca75778d\n            || msg.sender == 0xa198FA5db682a2A828A90b42D3Cd938DAcc01ADE\n        ), \"CXIP: Unauthorized wallet\");\n        require (\n            address (this) == 0x0B8a1ec4891eFBbaC5Bc34046512f0743B63539D,\n            \"CXIP: Unauthorized contract\"\n        );\n        assembly {\n            sstore(\n                0x977a47af6886c81cccba9ceb5316ec9b4027c59ac276de3e2cb39ec8af72ee7b,\n                payloadHash\n            )\n            sstore(\n                0x977a47af6886c81cccba9ceb5316ec9b4027c59ac276de3e2cb39ec8af72ee7c,\n                payloadSignatureR\n            )\n            sstore(\n                0x977a47af6886c81cccba9ceb5316ec9b4027c59ac276de3e2cb39ec8af72ee7d,\n                payloadSignatureS\n            )\n            sstore(\n                0x977a47af6886c81cccba9ceb5316ec9b4027c59ac276de3e2cb39ec8af72ee7e,\n                payloadSignatureV\n            )\n        }\n    }\n\n    /**\n     * @dev Public function for anyone to easily check/test storage slot data.\n     */\n    function getStorageSlot (bytes32 slot) public view returns (bytes32 data) {\n        assembly {\n            data := sload(slot)\n        }\n    }\n\n    /**\n     * @dev Catching all other functions and delegating them to _defaultFallback.\n     */\n    receive() external payable {\n        _defaultFallback();\n    }\n\n    /**\n     * @dev Catching all other functions and delegating them to _defaultFallback.\n     */\n    fallback() external {\n        _defaultFallback();\n    }\n\n    /**\n     * @dev Redirecting to original ERC721 smart contract that was at getERC721CollectionSource.\n     * @dev For a quick and gas effective .\n     */\n    function _defaultFallback() internal {\n        assembly {\n            calldatacopy(0, 0, calldatasize())\n            let result := delegatecall(\n                gas(),\n                0x0fb6c0de0d3cd2a27941981ea1de878348b26014,\n                0,\n                calldatasize(),\n                0,\n                0\n            )\n            returndatacopy(0, 0, returndatasize())\n            switch result\n                case 0 {\n                    revert(0, returndatasize())\n                }\n                default {\n                    return(0, returndatasize())\n                }\n        }\n    }\n\n}"
+    }
+  }
+}

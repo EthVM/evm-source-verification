@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "TokenSwap.sol": {
+      "content": "pragma solidity >=0.5.12;\r\n\r\n\r\n/**\r\n * @title SafeMath\r\n * @dev Math operations with safety checks that throw on error\r\n */\r\nlibrary SafeMath {\r\n  function mul(uint256 a, uint256 b) internal pure returns (uint256) {\r\n    if (a == 0) {\r\n      return 0;\r\n    }\r\n    uint256 c = a * b;\r\n    assert(c / a == b);\r\n    return c;\r\n  }\r\n\r\n  function div(uint256 a, uint256 b) internal pure returns (uint256) {\r\n    // assert(b > 0); // Solidity automatically throws when dividing by 0\r\n    uint256 c = a / b;\r\n    // assert(a == b * c + a % b); // There is no case in which this doesn't hold\r\n    return c;\r\n  }\r\n\r\n  function sub(uint256 a, uint256 b) internal pure returns (uint256) {\r\n    assert(b <= a);\r\n    return a - b;\r\n  }\r\n\r\n  function add(uint256 a, uint256 b) internal pure returns (uint256) {\r\n    uint256 c = a + b;\r\n    assert(c >= a);\r\n    return c;\r\n  }\r\n}\r\n\r\ncontract owned {\r\n    address public owner;\r\n\r\n    constructor() public {\r\n        owner = msg.sender;\r\n    }\r\n\r\n    modifier onlyOwner {\r\n        require(msg.sender == owner);\r\n        _;\r\n    }\r\n\r\n    function transferOwnership(address newOwner) onlyOwner public {\r\n        require(newOwner != address(this));\r\n        owner = newOwner;\r\n    }\r\n}\r\n\r\ncontract Token {\r\n    function transferFrom(address _from, address _to, uint256 _value) public returns (bool success);\r\n    function transfer(address _to, uint256 _value) public returns (bool success);\r\n\tfunction balanceOf(address account) external view returns (uint256);\r\n\t\r\n}\r\n\r\ncontract TokenSwap is owned {\r\n\tusing SafeMath for uint;\r\n\tToken public tokenAddress;\r\n    bool public initialized = false;\r\n\r\n\taddress public receiverAddress;\r\n\t\r\n\tuint public rate = 3571428571428570000000;\r\n\t\r\n    event Initialized();\r\n    event WithdrawTokens(address destination, uint256 amount);\r\n    event WithdrawAnyTokens(address tokenAddress, address destination, uint256 amount);\r\n    event WithdrawEther(address destination, uint256 amount);\r\n\t\r\n\r\n\t/**\r\n     * Constructor\r\n     *\r\n     * First time rules setup \r\n     */\r\n    constructor() payable public {\r\n    }\r\n\r\n\r\n    /**\r\n     * Initialize contract\r\n     *\r\n     * @param _tokenAddress token address\r\n     */\r\n    function init(Token _tokenAddress) onlyOwner public {\r\n        require(!initialized);\r\n        initialized = true;\r\n        tokenAddress = _tokenAddress;\r\n        emit Initialized();\r\n    }\r\n\r\n\r\n    /**\r\n     * withdrawTokens\r\n     *\r\n     * Withdraw tokens from the contract\r\n     *\r\n     * @param amount is an amount of tokens\r\n     */\r\n    function withdrawTokens(\r\n        uint256 amount\r\n    )\r\n        onlyOwner public\r\n    {\r\n        require(initialized);\r\n        tokenAddress.transfer(msg.sender, amount);\r\n        emit WithdrawTokens(msg.sender, amount);\r\n    }\r\n\r\n    /**\r\n     * withdrawAnyTokens\r\n     *\r\n     * Withdraw any tokens from the contract\r\n     *\r\n     * @param _tokenAddress is a token contract address\r\n     * @param amount is an amount of tokens\r\n     */\r\n    function withdrawAnyTokens(\r\n        address _tokenAddress,\r\n        uint256 amount\r\n    )\r\n        onlyOwner public\r\n    {\r\n        Token(_tokenAddress).transfer(msg.sender, amount);\r\n        emit WithdrawAnyTokens(_tokenAddress, msg.sender, amount);\r\n    }\r\n    \r\n    /**\r\n     * withdrawEther\r\n     *\r\n     * Withdraw ether from the contract\r\n     *\r\n     * @param amount is a wei amount \r\n     */\r\n    function withdrawEther(\r\n        uint256 amount\r\n    )\r\n        onlyOwner public\r\n    {\r\n        msg.sender.transfer(amount);\r\n        emit WithdrawEther(msg.sender, amount);\r\n    }\r\n\t\r\n\tfunction setRate(uint _rate) public onlyOwner {\r\n\t\trate = _rate;\r\n\t}\r\n\t\r\n\tfunction setReceiver(address _receiverAddress) public onlyOwner {\r\n\t\treceiverAddress = _receiverAddress;\r\n\t}\r\n\t\r\n\t\r\n\t/**\r\n     * Execute transaction\r\n     *\r\n     * @param transactionBytecode transaction bytecode\r\n     */\r\n    function execute(bytes memory transactionBytecode) onlyOwner public {\r\n        require(initialized);\r\n        (bool success, ) = msg.sender.call.value(0)(transactionBytecode);\r\n            require(success);\r\n    }\r\n\t\r\n\t\r\n\tfunction Swap() payable public {\r\n\t\taddress payable wallet = address(uint160(receiverAddress));\r\n\t\t\r\n\t\tuint tokens = rate.mul(msg.value).div(1 ether);\r\n\t\twallet.transfer(msg.value);\r\n\r\n\t\tuint amountTobuy = msg.value;\r\n\t\tuint TotalTokens = tokens;\r\n\t\t\r\n        uint TokenBalance = Token(tokenAddress).balanceOf(address(this));\r\n        require(amountTobuy > 0, \"You need to send some BNB\");\r\n        require(TotalTokens <= TokenBalance, \"Not enough tokens available\");\r\n\t\t\r\n\t\t\r\n        Token(tokenAddress).transfer(msg.sender, TotalTokens);\r\n\t\t\r\n\t}\r\n\r\n\tfunction() external payable {\r\n\t\tSwap();\r\n\t}\r\n\t\r\n}"
+    }
+  }
+}

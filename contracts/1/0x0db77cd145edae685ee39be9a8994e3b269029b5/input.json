@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "SwapTokens.sol": {
+      "content": "pragma solidity ^0.8.9;\r\n\r\n// SPDX-License-Identifier: MIT\r\n\r\ninterface IBEP20 {\r\n    function totalSupply() external view returns (uint256);\r\n\r\n    function balanceOf(address account) external view returns (uint256);\r\n\r\n    function transfer(address recipient, uint256 amount)\r\n        external\r\n        returns (bool);\r\n\r\n    function allowance(address owner, address spender)\r\n        external\r\n        view\r\n        returns (uint256);\r\n\r\n    function approve(address spender, uint256 amount) external returns (bool);\r\n\r\n    function transferFrom(\r\n        address sender,\r\n        address recipient,\r\n        uint256 amount\r\n    ) external returns (bool);\r\n}\r\n\r\ncontract SwapTokens {\r\n    address public owner;\r\n    address public wol;\r\n    address public adam;\r\n\r\n    uint256 public feePercent;\r\n    uint256 public percentDivider;\r\n\r\n    modifier onlyOwner() {\r\n        require(msg.sender == owner, \"Owned: Not an owner\");\r\n        _;\r\n    }\r\n\r\n    constructor(\r\n        address _owner,\r\n        address _wol,\r\n        address _adam\r\n    ) {\r\n        owner = _owner;\r\n        wol = _wol;\r\n        adam = _adam;\r\n        feePercent = 11111111111;\r\n        percentDivider = 100000000000;\r\n    }\r\n\r\n    function swap(\r\n        address _token1,\r\n        address _token2,\r\n        uint256 _amount\r\n    ) public {\r\n        IBEP20(_token1).transferFrom(msg.sender, owner, _amount);\r\n        if (_token2 == adam) {\r\n            IBEP20(_token2).transferFrom(owner, msg.sender, _amount);\r\n        } else {\r\n            uint256 _feeAmount = _amount * feePercent / percentDivider;\r\n            IBEP20(_token2).transferFrom(owner, msg.sender, _amount + _feeAmount);\r\n        }\r\n    }\r\n\r\n    function changeOwner(address _owner) public onlyOwner {\r\n        owner = _owner;\r\n    }\r\n\r\n    function changeWol(address _token) public onlyOwner {\r\n        wol = _token;\r\n    }\r\n\r\n    function changeAdam(address _token) public onlyOwner {\r\n        adam = _token;\r\n    }\r\n\r\n    function changeFeePercent(uint256 _percent, uint256 _divider) public onlyOwner {\r\n        feePercent = _percent;\r\n        percentDivider = _divider;\r\n    }\r\n}"
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "DummyLPToken.sol": {
+      "content": "// File: contracts/DummyLPToken.sol\r\n\r\n\r\n\r\n/// @notice The (older) MasterChef contract gives out a constant number of DRINK tokens per block.\r\n/// MasterChef the only address with minting rights for DRINK.\r\n/// The idea for this contract is therefore to be the dummy LP token that is deposited into the MasterChef V1 (MCV1) contract.\r\n/// The allocation point for this pool on MCV1 is the total allocation point for all pools that receive incentives on L2.\r\n\r\npragma solidity 0.6.12;\r\n\r\ncontract DummyLPToken {\r\n    uint256 public immutable totalSupply;\r\n    mapping(address => uint256) public balanceOf;\r\n    mapping(address => mapping (address => uint256)) public allowance;\r\n    event Transfer(address indexed _from, address indexed _to, uint256 _value);\r\n    event Approval(address indexed _owner, address indexed _spender, uint256 _value);\r\n\r\n    /// _mintTo         Address to which entire supply is to be minted\r\n    /// _totalSupply    Total supply\r\n    constructor(address _mintTo, uint256 _totalSupply) public {\r\n        balanceOf[_mintTo] = _totalSupply;\r\n        totalSupply = _totalSupply;\r\n    }\r\n\r\n    function transfer(address to, uint256 amount) public returns (bool success) {\r\n        require(balanceOf[msg.sender] >= amount, \"ERC20: balance too low\");\r\n        // The following check is pretty much in all ERC20 contracts, but this can only fail if totalSupply >= 2^256\r\n        require(balanceOf[to] + amount >= balanceOf[to], \"ERC20: overflow detected\");\r\n        balanceOf[msg.sender] -= amount;\r\n        balanceOf[to] += amount;\r\n        emit Transfer(msg.sender, to, amount);\r\n        return true;\r\n    }\r\n\r\n    function transferFrom(address from, address to, uint256 amount) public returns (bool success) {\r\n        require(balanceOf[from] >= amount, \"ERC20: balance too low\");\r\n        require(allowance[from][msg.sender] >= amount, \"ERC20: allowance too low\");\r\n        // The following check is pretty much in all ERC20 contracts, but this can only fail if totalSupply >= 2^256\r\n        require(balanceOf[to] + amount >= balanceOf[to], \"ERC20: overflow detected\");\r\n        balanceOf[from] -= amount;\r\n        allowance[from][msg.sender] -= amount;\r\n        balanceOf[to] += amount;\r\n        emit Transfer(from, to, amount);\r\n        return true;\r\n    }\r\n\r\n    function approve(address spender, uint256 amount) public returns (bool success) {\r\n        allowance[msg.sender][spender] = amount;\r\n        emit Approval(msg.sender, spender, amount);\r\n        return true;\r\n    }\r\n}"
+    }
+  }
+}

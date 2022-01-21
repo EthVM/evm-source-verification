@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "Scribe.sol": {
+      "content": "pragma solidity ^0.5.12;\r\n\r\n/** \r\n * Utilities library\r\n */\r\nlibrary Utilities {\r\n\t// concat two bytes objects\r\n    function concat(bytes memory a, bytes memory b)\r\n            internal pure returns (bytes memory) {\r\n        return abi.encodePacked(a, b);\r\n    }\r\n\r\n    // convert address to bytes\r\n    function toBytes(address x) internal pure returns (bytes memory b) { \r\n\t\tb = new bytes(20); \r\n\t\r\n\t\tfor (uint i = 0; i < 20; i++) \r\n\t\t\tb[i] = byte(uint8(uint(x) / (2**(8*(19 - i))))); \r\n\t}\r\n\r\n\t// convert uint256 to bytes\r\n\tfunction toBytes(uint256 x) internal pure returns (bytes memory b) {\r\n    \tb = new bytes(32);\r\n    \tassembly { mstore(add(b, 32), x) }\r\n\t}\r\n}\r\n\r\n\r\ninterface DadaCollectible {\r\n    function DrawingPrintToAddress(uint256) external view returns (address);\r\n}\r\n\r\n/*\r\n * @title Contract that allows an owner of a Creep to scribe a message attached to the token.\r\n * There's no limit on the number of messages they can scribe or the length for a single message\r\n * Each message is an on-chain transaction requiring gas\r\n * @dev Conlan Rios\r\n * Modified by sparrow\r\n */\r\ncontract Scribe {\r\naddress creepsContract = 0x068696A3cf3c4676B65F1c9975dd094260109d02;\r\n//address creepsContract = 0xbc2Df256FA6FAd53BfBf0a054aBF43561AcAafe3;\r\n// A record event that emits each time an owner dictates a message\r\n\tevent Record (\r\n\t// the address of who dicated this document\r\n\taddress dictator,\r\n        // The Creep printIndex\r\n\tuint printIndex,\r\n        // The text of the dictation\r\n        string text\r\n    );\r\n    \r\n    uint256 creepOwner;\r\n\r\n\t// A recorded document which tracks the dictator, the text, and the timestamp of when it was created\r\n\tstruct Document {\r\n\t\t// the address of who dicated this document\r\n\t\taddress dictator;\r\n\t\t// the text of the dictation\r\n\t\tstring text;\r\n\t\t// the block time of the dictation\r\n\t\tuint creationTime;\r\n\t}\r\n\t\r\n\tfunction getOwner(uint256 printIndex) public view returns (address) {\r\n     return DadaCollectible(creepsContract).DrawingPrintToAddress(printIndex);\r\n     \r\n    }\r\n\r\n\t// Mapping of document keys to documents (keys are concated token address + tokenId)\r\n\tmapping (uint256 => Document[]) public documents;\r\n\t\r\n\t// Mapping of document keys to the count of dictated documents\r\n\tmapping (uint256 => uint) public documentsCount;\r\n\r\n\t// Function for dictating an owner message\r\n\tfunction dictate(uint256 printIndex, string memory _text) public {\r\n\t\t// check that the message sender owns the token \r\n\t\t// the function in DadaCollectible.sol that returns the owner address given a unique printIndex\r\n\t\t// is DrawingPrintToAddress\r\n\t\trequire(getOwner(printIndex) == msg.sender, \"Sender not authorized to dictate.\");\r\n\r\n\t\t// push a new document with the dictator address, message, and timestamp\r\n\t\tdocuments[printIndex].push(Document(msg.sender, _text, block.timestamp));\r\n\t\t// increase the documents counter for this key\r\n\t\tdocumentsCount[printIndex]++;\r\n\t\t// emit an event for this newly created record\r\n\t\temit Record(msg.sender, printIndex, _text);\r\n\t}\r\n\t\r\n\t// Function for getting the document key for a given printIndex\r\n\tfunction getDocumentKey(uint256 _printIndex) public pure returns (bytes memory) {\r\n\t\treturn Utilities.toBytes(_printIndex);\r\n\t}\r\n\r\n}"
+    }
+  }
+}

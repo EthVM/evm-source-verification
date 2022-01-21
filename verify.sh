@@ -10,7 +10,7 @@ do
        continue
     fi
     dir=$dir*
-    # dir=contracts/1/0x15813463b10ec10ad3db7a4a32d91ae9195622a8/*    
+    # dir=contracts/1/0x0131b36ad41b041db46ded4016bca296deb2136a/*    
     echo "${dir}"
     rm -rf ./out/*
     cp -R $dir ./out
@@ -21,10 +21,13 @@ do
         echo "$dir $i" >> unsupported
         continue
     fi
-    wget https://raw.githubusercontent.com/ethereum/solc-bin/gh-pages/linux-amd64/solc-linux-amd64-$compiler -q -O ./out/solc
-    chmod +x ./out/solc
-    ./out/solc --version
-    timeout 15s bash -c "cat ./out/input.json | ./out/solc --standard-json | jq '.' > ./out/output.json"
+    COMPILER_FILE="./compilers/solc-$compiler"
+    if ! test -f "$COMPILER_FILE"; then
+        wget https://raw.githubusercontent.com/ethereum/solc-bin/gh-pages/linux-amd64/solc-linux-amd64-$compiler -q -O $COMPILER_FILE
+        chmod +x $COMPILER_FILE
+    fi
+    $COMPILER_FILE --version
+    timeout 15s bash -c "cat ./out/input.json | $COMPILER_FILE --standard-json | jq '.' > ./out/output.json"
     exit_status=$?
     if [[ $exit_status -eq 124 ]]; then
         echo "$dir $i" >> timeouts

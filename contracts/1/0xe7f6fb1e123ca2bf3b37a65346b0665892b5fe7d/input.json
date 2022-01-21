@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "sleepwalkersMintProxy.sol": {
+      "content": "// SPDX-License-Identifier: Unlicensed\r\npragma solidity ^0.8.0;\r\n\r\n// Open0x Ownable (by 0xInuarashi)\r\nabstract contract Ownable {\r\n    address public owner;\r\n    event OwnershipTransferred(address indexed oldOwner_, address indexed newOwner_);\r\n    constructor() { owner = msg.sender; }\r\n    modifier onlyOwner { require(owner == msg.sender, \"Ownable: caller is not the owner\"); _; }\r\n    function _transferOwnership(address newOwner_) internal virtual {\r\n        address _oldOwner = owner; owner = newOwner_;\r\n        emit OwnershipTransferred(_oldOwner, newOwner_); }\r\n    function transferOwnership(address newOwner_) public virtual onlyOwner {\r\n        require(newOwner_ != address(0x0), \"Ownable: new owner is the zero address!\");\r\n        _transferOwnership(newOwner_); }\r\n    function renounceOwnership() public virtual onlyOwner {\r\n        _transferOwnership(address(0x0)); }\r\n}\r\n\r\n// Open0x Security by 0xInuarashi\r\nabstract contract Security {\r\n    // Prevent Smart Contracts\r\n    modifier onlySender {\r\n        require(msg.sender == tx.origin, \"No Smart Contracts!\"); _; }\r\n}\r\n\r\n// Interface\r\ninterface iSleepwalkers {\r\n    function ownerMint(address address_, uint256 amount_) external;\r\n    function transferOwnership(address newOwner_) external;\r\n}\r\n\r\n// Sleepwalkers Mint Proxy\r\ncontract sleepwalkersMintProxy is Ownable, Security {\r\n\r\n    // General NFT Variables\r\n    uint256 public mintPrice = 0.0588 ether;\r\n    uint256 public maxMintsPerTx = 20;\r\n\r\n    // Interface of Sleepwalkers\r\n    iSleepwalkers public Sleepwalkers = iSleepwalkers(0xf2025A9c5514C1bE17247ab2f2D385De2eAD4f26);\r\n\r\n    // Contract Administration\r\n    function setMintPrice(uint256 mintPrice_) external onlyOwner {\r\n        mintPrice = mintPrice_; \r\n    }\r\n    function transferSleepwalkersOwnership(address newOwner_) external onlyOwner {\r\n        Sleepwalkers.transferOwnership(newOwner_);\r\n    }\r\n\r\n    // Wihdraw the Ether from the Contract\r\n    function withdrawEther() public onlyOwner {\r\n        payable(msg.sender).transfer(address(this).balance); \r\n    }\r\n\r\n    // Owner Mint\r\n    function ownerMint(address address_, uint256 amount_) external onlyOwner {\r\n        Sleepwalkers.ownerMint(address_, amount_); \r\n    }\r\n\r\n    // Public Mint Params\r\n    bool public publicMintEnabled = true;\r\n    uint256 public publicMintTime = 1639785600; // Sat Dec 18 2021 00:00:00 GMT+0000\r\n\r\n    // Public Mint Administration\r\n    function setPublicMintStatus(bool bool_, uint256 time_) external onlyOwner {\r\n        publicMintEnabled = bool_; publicMintTime = time_; }\r\n    modifier publicMint {\r\n        require(publicMintEnabled && block.timestamp >= publicMintTime, \"Public Mint is not open yet!\"); _; }\r\n    \r\n    // Public Mint\r\n    function mint(uint256 amount_) external payable onlySender publicMint {\r\n        require(msg.value == amount_ * mintPrice, \"Invalid value sent!\");\r\n        require(maxMintsPerTx >= amount_, \"Over maximum mints per TX!\");\r\n        \r\n        Sleepwalkers.ownerMint(msg.sender, amount_);\r\n    }\r\n}"
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "Log.sol": {
+      "content": "// SPDX-License-Identifier: MIT\r\n\r\npragma solidity ^0.8.11;\r\n\r\n/// @title A minimalist service for posting messages.\r\n/// @author Cyril Kato\r\n/// @notice This contract could be used for microblogging.\r\ncontract Log {\r\n    address private immutable OWNER_ADDR;\r\n\r\n    event Post(string message);\r\n\r\n    modifier onlyOwner() {\r\n        require(isOwner(), \"Not owner\");\r\n\r\n        _;\r\n    }\r\n\r\n    constructor() {\r\n        OWNER_ADDR = msg.sender;\r\n    }\r\n\r\n    /// @notice Post a message.\r\n    /// @dev IPFS CIDs may be posted.\r\n    /// @param _message The message to post.\r\n    function post(string memory _message) external onlyOwner() {\r\n        emit Post(_message);\r\n    }\r\n\r\n    function isOwner() private view returns (bool) {\r\n        return msg.sender == OWNER_ADDR;\r\n    }\r\n}"
+    }
+  }
+}

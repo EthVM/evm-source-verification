@@ -1,0 +1,33 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "evmVersion": "london",
+    "libraries": {},
+    "metadata": {
+      "bytecodeHash": "ipfs",
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "evm.bytecode",
+          "evm.deployedBytecode",
+          "devdoc",
+          "userdoc",
+          "metadata",
+          "abi"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/NahikosGameModuleMultipleClaim.sol": {
+      "content": "//SPDX-License-Identifier: MIT\npragma solidity ^0.8.9;\n\ninterface TheNahikosGameModule {\n    function claim(\n        address to,\n        uint256 typeId,\n        bytes memory signature\n    ) external payable;\n}\n\n/// @title NahikosGameModuleMultipleClaim\n/// @author Simon Fremaux (@dievardump)\n/// @dev Oh yes this verbose name, we like it.\ncontract NahikosGameModuleMultipleClaim {\n    address public immutable nahikosGameModuleAddr;\n\n    /// @notice constructor\n    /// @param nahikosGameModuleAddr_ The contract address allowing to mint\n    constructor(address nahikosGameModuleAddr_) {\n        nahikosGameModuleAddr = nahikosGameModuleAddr_;\n    }\n\n    function claimBatch(\n        address to,\n        uint256[] memory typeIds,\n        bytes[] memory signatures\n    ) public {\n        TheNahikosGameModule module = TheNahikosGameModule(\n            nahikosGameModuleAddr\n        );\n        require(typeIds.length == signatures.length, '!LENGTH_MISMATCH!');\n        for (uint256 i; i < typeIds.length; i++) {\n            module.claim(to, typeIds[i], signatures[i]);\n        }\n    }\n}\n"
+    }
+  }
+}

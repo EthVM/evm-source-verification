@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "BridgeAssistE.sol": {
+      "content": "// SPDX-License-Identifier: MIT\r\npragma solidity ^0.8.6;\r\n\r\ninterface IERC20 {\r\n    function transfer(address recipient, uint256 amount) external returns (bool);\r\n    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);\r\n    function balanceOf(address account) external view returns (uint256);\r\n    function allowance(address owner, address spender) external view returns (uint256);\r\n}\r\n\r\ncontract BridgeAssistE {\r\n    \r\n    struct Bridge {\r\n        uint256 amount;\r\n        uint256 nonce;\r\n    }\r\n    \r\n    address public owner;\r\n    IERC20 public TKN = IERC20(0x3873965e73d9A21F88e645ce40B7db187FDE4931);\r\n    string name = \"Plethori\";\r\n    string version = \"1\";\r\n    uint256 chainId;\r\n    address verifyingContract;\r\n    bytes32 salt;\r\n    bytes32 DOMAIN_SEPARATOR;\r\n    \r\n    mapping(address => uint) public nonces;\r\n    \r\n    constructor() {\r\n        owner = msg.sender;\r\n        uint _chainId;\r\n        assembly {\r\n            _chainId := chainid()\r\n        }\r\n        chainId = _chainId;\r\n        verifyingContract = address(this);\r\n        salt = keccak256(abi.encode(block.timestamp, verifyingContract));\r\n        DOMAIN_SEPARATOR = keccak256(abi.encode(\r\n            keccak256(\"EIP712Domain(string name,string version,uint256 chainId,address verifyingContract,bytes32 salt)\"),\r\n            keccak256(bytes(name)),\r\n            keccak256(bytes(version)),\r\n            chainId,\r\n            verifyingContract,\r\n            salt\r\n        ));\r\n    }\r\n    \r\n    \r\n    modifier restricted {\r\n        require(msg.sender == owner, \"This function is restricted to owner\");\r\n        _;\r\n    }\r\n    \r\n    event Collect(address indexed sender, uint256 amount);\r\n    event Dispense(address indexed sender, uint256 amount);\r\n    event TransferOwnership(address indexed previousOwner, address indexed newOwner);\r\n    \r\n    function hashBridge(uint256 _amount, uint256 _nonce) private view returns (bytes32) {\r\n        return keccak256(abi.encodePacked(\r\n            \"\\x19\\x01\",\r\n           DOMAIN_SEPARATOR,\r\n           keccak256(abi.encode(\r\n                keccak256(\"Bridge(uint256 amount,uint256 nonce)\"),\r\n                _amount,\r\n                _nonce\r\n            ))\r\n        ));\r\n    }\r\n    \r\n    function collect(address _sender, uint256 _amount, uint256 _nonce, bytes32 sigR, bytes32 sigS, uint8 sigV ) external restricted returns (bool success) {\r\n        require(verify(_sender, _amount, _nonce, sigR, sigS, sigV ), \"Wrong Metamask sign!\");\r\n        require(TKN.transferFrom(_sender, address(this), _amount), \"transferFrom() failure. Make sure that your balance is not lower than the allowance you set\");\r\n        nonceIncrement(_sender);\r\n        emit Collect(_sender, _amount);\r\n        return true;\r\n    }\r\n\r\n    function dispense(address _sender, uint256 _amount) external restricted returns (bool success) {\r\n        require(TKN.transfer(_sender, _amount), \"transfer() failure. Contact contract owner\");\r\n        emit Dispense(_sender, _amount);\r\n        return true;\r\n    }\r\n\r\n    function transferOwnership(address _newOwner) external restricted {\r\n        require(_newOwner != address(0), \"Invalid address: should not be 0x0\");\r\n        emit TransferOwnership(owner, _newOwner);\r\n        owner = _newOwner;\r\n    }\r\n    \r\n    function getInfo(address _user) external view returns(uint256, uint256, uint256){\r\n        require(_user != address(0), \"Invalid address!\");\r\n        return (TKN.balanceOf(_user), TKN.allowance(_user, address(this)), nonces[_user]);\r\n    }\r\n    \r\n    function verify(address signer, uint256 _amount, uint256 _nonce, bytes32 sigR, bytes32 sigS, uint8 sigV) public view returns (bool) {\r\n        require(_nonce == nonces[signer], \"Wrong nonce!\");\r\n        return signer == ecrecover(hashBridge(_amount, _nonce), sigV, sigR, sigS);\r\n    }\r\n    \r\n    function DOMAIN_INFO() external view returns (string memory, string memory, uint256, address, bytes32) {\r\n        return (name, version, chainId, verifyingContract, salt);\r\n    }\r\n    \r\n    function USER_DOMAIN_INFO(address _user) external view returns (string memory, string memory, uint256, address, bytes32, uint256) {\r\n        return (name, version, chainId, verifyingContract, salt, nonces[_user]);\r\n    }\r\n    \r\n    function nonceIncrement(address signer) internal {\r\n        nonces[signer] += 1;\r\n    }\r\n}"
+    }
+  }
+}

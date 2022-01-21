@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "ERC20Token.sol": {
+      "content": "// SPDX-License-Identifier: MIT\r\npragma solidity ^0.6.11;\r\n\r\ninterface ERC20 {\r\n    // Get the total token supply\r\n    function totalSupply() view external returns (uint256);\r\n \r\n    // Get the account balance of another account with address _owner\r\n    function balanceOf(address _owner) view external returns (uint256);\r\n \r\n    // Send _value amount of tokens to address _to\r\n    function transfer(address _to, uint256 _value) external returns (bool success);\r\n \r\n    // Send _value amount of tokens from address _from to address _to\r\n    function transferFrom(address _from, address _to, uint256 _value) external returns (bool);\r\n \r\n    // Allow _spender to withdraw from your account, multiple times, up to the _value amount.\r\n    // If this function is called again it overwrites the current allowance with _value.\r\n    // this function is required for some DEX functionality\r\n    function approve(address _spender, uint256 _value) external returns (bool);\r\n \r\n    // Returns the amount which _spender is still allowed to withdraw from _owner\r\n    function allowance(address _owner, address _spender) view external returns (uint256);\r\n \r\n    // Triggered when tokens are transferred.\r\n    event Transfer(address indexed _from, address indexed _to, uint256 _value);\r\n \r\n    // Triggered whenever approve(address _spender, uint256 _value) is called.\r\n    event Approval(address indexed _owner, address indexed _spender, uint256 _value);\r\n}\r\n\r\ncontract ERC20Token {\r\n\r\n    using SafeMath for uint256;\r\n\r\n    string public name;\r\n    string public symbol;\r\n    uint8 public decimals;\r\n    uint256 public totalSupply;\r\n\r\n    event Approval(address indexed tokenOwner, address indexed spender, uint256 tokens);\r\n    event Transfer(address indexed from, address indexed to, uint256 tokens);\r\n    event DepositTo(address indexed to, bytes8 id, uint256 amount);\r\n\r\n    mapping(address => uint256) balances;\r\n    mapping(address => mapping (address => uint256)) allowed;\r\n\r\n    constructor() public{\r\n\r\n        name = \"The Myth Of America\";\r\n        symbol = \"GUMP\";\r\n        decimals = 0;\r\n        \r\n        totalSupply = 720000000000 * 10 ** uint256(decimals);\r\n\t    balances[msg.sender] = totalSupply;\r\n    }\r\n\r\n    function balanceOf(address tokenOwner) public view returns (uint256) {\r\n        return balances[tokenOwner];\r\n    }\r\n\r\n    function transfer(address receiver, uint256 numTokens) public returns (bool) {\r\n        require(numTokens <= balances[msg.sender], \"Not Enough Tokens\");\r\n        balances[msg.sender] = balances[msg.sender].sub(numTokens);\r\n        balances[receiver] = balances[receiver].add(numTokens);\r\n        emit Transfer(msg.sender, receiver, numTokens);\r\n        return true;\r\n    }\r\n\r\n    function approve(address delegate, uint256 numTokens) public returns (bool) {\r\n        allowed[msg.sender][delegate] = numTokens;\r\n        emit Approval(msg.sender, delegate, numTokens);\r\n        return true;\r\n    }\r\n\r\n    function allowance(address owner, address delegate) public view returns (uint256) {\r\n        return allowed[owner][delegate];\r\n    }\r\n\r\n    function transferFrom(address owner, address buyer, uint256 numTokens) public returns (bool) {\r\n        require(numTokens <= balances[owner], \"Not Enough Tokens\");\r\n        require(numTokens <= allowed[owner][msg.sender], \"Not Enough Tokens\");\r\n\r\n        balances[owner] = balances[owner].sub(numTokens);\r\n        allowed[owner][msg.sender] = allowed[owner][msg.sender].sub(numTokens);\r\n        balances[buyer] = balances[buyer].add(numTokens);\r\n        emit Transfer(owner, buyer, numTokens);\r\n        return true;\r\n    }\r\n    \r\n    function checksumMatch(bytes8 id) internal view returns (bool) {\r\n        bytes32 chkhash = keccak256(\r\n            abi.encodePacked(address(this), bytes5(id))\r\n        );\r\n        bytes3 chkh = bytes3(chkhash);\r\n        bytes3 chki = bytes3(bytes8(uint64(id) << 40));\r\n        return chkh == chki;\r\n    }\r\n\r\n    // deposit to target address with id\r\n    function depositTo(address to, uint256 amount, bytes8 id) external {\r\n        require(checksumMatch(id), 'checksum mismatch');\r\n        require(transfer(to, amount), 'Could not forward funds');\r\n        emit DepositTo(to, id, amount);\r\n    }\r\n}\r\n\r\nlibrary SafeMath {\r\n    function sub(uint256 a, uint256 b) internal pure returns (uint256) {\r\n      assert(b <= a);\r\n      return a - b;\r\n    }\r\n\r\n    function add(uint256 a, uint256 b) internal pure returns (uint256) {\r\n      uint256 c = a + b;\r\n      assert(c >= a);\r\n      return c;\r\n    }\r\n}"
+    }
+  }
+}

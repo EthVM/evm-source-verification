@@ -1,0 +1,42 @@
+{
+  "language": "Solidity",
+  "sources": {
+    "LinkPriceOracle.sol": {
+      "content": "// SPDX-License-Identifier: UNLICENSED\n\n// Copyright (c) WildCredit - All rights reserved\n// https://twitter.com/WildCredit\n\nimport \"IERC20.sol\";\nimport \"ILinkOracle.sol\";\nimport \"IPriceOracle.sol\";\nimport \"SafeOwnable.sol\";\n\npragma solidity 0.8.6;\n\ncontract LinkPriceOracle is IPriceOracle, SafeOwnable {\n\n  uint public MIN_ORACLE_FRESHNESS = 3 hours;\n\n  mapping(address => ILinkOracle) public linkOracles;\n  mapping(address => uint) private tokenPrices;\n\n  event AddLinkOracle(address indexed token, address oracle);\n  event RemoveLinkOracle(address indexed token);\n  event PriceUpdate(address indexed token, uint amount);\n\n  function addLinkOracle(address _token, ILinkOracle _linkOracle) external onlyOwner {\n    require(_linkOracle.decimals() == 8, \"LinkPriceOracle: non-usd pairs not allowed\");\n    linkOracles[_token] = _linkOracle;\n\n    emit AddLinkOracle(_token, address(_linkOracle));\n  }\n\n  function removeLinkOracle(address _token) external onlyOwner {\n    linkOracles[_token] = ILinkOracle(address(0));\n    emit RemoveLinkOracle(_token);\n  }\n\n  function setTokenPrice(address _token, uint _value) external onlyOwner {\n    tokenPrices[_token] = _value;\n    emit PriceUpdate(_token, _value);\n  }\n\n  // _token price in USD with 18 decimals\n  function tokenPrice(address _token) public view override returns(uint) {\n\n    if (tokenPrices[_token] != 0) {\n      return tokenPrices[_token];\n\n    } else if (address(linkOracles[_token]) != address(0)) {\n\n      (, int answer, , uint updatedAt, ) = linkOracles[_token].latestRoundData();\n      uint result = uint(answer);\n      uint timeElapsed = block.timestamp - updatedAt;\n      require(result > 1, \"LinkPriceOracle: invalid oracle value\");\n      require(timeElapsed <= MIN_ORACLE_FRESHNESS, \"LinkPriceOracle: oracle is stale\");\n\n      return result * 1e10;\n\n    } else {\n      revert(\"LinkPriceOracle: token not supported\");\n    }\n  }\n\n  function convertTokenValues(address _fromToken, address _toToken, uint _amount) external view override returns(uint) {\n    uint priceFrom = tokenPrice(_fromToken) * 1e18 / 10 ** IERC20(_fromToken).decimals();\n    uint priceTo   = tokenPrice(_toToken)   * 1e18 / 10 ** IERC20(_toToken).decimals();\n    return _amount * priceFrom / priceTo;\n  }\n\n  function tokenSupported(address _token) external view override returns(bool) {\n    return (\n      address(linkOracles[_token]) != address(0) ||\n      tokenPrices[_token] != 0\n    );\n  }\n}\n"
+    },
+    "IERC20.sol": {
+      "content": "// SPDX-License-Identifier: UNLICENSED\n\npragma solidity >=0.7.0;\n\ninterface IERC20 {\n  function totalSupply() external view returns (uint);\n  function balanceOf(address account) external view returns(uint);\n  function transfer(address recipient, uint256 amount) external returns(bool);\n  function allowance(address owner, address spender) external view returns(uint);\n  function decimals() external view returns(uint8);\n  function approve(address spender, uint amount) external returns(bool);\n  function transferFrom(address sender, address recipient, uint amount) external returns(bool);\n}"
+    },
+    "ILinkOracle.sol": {
+      "content": "// SPDX-License-Identifier: UNLICENSED\n\npragma solidity 0.8.6;\n\ninterface ILinkOracle {\n  function decimals() external view returns(int256);\n\n  function latestRoundData() external view returns (\n    uint80  roundId,\n    int256  answer,\n    uint256 startedAt,\n    uint256 updatedAt,\n    uint80  answeredInRound\n  );\n}\n"
+    },
+    "IPriceOracle.sol": {
+      "content": "// SPDX-License-Identifier: UNLICENSED\n\npragma solidity 0.8.6;\n\ninterface IPriceOracle {\n\n  function tokenPrice(address _token) external view returns(uint);\n  function tokenSupported(address _token) external view returns(bool);\n  function convertTokenValues(address _fromToken, address _toToken, uint _amount) external view returns(uint);\n}\n"
+    },
+    "SafeOwnable.sol": {
+      "content": "// SPDX-License-Identifier: UNLICENSED\n\npragma solidity 0.8.6;\n\nimport \"IOwnable.sol\";\n\ncontract SafeOwnable is IOwnable {\n\n  uint public constant RENOUNCE_TIMEOUT = 1 hours;\n\n  address public override owner;\n  address public pendingOwner;\n  uint public renouncedAt;\n\n  event OwnershipTransferInitiated(address indexed previousOwner, address indexed newOwner);\n  event OwnershipTransferConfirmed(address indexed previousOwner, address indexed newOwner);\n\n  constructor() {\n    owner = msg.sender;\n    emit OwnershipTransferConfirmed(address(0), msg.sender);\n  }\n\n  modifier onlyOwner() {\n    require(isOwner(), \"Ownable: caller is not the owner\");\n    _;\n  }\n\n  function isOwner() public view returns (bool) {\n    return msg.sender == owner;\n  }\n\n  function transferOwnership(address _newOwner) external override onlyOwner {\n    require(_newOwner != address(0), \"Ownable: new owner is the zero address\");\n    emit OwnershipTransferInitiated(owner, _newOwner);\n    pendingOwner = _newOwner;\n  }\n\n  function acceptOwnership() external override {\n    require(msg.sender == pendingOwner, \"Ownable: caller is not pending owner\");\n    emit OwnershipTransferConfirmed(msg.sender, pendingOwner);\n    owner = pendingOwner;\n    pendingOwner = address(0);\n  }\n\n  function initiateRenounceOwnership() external onlyOwner {\n    require(renouncedAt == 0, \"Ownable: already initiated\");\n    renouncedAt = block.timestamp;\n  }\n\n  function acceptRenounceOwnership() external onlyOwner {\n    require(renouncedAt > 0, \"Ownable: not initiated\");\n    require(block.timestamp - renouncedAt > RENOUNCE_TIMEOUT, \"Ownable: too early\");\n    owner = address(0);\n    pendingOwner = address(0);\n    renouncedAt = 0;\n  }\n\n  function cancelRenounceOwnership() external onlyOwner {\n    require(renouncedAt > 0, \"Ownable: not initiated\");\n    renouncedAt = 0;\n  }\n}"
+    },
+    "IOwnable.sol": {
+      "content": "// SPDX-License-Identifier: UNLICENSED\n\npragma solidity 0.8.6;\n\ninterface IOwnable {\n  function owner() external view returns(address);\n  function transferOwnership(address _newOwner) external;\n  function acceptOwnership() external;\n}"
+    }
+  },
+  "settings": {
+    "evmVersion": "istanbul",
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "outputSelection": {
+      "*": {
+        "*": [
+          "evm.bytecode",
+          "evm.deployedBytecode",
+          "devdoc",
+          "userdoc",
+          "metadata",
+          "abi"
+        ]
+      }
+    }
+  }
+}

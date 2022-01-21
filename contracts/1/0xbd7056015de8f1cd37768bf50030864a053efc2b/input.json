@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 1000
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "RocketeerHelper.sol": {
+      "content": "//SPDX-License-Identifier: Unlicense\r\npragma solidity 0.8.4;\r\n\r\ninterface Rocketeer {\r\n    function totalSupply () external view returns ( uint256 );\r\n    function balanceOf ( address owner ) external view returns ( uint256 );\r\n    function spawnRocketeer ( address _to ) external;\r\n    function tokenOfOwnerByIndex ( address owner, uint256 index ) external view returns ( uint256 );\r\n}\r\n\r\n/** @title Streamline the creation of \"Rocketeer\"-NFTs\r\n    @author RamiRond\r\n    @notice This simple contract has 3 main purposes:\r\n            1: Spawning multiple Rocketeers at once. The Rocketeer contract only allows you to spawn one Rocketeer at a time.\r\n               You cannot have enough of them, so this makes it more easy to buy as many as you want!\r\n            2: Saving gas fees. While Rcoketeers themselves are free to spawn, using Ethereum is not. By minting multiple\r\n               NFTs at once, you save about 10-20% per Rocketeer on gas fees.\r\n               But be cautious: Your transactions can still fail if MetaMask gas estimation isn't correct anymore at execution time.\r\n               So make sure to supply enough gas, you'll always get the remainder refunded if it was too much.\r\n            3: Handling the \"42nd-mechanic\" nicely. Every 42nd mint creates two (special!) Rocketeers, one for the user and one for the devs.\r\n               This can result in failed transactions and lost gas. To mitigate this effect, you can specify whether you\r\n               want to mint a 42nd or not.\r\n    @dev Could add some checks to not try minting over max supply of 3475, but this is short lived anyway. Let's save that gas instead.\r\n*/\r\ncontract RocketeerHelper {\r\n\r\n    Rocketeer constant rocketeer = Rocketeer(0xb3767b2033CF24334095DC82029dbF0E9528039d);\r\n\r\n    /**\r\n    @notice Try to spawn one Rocketeer. Can be used to either reliably snipe or avoid the 42nd.\r\n    @param spawn_for_devs True if you only want to spawn if it's a 42nd, False if you only want to spawn if it's NOT a 42nd.\r\n    */\r\n    function spawnOne(bool spawn_for_devs) external {\r\n        bool next_is_42nd = rocketeer.totalSupply() % 42 == 41;\r\n        if (next_is_42nd == spawn_for_devs) {\r\n            rocketeer.spawnRocketeer(msg.sender);\r\n        }\r\n    }\r\n\r\n    /**\r\n    @notice Unconditionally spawn an exact amount of Rocketeers. Might wrap over 42 and mint one (or more) Rocketeer(s) for the devs.\r\n    @param amount Amount of Rocketeers to spawn.\r\n    */\r\n    function spawnMany(uint amount) public {\r\n        for (uint i = 0; i < amount; i++) {\r\n            rocketeer.spawnRocketeer(msg.sender);\r\n        }\r\n    }\r\n\r\n    /**\r\n    @notice Try to spawn an exact amount of Rocketeers, but stop at the next 41st (so you don't pay extra for the devs).\r\n    @param max_amount The desired amount of Rocketeers to spawn.\r\n    */\r\n    function spawnManyLimited(uint max_amount) external {\r\n        uint avail = 41 - rocketeer.totalSupply() % 42;\r\n        spawnMany(max_amount > avail ? avail : max_amount);\r\n    }\r\n\r\n    /**\r\n    @notice Spawn as many Rocketeers as possible until the next double Rocketeer.\r\n    @param spawn_for_devs Set true if you want to buy the 42nd (and pay the extra gas), otherwise set false.\r\n    */\r\n    function spawnUntil42(bool spawn_for_devs) external {\r\n        spawnMany((spawn_for_devs ? 42 : 41) - rocketeer.totalSupply() % 42);\r\n    }\r\n\r\n    /**\r\n    @notice Spawn all Rocketeers up until a specific ID (like 1337). Doesn't stop at 42 mechanic, but fails if the Rocketeer would go to the devs.\r\n    @param id The last id to spawn.\r\n    */\r\n    function spawnUntilId(uint id) external {\r\n        require(id % 42 != 0, \"Rocketeer with this ID is reserved for devs\");\r\n        uint cur_id = rocketeer.totalSupply();\r\n        require(id > cur_id, \"The Rocketeer with this ID has been minted already\");\r\n        uint amount = id - cur_id;\r\n        if ((42 - cur_id % 42) < amount)\r\n        {\r\n            amount--;\r\n        }\r\n        amount -= amount / 42;\r\n        spawnMany(amount);\r\n    }\r\n}"
+    }
+  }
+}

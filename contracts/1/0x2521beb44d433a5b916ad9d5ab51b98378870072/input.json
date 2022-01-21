@@ -1,0 +1,47 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "evmVersion": "istanbul",
+    "libraries": {},
+    "metadata": {
+      "bytecodeHash": "ipfs",
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "details": {
+        "constantOptimizer": true,
+        "cse": true,
+        "deduplicate": true,
+        "jumpdestRemover": true,
+        "orderLiterals": true,
+        "peephole": true,
+        "yul": false
+      },
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "evm.bytecode",
+          "evm.deployedBytecode",
+          "devdoc",
+          "userdoc",
+          "metadata",
+          "abi"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "@openzeppelin/contracts/access/Ownable.sol": {
+      "content": "// SPDX-License-Identifier: MIT\n// OpenZeppelin Contracts v4.4.0 (access/Ownable.sol)\n\npragma solidity ^0.8.0;\n\nimport \"../utils/Context.sol\";\n\n/**\n * @dev Contract module which provides a basic access control mechanism, where\n * there is an account (an owner) that can be granted exclusive access to\n * specific functions.\n *\n * By default, the owner account will be the one that deploys the contract. This\n * can later be changed with {transferOwnership}.\n *\n * This module is used through inheritance. It will make available the modifier\n * `onlyOwner`, which can be applied to your functions to restrict their use to\n * the owner.\n */\nabstract contract Ownable is Context {\n    address private _owner;\n\n    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);\n\n    /**\n     * @dev Initializes the contract setting the deployer as the initial owner.\n     */\n    constructor() {\n        _transferOwnership(_msgSender());\n    }\n\n    /**\n     * @dev Returns the address of the current owner.\n     */\n    function owner() public view virtual returns (address) {\n        return _owner;\n    }\n\n    /**\n     * @dev Throws if called by any account other than the owner.\n     */\n    modifier onlyOwner() {\n        require(owner() == _msgSender(), \"Ownable: caller is not the owner\");\n        _;\n    }\n\n    /**\n     * @dev Leaves the contract without owner. It will not be possible to call\n     * `onlyOwner` functions anymore. Can only be called by the current owner.\n     *\n     * NOTE: Renouncing ownership will leave the contract without an owner,\n     * thereby removing any functionality that is only available to the owner.\n     */\n    function renounceOwnership() public virtual onlyOwner {\n        _transferOwnership(address(0));\n    }\n\n    /**\n     * @dev Transfers ownership of the contract to a new account (`newOwner`).\n     * Can only be called by the current owner.\n     */\n    function transferOwnership(address newOwner) public virtual onlyOwner {\n        require(newOwner != address(0), \"Ownable: new owner is the zero address\");\n        _transferOwnership(newOwner);\n    }\n\n    /**\n     * @dev Transfers ownership of the contract to a new account (`newOwner`).\n     * Internal function without access restriction.\n     */\n    function _transferOwnership(address newOwner) internal virtual {\n        address oldOwner = _owner;\n        _owner = newOwner;\n        emit OwnershipTransferred(oldOwner, newOwner);\n    }\n}\n"
+    },
+    "@openzeppelin/contracts/utils/Context.sol": {
+      "content": "// SPDX-License-Identifier: MIT\n// OpenZeppelin Contracts v4.4.0 (utils/Context.sol)\n\npragma solidity ^0.8.0;\n\n/**\n * @dev Provides information about the current execution context, including the\n * sender of the transaction and its data. While these are generally available\n * via msg.sender and msg.data, they should not be accessed in such a direct\n * manner, since when dealing with meta-transactions the account sending and\n * paying for execution may not be the actual sender (as far as an application\n * is concerned).\n *\n * This contract is only required for intermediate, library-like contracts.\n */\nabstract contract Context {\n    function _msgSender() internal view virtual returns (address) {\n        return msg.sender;\n    }\n\n    function _msgData() internal view virtual returns (bytes calldata) {\n        return msg.data;\n    }\n}\n"
+    },
+    "contracts/TerraformsAugmentations.sol": {
+      "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.0;\n\nimport \"@openzeppelin/contracts/access/Ownable.sol\";\n\ncontract TerraformsAugmentations is Ownable {\n    struct Augmentation {\n        string name;\n        AugmentationVersion[] versions;\n    }\n\n    struct AugmentationVersion {\n        uint versionNumber;\n        address contractAddress;\n        string contractABI;\n    }\n\n    uint public numberOfAugmentations;\n    mapping(uint => Augmentation) augmentations;\n\n    /// @notice Adds an augmentation for the Terraforms contract\n    /// @param name The name of the augmentation\n    function addAugmentation(string memory name) public onlyOwner {\n        numberOfAugmentations += 1;\n        Augmentation storage a = augmentations[numberOfAugmentations];\n        a.name = name;\n    }\n\n    /// @notice Adds an augmentation for the Terraforms contract\n    /// @dev If ABI is unchanged from last version, no new ABI will be uploaded\n    /// @param augmentationId The id number of the augmentation\n    /// @param contractAddress The address of the augmentation contract\n    /// @param contractABI The augmentation contract's ABI\n    function addAugmentationVersion(\n        uint augmentationId, \n        address contractAddress, \n        string memory contractABI\n    )\n        public\n        onlyOwner\n    {\n        require(augmentationId > 0, \"Numbering begins at 1\");\n        require(\n            augmentationId <= numberOfAugmentations, \n            \"Augmentation does not exist\"\n        );\n        Augmentation storage a = augmentations[augmentationId];\n        a.versions.push(\n            AugmentationVersion(\n                a.versions.length + 1,\n                contractAddress,\n                contractABI\n            )\n        );\n    }\n\n    /// @notice Lists all augmentations\n    /// @return result The list of augmentations\n    function listAugmentations() \n        public \n        view \n        returns (Augmentation[] memory result) \n    {\n        result = new Augmentation[](numberOfAugmentations);\n        for (uint i; i < numberOfAugmentations; i++){\n            result[i] = augmentations[i + 1];\n        }\n    }\n\n    /// @notice Gets an augmentation version\n    /// @param augmentationId The id number of the augmentation\n    /// @param version The desired version number \n    /// @return result The requested version\n    function getAugmentationVersion(uint augmentationId, uint version) \n        public \n        view\n        returns (AugmentationVersion memory)\n    {\n        require(augmentationId > 0 && version > 0, \"Numbering begins at 1\");\n        require(\n            augmentationId <= numberOfAugmentations, \n            \"Augmentation does not exist\"\n        );\n\n        require(\n            version <= augmentations[augmentationId].versions.length,\n            \"Version does not exist\"\n        );\n\n        return augmentations[augmentationId].versions[version - 1];\n    }\n}"
+    }
+  }
+}

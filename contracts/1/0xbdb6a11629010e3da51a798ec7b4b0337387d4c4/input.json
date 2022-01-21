@@ -1,0 +1,33 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {
+      "MerkleEligibility.sol": {
+        "MerkleLib": "0x458efd41740ffb27d86a9157050c0707b41e9520"
+      }
+    },
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "MerkleEligibility.sol": {
+      "content": "// SPDX-License-Identifier: GPL-3.0-only\r\n\r\npragma solidity 0.8.9;\r\n\r\nlibrary MerkleLib {\r\n\r\n    function verifyProof(bytes32 root, bytes32 leaf, bytes32[] memory proof) public pure returns (bool) {\r\n        bytes32 currentHash = leaf;\r\n\r\n        for (uint i = 0; i < proof.length; i += 1) {\r\n            currentHash = parentHash(currentHash, proof[i]);\r\n        }\r\n\r\n        return currentHash == root;\r\n    }\r\n\r\n    function parentHash(bytes32 a, bytes32 b) public pure returns (bytes32) {\r\n        if (a < b) {\r\n            return keccak256(abi.encode(a, b));\r\n        } else {\r\n            return keccak256(abi.encode(b, a));\r\n        }\r\n    }\r\n\r\n}\r\n\r\n\r\ninterface IEligibility {\r\n\r\n//    function getGate(uint) external view returns (struct Gate)\r\n//    function addGate(uint...) external\r\n\r\n    function isEligible(uint, address, bytes32[] memory) external view returns (bool eligible);\r\n\r\n    function passThruGate(uint, address, bytes32[] memory) external;\r\n}\r\n\r\n\r\ncontract MerkleEligibility is IEligibility {\r\n    using MerkleLib for bytes32;\r\n    \r\n    address public management;\r\n    address public gateMaster;\r\n    struct Gate {\r\n        bytes32 root;\r\n        uint maxWithdrawals;\r\n    }\r\n    mapping (uint => Gate) public gates;\r\n    mapping(uint => mapping(address => uint)) public timesWithdrawn;\r\n    uint public numGates = 0;\r\n\r\n    modifier managementOnly() {\r\n        require (msg.sender == management, 'Only management may call this');\r\n        _;\r\n    }\r\n\r\n    constructor(address _mgmt, address _gateMaster) {\r\n        management = _mgmt;\r\n        gateMaster = _gateMaster;\r\n    }\r\n\r\n    function addGate(bytes32 _merkleRoot, uint _maxWithdrawals) external managementOnly returns (uint index) {\r\n        // increment the number of roots\r\n        numGates += 1;\r\n\r\n        gates[numGates] = Gate(_merkleRoot, _maxWithdrawals);\r\n        return numGates;\r\n    }\r\n\r\n    function getGate(uint index) external view returns (bytes32, uint) {\r\n        return (gates[index].root, gates[index].maxWithdrawals);\r\n    }\r\n\r\n    function isEligible(uint rootIndex, address recipient, bytes32[] memory proof) public override view returns (bool eligible) {\r\n        // We need to pack the 20 bytes address to the 32 bytes value\r\n        bytes32 leaf = keccak256(abi.encode(recipient));\r\n        bool countValid = timesWithdrawn[rootIndex][recipient] < gates[rootIndex].maxWithdrawals;\r\n        return countValid && gates[rootIndex].root.verifyProof(leaf, proof);\r\n    }\r\n\r\n    function passThruGate(uint rootIndex, address recipient, bytes32[] memory proof) external override {\r\n        require(msg.sender == gateMaster, \"Only gatemaster may call this.\");\r\n\r\n        // close re-entrance gate, prevent double withdrawals\r\n        require(isEligible(rootIndex, recipient, proof), \"Address is not eligible\");\r\n\r\n        timesWithdrawn[rootIndex][recipient] += 1;\r\n    }\r\n}"
+    }
+  }
+}

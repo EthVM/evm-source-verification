@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "Owner.sol": {
+      "content": "// SPDX-License-Identifier: GPL-3.0\r\n\r\npragma solidity ^0.8.0;\r\n\r\ncontract Owner {\r\n\r\n    address private owner;\r\n    address private bot;\r\n    \r\n    event OwnerSet(address indexed oldOwner, address indexed newOwner);\r\n    event BotSet(address indexed oldBot, address indexed newBot);\r\n    event BotTip(address from, address miner, uint256 tip);\r\n    \r\n    modifier isOwner() { \r\n        require(msg.sender == owner, \"Caller is not owner\");\r\n        _;\r\n    } \r\n\r\n    modifier isBot() { \r\n        require(msg.sender == bot, \"Caller is not bot\");\r\n        _;\r\n    } \r\n    \r\n    constructor(address _bot) {\r\n        owner = msg.sender;  \r\n        bot = _bot;\r\n        emit OwnerSet(address(0), owner);\r\n    } \r\n\r\n    function changeOwner(address newOwner) public isOwner {\r\n        emit OwnerSet(owner, newOwner);\r\n        owner = newOwner;\r\n    }\r\n \r\n    function getOwner() external view returns (address) {\r\n        return owner;\r\n    } \r\n\r\n    function changeBot(address newBot) public isOwner {\r\n        emit BotSet(bot, newBot);\r\n        bot = newBot;\r\n    }\r\n \r\n    function getBot() external view returns (address) {\r\n        return bot;\r\n    } \r\n\r\n    function tip() public payable isBot {\r\n        block.coinbase.transfer(msg.value);\r\n        emit BotTip(bot, block.coinbase, msg.value);\r\n    }\r\n}"
+    }
+  }
+}

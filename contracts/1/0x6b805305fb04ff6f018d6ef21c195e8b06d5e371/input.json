@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "PingerBundledCall.sol": {
+      "content": "pragma solidity ^0.6.7;\r\n\r\ninterface ExternallyFundedOSM {\r\n    function updateResult() external;\r\n}\r\n\r\ninterface OracleRelayer {\r\n    function updateCollateralPrice(bytes32 collateralType) external;\r\n}\r\n\r\ninterface CoinMedianizer {\r\n    function updateResult(address feeReceiver) external;\r\n}\r\n\r\ninterface RateSetter {\r\n    function updateRate(address feeReceiver) external;\r\n}\r\n\r\ncontract PingerBundledCall {\r\n    ExternallyFundedOSM public osmEthA;\r\n    OracleRelayer public oracleRelayer;\r\n    CoinMedianizer public coinMedianizer;\r\n    RateSetter public rateSetter;\r\n    bytes32 ETH_A = 0x4554482d41000000000000000000000000000000000000000000000000000000;\r\n    \r\n    constructor(address osmEthA_, address oracleRelayer_, address coinMedianizer_, address rateSetter_) public {\r\n        osmEthA = ExternallyFundedOSM(osmEthA_);\r\n        oracleRelayer = OracleRelayer(oracleRelayer_);\r\n        rateSetter = RateSetter(rateSetter_);\r\n        coinMedianizer = CoinMedianizer(coinMedianizer_);\r\n    }\r\n\r\n    function updateOsmAndEthAOracleRelayer() external {\r\n        osmEthA.updateResult();\r\n        oracleRelayer.updateCollateralPrice(ETH_A);\r\n    }\r\n\r\n    function updateOsmAndOracleRelayer(address osm, bytes32 collateralType) external {\r\n        ExternallyFundedOSM(osm).updateResult();\r\n        oracleRelayer.updateCollateralPrice(collateralType);\r\n    }\r\n\r\n    function updateCoinMedianizerAndRateSetter(address feeReceiver) external {\r\n        coinMedianizer.updateResult(feeReceiver);\r\n        rateSetter.updateRate(feeReceiver);\r\n    }\r\n\r\n}"
+    }
+  }
+}

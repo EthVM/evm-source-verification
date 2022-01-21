@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 2000000
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "DotComSeanceMetadata.sol": {
+      "content": "// File: contracts/strings.sol\r\n\r\n/*\r\n * @title String & slice utility library for Solidity contracts.\r\n * @author Nick Johnson <arachnid@notdot.net>\r\n */\r\n\r\npragma solidity ^0.5.0;\r\n\r\nlibrary strings {\r\n    struct slice {\r\n        uint _len;\r\n        uint _ptr;\r\n    }\r\n\r\n    function memcpy(uint dest, uint src, uint len) private pure {\r\n        // Copy word-length chunks while possible\r\n        for (; len >= 32; len -= 32) {\r\n            assembly {\r\n                mstore(dest, mload(src))\r\n            }\r\n            dest += 32;\r\n            src += 32;\r\n        }\r\n\r\n        // Copy remaining bytes\r\n        uint mask = 256 ** (32 - len) - 1;\r\n        assembly {\r\n            let srcpart := and(mload(src), not(mask))\r\n            let destpart := and(mload(dest), mask)\r\n            mstore(dest, or(destpart, srcpart))\r\n        }\r\n    }\r\n\r\n    /*\r\n     * @dev Returns a slice containing the entire string.\r\n     * @param self The string to make a slice from.\r\n     * @return A newly allocated slice containing the entire string.\r\n     */\r\n    function toSlice(string memory self) internal pure returns (slice memory) {\r\n        uint ptr;\r\n        assembly {\r\n            ptr := add(self, 0x20)\r\n        }\r\n        return slice(bytes(self).length, ptr);\r\n    }\r\n\r\n    /*\r\n     * @dev Returns a newly allocated string containing the concatenation of\r\n     *      `self` and `other`.\r\n     * @param self The first slice to concatenate.\r\n     * @param other The second slice to concatenate.\r\n     * @return The concatenation of the two strings.\r\n     */\r\n    function concat(slice memory self, slice memory other) internal pure returns (string memory) {\r\n        string memory ret = new string(self._len + other._len);\r\n        uint retptr;\r\n        assembly {\r\n            retptr := add(ret, 32)\r\n        }\r\n        memcpy(retptr, self._ptr, self._len);\r\n        memcpy(retptr + self._len, other._ptr, other._len);\r\n        return ret;\r\n    }\r\n}\r\n\r\n// File: contracts/Metadata.sol\r\n\r\npragma solidity ^0.5.0;\r\n/**\r\n* Metadata contract is upgradeable and returns metadata about Token\r\n*/\r\n\r\n\r\ncontract Metadata {\r\n    using strings for *;\r\n\r\n    function tokenURI(uint _tokenId) public pure returns (string memory _infoUrl) {\r\n        string memory base = \"https://folia.app/v1/metadata/\";\r\n        string memory id = uint2str(_tokenId);\r\n        return base.toSlice().concat(id.toSlice());\r\n    }\r\n    function uint2str(uint i) internal pure returns (string memory) {\r\n        if (i == 0) return \"0\";\r\n        uint j = i;\r\n        uint length;\r\n        while (j != 0) {\r\n            length++;\r\n            j /= 10;\r\n        }\r\n        bytes memory bstr = new bytes(length);\r\n        uint k = length - 1;\r\n        while (i != 0) {\r\n            uint _uint = 48 + i % 10;\r\n            bstr[k--] = toBytes(_uint)[31];\r\n            i /= 10;\r\n        }\r\n        return string(bstr);\r\n    }\r\n    function toBytes(uint256 x) public pure returns (bytes memory b) {\r\n        b = new bytes(32);\r\n        assembly { mstore(add(b, 32), x) }\r\n    }\r\n}\r\n\r\n// File: contracts/DotComSeanceMetadata.sol\r\n\r\npragma solidity ^0.5.0;\r\n/**\r\n* Metadata contract is upgradeable and returns metadata about Token\r\n*/\r\n\r\n\r\ncontract DotComSeanceMetadata is Metadata {\r\n    function tokenURI(uint _tokenId) public pure returns (string memory _infoUrl) {\r\n        string memory base = \"https://dotcom-seance.folia.app/v1/metadata/\";\r\n        string memory id = uint2str(_tokenId);\r\n        return base.toSlice().concat(id.toSlice());\r\n    }\r\n}"
+    }
+  }
+}
