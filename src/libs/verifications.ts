@@ -4,6 +4,20 @@ import { toBN } from "web3-utils";
 import { getBytecodeWithoutMetadata } from "./utils";
 
 /**
+ * check the bytecodes against each other
+ *
+ * @param  {string} liveByteCode
+ * @param  {string} compiedByteCode
+ * @return {boolean} true if bytecode matches
+ */
+export function directVerification(
+  liveByteCode: string,
+  compiledByteCode: string
+): boolean {
+  return liveByteCode === compiledByteCode;
+}
+
+/**
  * Strips metadata and check the bytecodes against each other
  *
  * @param  {string} liveByteCode

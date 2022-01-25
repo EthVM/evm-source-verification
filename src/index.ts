@@ -5,6 +5,7 @@ import Web3 from "web3";
 import {
   opCodeCodeVerification,
   runtimeCodeVerification,
+  directVerification,
 } from "./libs/verifications";
 
 yargs(hideBin(process.argv))
@@ -42,6 +43,10 @@ yargs(hideBin(process.argv))
         if (Object.keys(jsonData.contracts[contract]).includes(argv.name)) {
           const mainContract = jsonData.contracts[contract][argv.name];
           const compiledCode = mainContract.evm.deployedBytecode.object;
+          const isDirectVerified = directVerification(
+            liveCode.replace("0x", ""),
+            compiledCode
+          );
           const isRuntimeVerified = runtimeCodeVerification(
             liveCode.replace("0x", ""),
             compiledCode
@@ -50,7 +55,8 @@ yargs(hideBin(process.argv))
             liveCode.replace("0x", ""),
             compiledCode
           );
-          console.log("verified direct:", isRuntimeVerified);
+          console.log("verified direct:", isDirectVerified);
+          console.log("verified runtime:", isRuntimeVerified);
           console.log("verified opcodes:", isOpCodeVerified);
           if (!isRuntimeVerified && !isOpCodeVerified) process.exit(1);
           return;
