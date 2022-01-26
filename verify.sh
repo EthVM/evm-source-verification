@@ -1,13 +1,20 @@
 #!/bin/bash
+
+# https://gist.github.com/mohanpedala/1e2ff5661761d3abd0385e8223e16425
+set -euo pipefail
+
 CONFIG_FILE=out/configs.json
-mkdir ./out
+
+mkdir -p ./out
+mkdir -p ./compilers
+
 i=0
 for dir in contracts/1/*/
 do
     echo "counter: $i"
-    ((i++))
+    ((i++)) || true
     if [[ "$i" -lt 0 ]]; then
-       continue
+        continue
     fi
     dir=$dir*
     # dir=contracts/1/0x0131b36ad41b041db46ded4016bca296deb2136a/*    
@@ -35,9 +42,9 @@ do
     fi
     contractname=`jq -r .name $CONFIG_FILE`
     address=`jq -r .address $CONFIG_FILE`
-    chainid=`jq -r .chainId $CONFIG_FILE`
+    chainId=`jq -r .chainId $CONFIG_FILE`
     echo $contractname
-    $CMD
+    # $CMD
     #npm run build
     pwd=`pwd`
     abc="node ./dist/src/index.js verify --file $pwd/out/output.json --name $contractname --chainid $chainId --address $address"

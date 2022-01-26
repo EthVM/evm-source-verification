@@ -33,6 +33,7 @@ yargs(hideBin(process.argv))
       });
     },
     async (argv: any) => {
+      // TOOD: load web3 endpoint in environment or ar
       const web3 = new Web3("https://nodes.mewapi.io/rpc/eth");
       const liveCode = await web3.eth.getCode(argv.address);
       const outputJson = fs.readFileSync(argv.file);
