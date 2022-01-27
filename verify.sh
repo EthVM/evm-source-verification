@@ -3,19 +3,34 @@
 # https://gist.github.com/mohanpedala/1e2ff5661761d3abd0385e8223e16425
 # -u: no unknown vars
 # -o pipefail: don't hide pipe errs
-set -eo pipefail
+set -ueo pipefail
 
 CONFIG_FILE=out/configs.json
 
 mkdir -p ./out
 mkdir -p ./compilers
 
-i=0
+# https://stackoverflow.com/questions/192249/how-do-i-parse-command-line-arguments-in-bash
+# skip contracts that have already been verified (already have a metadata.json file)
+SKIP=false
+for i in "$@"; do
+    case $i in
+        -s=*|--skip=*)
+            SKIP="${i#*=}";
+            shift;
+            ;;
+        -*|--*)
+            echo "unknown option $i";
+            exit 1;
+            ;;
+    esac
+done
 
+i=0
 # dir=contracts/1/0x0131b36ad41b041db46ded4016bca296deb2136a/*    
 for dir in contracts/1/*
 do
-    echo "counter: $i"
+    echo "==== counter: $i ===="
     ((i++)) || true
     if [[ "$i" -lt 0 ]]; then
         continue
@@ -23,9 +38,10 @@ do
 
     # is already verified?
     if [[ -f "$dir/metadata.json" ]]; then
-        # echo "skipping: $dir";
-        # continue;
-        echo "$dir already verified. re-verifying";
+        if [[ "$SKIP" == "true" ]]
+        then echo "skipping $dir"; continue;
+        else echo "re-verifying $dir";
+        fi
     fi
 
     echo "verifying ${dir}"
