@@ -3,12 +3,17 @@
 # https://gist.github.com/mohanpedala/1e2ff5661761d3abd0385e8223e16425
 # -u: no unknown vars
 # -o pipefail: don't hide pipe errs
-set -ueo pipefail
+set -uo pipefail
 
 CONFIG_FILE=out/configs.json
 
 mkdir -p ./out
 mkdir -p ./compilers
+
+# build (it's fast with tsconfig.json#compilerOptions#incremental)
+npm run build
+
+if [[ $? -ne 0 ]]; then exit 1; fi
 
 # https://stackoverflow.com/questions/192249/how-do-i-parse-command-line-arguments-in-bash
 # skip contracts that have already been verified (already have a metadata.json file)
