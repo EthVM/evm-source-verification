@@ -9,9 +9,9 @@ import {
   directVerification,
   getOpCodes,
 } from "./libs/verifications";
-import { getByteCodeMetadata, getBytecodeWithoutMetadata } from "./libs/utils";
+import { arrObjPush, arrPush, getBytecodeMetadatas, getBytecodeWithoutMetadata, hasOwn, readJsonFile, writeJsonFile } from "./libs/utils";
 
-const { keccak256 } = Web3.utils;
+const { keccak256, toBN } = Web3.utils;
 
 type Address = string;
 type Keccak256 = string;
@@ -29,13 +29,26 @@ interface Metadata {
   opcodeHash: string;
   runtimeHash: string;
   metalessHash: string;
-  encodedMetadata: CborDataType;
+  encodedMetadata: CborDataType[];
+  deployedBytecode: {
+    object: string;
+  };
+  bytecode: {
+    object: string;
+  };
 }
 
 interface ContractObject {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   abi: any[],
   evm: {
+    bytecode: {
+       
+      /**
+       * eg. 60a060405234801561001057600080fd5b5......
+       */
+      object: string;
+    };
     deployedBytecode: {
       /**
        * eg. PUSH1 0x80 PUSH1 0x40 MSTORE PUSH1 0x4 CALLDATASIZE LT...
@@ -95,18 +108,19 @@ yargs(hideBin(process.argv))
       });
       _yargs.positional("hashlists.dir", {
         type: "string",
-        describe: "directory housing the hash lists",
+        describe: "directory with the hash lists",
         default: path.join(process.cwd(), 'generated', 'hashes'),
       });
       _yargs.positional("verifiedlists.dir", {
         type: "string",
-        describe: "directory housing the verified lists",
+        describe: "directory with the verified lists",
         default: path.join(process.cwd(), 'generated', 'verified'),
       });
     },
     async (argv) => {
       // process cli args
-      const { file, name, chainid, address, out, hashlists, verifiedlists } = argv;
+      const { file, name, address, out, hashlists, verifiedlists, } = argv;
+      const chainid = toBN(argv.chainid).toString(10);
 
       const hashlistsDirname = path.normalize(
         path.isAbsolute(hashlists.dir)
@@ -177,12 +191,16 @@ yargs(hideBin(process.argv))
       }
 
       // filenames
+
       const metadataFilename = path.join(out, 'metadata.json');
-      const hashlistsChainDirname = path.join(hashlistsDirname, chainid);
+
       const verifiedlistsChainFilename = path.join(verifiedlistsDirname, `${chainid}.json`);
+
+      const hashlistsChainDirname = path.join(hashlistsDirname, chainid);
       const opcodeHashesFilename = path.join(hashlistsChainDirname, 'opcodes.json');
       const runtimeHashesFilename = path.join(hashlistsChainDirname, 'runtime.json');
       const metalessHashesFilename = path.join(hashlistsChainDirname, 'metaless.json');
+
 
       // metadata & hashes
       const { abi } = mainContract;
@@ -193,8 +211,28 @@ yargs(hideBin(process.argv))
           .join(','));
       const metalessHash = keccak256(liveByteCode);
       const runtimeHash = keccak256(liveCode);
-      const encodedMetadata = getByteCodeMetadata(Buffer.from(liveCode.replace(/^0x/, ''), 'hex'));
-      const metadata: Metadata = { opcodeHash, metalessHash, runtimeHash, encodedMetadata, abi };
+
+      // keep only unique encoded metadata
+      // TODO: it seems every call to `getBytecodeMetadatas` produces duplicate
+      // metadata elements, can this be resoled in `getBytecodeMetadatas`?
+      const encodedMetadata: CborDataType[] = getBytecodeMetadatas(liveCode.replace(/^0x/, ''));
+      const uniqueEncodedMetadata: CborDataType[] = Array
+        .from(new Set(encodedMetadata.map(JSON.stringify.bind(JSON))))
+        .map(JSON.parse.bind(JSON));
+
+      const metadata: Metadata = {
+        opcodeHash,
+        metalessHash,
+        runtimeHash,
+        encodedMetadata: uniqueEncodedMetadata,
+        abi,
+        deployedBytecode: {
+          object: mainContract.evm.deployedBytecode.object,
+        },
+        bytecode: {
+          object: mainContract.evm.bytecode.object,
+        },
+      };
 
       // create directories
       await Promise.all([
@@ -243,96 +281,7 @@ yargs(hideBin(process.argv))
       // move the output to the address
     }
   )
-  .demandOption(["file", "name", "address"])
+  .demandOption(["file", "name", "address", "out"])
   .demandCommand(1)
   .parse();
 
-
-/**
- * Does the object have the property on itself? (not its prototype chain)
- *
- * @param object 
- * @param property 
- * @returns 
- */
-function hasOwn(
-  object: Record<string, unknown>,
-  property: PropertyKey,
-): boolean {
-  return Object.prototype.hasOwnProperty.call(object, property);
-}
-
-/**
- * Read a JSON file from the filesystem
- *
- * @param filename  filename to read from the filesystem
- * @returns         the json object or undefined if the file was not found
- */
-function readJsonFile<T>(filename: string): Promise<undefined | T> {
-  return fs
-    .promises
-    .readFile(filename, 'utf-8')
-    .then(raw => JSON.parse(raw) as T)
-    .catch((err: NodeJS.ErrnoException) => {
-      if (err && err.code !== 'ENOENT') throw err;
-      return undefined;
-    });
-}
-
-/**
- * Save a JSON object to a filesystem
- * 
- * @param filename  filename to save as
- * @param contents  object to save
- * @param options
- * @returns
- */
-function writeJsonFile(
-  filename: string,
-  // eslint-disable-next-line @typescript-eslint/ban-types
-  contents: object,
-  options?: { pretty?: boolean },
-): Promise<void> {
-  const pretty = options.pretty ?? false;
-  return fs.promises.writeFile(
-    filename,
-    pretty
-      ? JSON.stringify(contents, null, 2)
-      : JSON.stringify(contents),
-    'utf-8',
-  );
-}
-
-/**
- * Append a value to an record whose values are arrays
- * 
- * Return true if the record was modified, otherwise return false
- * 
- * @param record    object with array values
- * @param key       key on the object
- * @param value     value to push
- */
-function arrObjPush<T>(
-  record: Record<string, T[]>,
-  key: string,
-  value: T,
-): boolean {
-  if (!hasOwn(record, key)) record[key] = [];
-  return arrPush(record[key], value);
-}
-
-/**
- * Push an item on the array if it isn't already
- *
- * @param arr     array
- * @param value   value to push
- * @returns       whether the item was pushed
- */
-function arrPush<T>(
-  arr: T[],
-  value: T,
-) {
-  if (arr.includes(value)) return false;
-  arr.push(value);
-  return true;
-}
