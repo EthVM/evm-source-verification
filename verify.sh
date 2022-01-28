@@ -135,7 +135,7 @@ do
     [[ ! -f "$used" ]] && echo "[]" >> $used
 
     # append compiler to the list
-    jq ". |= . + [\"$compiler\"] | unique" $used > $usedtmp
+    jq ". |= . + [\"$compiler\"] | unique | sort" $used > $usedtmp
     [[ ! $? -eq "0" ]] && exit 1
     mv $usedtmp $used
 
@@ -167,6 +167,7 @@ do
     if [[ $? -ne 0 ]]; then
         # nodejs errored
         echo "[$(date '+%Y-%m-%d %H:%M:%S')] $(hostname) $dir $i $contractname" >> ./state/logs/failed.log
+        continue
     fi
 
     # move previous files & new nodejs output back into the contract's directory
