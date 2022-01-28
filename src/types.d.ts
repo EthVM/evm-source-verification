@@ -15,4 +15,5 @@ type CborDataType = {
 type OpCodeType = {
   code: string;
   data?: Buffer;
+  byte: number;
 };

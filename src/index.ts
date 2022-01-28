@@ -1,5 +1,5 @@
 import path from "path";
-import yargs  from "yargs";
+import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import fs from "fs";
 import Web3 from "web3";
@@ -9,7 +9,15 @@ import {
   directVerification,
   getOpCodes,
 } from "./libs/verifications";
-import { arrObjPush, arrPush, getBytecodeMetadatas, getBytecodeWithoutMetadata, hasOwn, readJsonFile, writeJsonFile } from "./libs/utils";
+import {
+  arrObjPush,
+  arrPush,
+  getBytecodeMetadatas,
+  getBytecodeWithoutMetadata,
+  hasOwn,
+  readJsonFile,
+  writeJsonFile,
+} from "./libs/utils";
 
 const { keccak256, toBN } = Web3.utils;
 
@@ -19,13 +27,15 @@ type Keccak256 = string;
 /**
  * Map of hashes to addresses
  */
-interface HashList { [keccak256: Keccak256]: Address[] };
+interface HashList {
+  [keccak256: Keccak256]: Address[];
+}
 
 /**
  * metadata.json contents
  */
 interface Metadata {
-  abi: any[]
+  abi: any[];
   opcodeHash: string;
   runtimeHash: string;
   metalessHash: string;
@@ -40,10 +50,9 @@ interface Metadata {
 
 interface ContractObject {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  abi: any[],
+  abi: any[];
   evm: {
     bytecode: {
-       
       /**
        * eg. 60a060405234801561001057600080fd5b5......
        */
@@ -58,12 +67,16 @@ interface ContractObject {
        * eg. 6080604052600436106100215760003560e01c801561002657........
        */
       object: string;
-    }
-  }
+    };
+  };
 }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-interface ContractFile { [objectname: string]: ContractObject };
-interface CompiledOutput { contracts: { [filename: string]: ContractFile }; }
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+interface ContractFile {
+  [objectname: string]: ContractObject;
+}
+interface CompiledOutput {
+  contracts: { [filename: string]: ContractFile };
+}
 
 interface CliArgs {
   file: string;
@@ -109,17 +122,17 @@ yargs(hideBin(process.argv))
       _yargs.positional("hashlists.dir", {
         type: "string",
         describe: "directory with the hash lists",
-        default: path.join(process.cwd(), 'generated', 'hashes'),
+        default: path.join(process.cwd(), "generated", "hashes"),
       });
       _yargs.positional("verifiedlists.dir", {
         type: "string",
         describe: "directory with the verified lists",
-        default: path.join(process.cwd(), 'generated', 'verified'),
+        default: path.join(process.cwd(), "generated", "verified"),
       });
     },
     async (argv) => {
       // process cli args
-      const { file, name, address, out, hashlists, verifiedlists, } = argv;
+      const { file, name, address, out, hashlists, verifiedlists } = argv;
       const chainid = toBN(argv.chainid).toString(10);
 
       const hashlistsDirname = path.normalize(
@@ -137,24 +150,26 @@ yargs(hideBin(process.argv))
       // TOOD: load web3 endpoint in environment or ar
       const web3 = new Web3("https://nodes.mewapi.io/rpc/eth");
       const liveCode = await web3.eth.getCode(address);
-      const compiledOutput: CompiledOutput =
-        JSON.parse(fs.readFileSync(file, 'utf-8'));
+      const compiledOutput: CompiledOutput = JSON.parse(
+        fs.readFileSync(file, "utf-8")
+      );
 
       const contractName = name;
 
       // search the solidity compiled json output for the file containing the
       // main contract
-      const mainFile = Object
-        .values(compiledOutput.contracts)
-        .find(contractFile => hasOwn(contractFile, contractName))
+      const mainFile = Object.values(compiledOutput.contracts).find(
+        (contractFile) => hasOwn(contractFile, contractName)
+      );
 
       if (!mainFile) {
         // contract not found in the output
-        console.warn(`contract not found`
-          + `  chainid=${chainid}`
-          + `  address=${address}`
-          + `  contractName=${contractName}`
-        )
+        console.warn(
+          `contract not found` +
+            `  chainid=${chainid}` +
+            `  address=${address}` +
+            `  contractName=${contractName}`
+        );
         process.exit(1);
       }
 
@@ -179,46 +194,64 @@ yargs(hideBin(process.argv))
       console.log("verified opcodes:", isOpCodeVerified);
 
       if (!isRuntimeVerified && !isOpCodeVerified) {
-        console.warn(`contract ${name} is not verified`
-          + `  chainid=${argv.chainid}`
-          + `  address=${argv.address}`
-          + `  contractName=${contractName}`
-          + `  isDirectVerified=${isDirectVerified}`
-          + `  isRuntimeVerified=${isRuntimeVerified}`
-          + `  isOpCodeVerified=${isOpCodeVerified}`
-        )
+        console.warn(
+          `contract ${name} is not verified` +
+            `  chainid=${argv.chainid}` +
+            `  address=${argv.address}` +
+            `  contractName=${contractName}` +
+            `  isDirectVerified=${isDirectVerified}` +
+            `  isRuntimeVerified=${isRuntimeVerified}` +
+            `  isOpCodeVerified=${isOpCodeVerified}`
+        );
         process.exit(1);
       }
 
       // filenames
 
-      const metadataFilename = path.join(out, 'metadata.json');
+      const metadataFilename = path.join(out, "metadata.json");
 
-      const verifiedlistsChainFilename = path.join(verifiedlistsDirname, `${chainid}.json`);
+      const verifiedlistsChainFilename = path.join(
+        verifiedlistsDirname,
+        `${chainid}.json`
+      );
 
       const hashlistsChainDirname = path.join(hashlistsDirname, chainid);
-      const opcodeHashesFilename = path.join(hashlistsChainDirname, 'opcodes.json');
-      const runtimeHashesFilename = path.join(hashlistsChainDirname, 'runtime.json');
-      const metalessHashesFilename = path.join(hashlistsChainDirname, 'metaless.json');
-
+      const opcodeHashesFilename = path.join(
+        hashlistsChainDirname,
+        "opcodes.json"
+      );
+      const runtimeHashesFilename = path.join(
+        hashlistsChainDirname,
+        "runtime.json"
+      );
+      const metalessHashesFilename = path.join(
+        hashlistsChainDirname,
+        "metaless.json"
+      );
 
       // metadata & hashes
       const { abi } = mainContract;
-      const liveByteCode = getBytecodeWithoutMetadata(liveCode.replace(/^0x/, ''));
-      const liveOpCodes = getOpCodes(Buffer.from(liveByteCode, 'hex'));
-      const opcodeHash = keccak256(liveOpCodes
-          .map((opcode) => opcode.code)
-          .join(','));
-      const metalessHash = keccak256(liveByteCode);
+      const liveByteCode = getBytecodeWithoutMetadata(
+        liveCode.replace(/^0x/, "")
+      );
+      const liveOpCodes = getOpCodes(Buffer.from(liveByteCode, "hex"));
+      const opcodeHash = keccak256(
+        `0x${Buffer.from(liveOpCodes.map((opcode) => opcode.byte)).toString(
+          "hex"
+        )}`
+      );
+      const metalessHash = keccak256(`0x${liveByteCode}`);
       const runtimeHash = keccak256(liveCode);
 
       // keep only unique encoded metadata
       // TODO: it seems every call to `getBytecodeMetadatas` produces duplicate
       // metadata elements, can this be resoled in `getBytecodeMetadatas`?
-      const encodedMetadata: CborDataType[] = getBytecodeMetadatas(liveCode.replace(/^0x/, ''));
-      const uniqueEncodedMetadata: CborDataType[] = Array
-        .from(new Set(encodedMetadata.map(JSON.stringify.bind(JSON))))
-        .map(JSON.parse.bind(JSON));
+      const encodedMetadata: CborDataType[] = getBytecodeMetadatas(
+        liveCode.replace(/^0x/, "")
+      );
+      const uniqueEncodedMetadata: CborDataType[] = Array.from(
+        new Set(encodedMetadata.map(JSON.stringify.bind(JSON)))
+      ).map(JSON.parse.bind(JSON));
 
       const metadata: Metadata = {
         opcodeHash,
@@ -251,30 +284,42 @@ yargs(hideBin(process.argv))
         // modify hashlists
         // hashlists: modify opcodelist.json
         (async () => {
-          const opcodeHashes = (await readJsonFile<HashList>(opcodeHashesFilename)) ?? {};
+          const opcodeHashes =
+            (await readJsonFile<HashList>(opcodeHashesFilename)) ?? {};
           if (!arrObjPush(opcodeHashes, opcodeHash, address)) return;
-          await writeJsonFile(opcodeHashesFilename, opcodeHashes, { pretty: true });
+          await writeJsonFile(opcodeHashesFilename, opcodeHashes, {
+            pretty: true,
+          });
         })(),
 
         // hashlists: modify runtimehashlist.json
         (async () => {
-          const runtimeHashes = (await readJsonFile<HashList>(runtimeHashesFilename)) ?? {};
+          const runtimeHashes =
+            (await readJsonFile<HashList>(runtimeHashesFilename)) ?? {};
           if (!arrObjPush(runtimeHashes, runtimeHash, address)) return;
-          await writeJsonFile(runtimeHashesFilename, runtimeHashes, { pretty: true });
+          await writeJsonFile(runtimeHashesFilename, runtimeHashes, {
+            pretty: true,
+          });
         })(),
 
         // hashlists: modify metalesshashlist.json
         (async () => {
-          const metalessHashes = (await readJsonFile<HashList>(metalessHashesFilename)) ?? {};
+          const metalessHashes =
+            (await readJsonFile<HashList>(metalessHashesFilename)) ?? {};
           if (!arrObjPush(metalessHashes, metalessHash, address)) return;
-          await writeJsonFile(metalessHashesFilename, metalessHashes, { pretty: true });
+          await writeJsonFile(metalessHashesFilename, metalessHashes, {
+            pretty: true,
+          });
         })(),
 
         // verifiedlists
         (async () => {
-          const verifiedHashes = (await readJsonFile<Address[]>(verifiedlistsChainFilename)) ?? [];
+          const verifiedHashes =
+            (await readJsonFile<Address[]>(verifiedlistsChainFilename)) ?? [];
           if (!arrPush(verifiedHashes, address)) return;
-          await writeJsonFile(verifiedlistsChainFilename, verifiedHashes, { pretty: true });
+          await writeJsonFile(verifiedlistsChainFilename, verifiedHashes, {
+            pretty: true,
+          });
         })(),
       ]);
 
@@ -284,4 +329,3 @@ yargs(hideBin(process.argv))
   .demandOption(["file", "name", "address", "out"])
   .demandCommand(1)
   .parse();
-

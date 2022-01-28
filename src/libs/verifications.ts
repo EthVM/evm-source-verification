@@ -54,7 +54,7 @@ export function getOpCodes(bytecode: Buffer): OpCodeType[] {
       pushData = bytecode.slice(pc + 1, pc + jumpNum + 1);
       i += jumpNum;
     }
-    opcodearr.push({ code: curOpCode, data: pushData });
+    opcodearr.push({ code: curOpCode, data: pushData, byte: bytecode[pc] });
     pushData = "";
   }
   return opcodearr;
