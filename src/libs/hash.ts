@@ -1,4 +1,5 @@
 import Web3 from 'web3';
+import { Hexable, Keccak256, MetadatalessBytecode, RuntimeBytecode } from '../types';
 import { getBytecodeWithoutMetadata } from './utils';
 import { getOpCodes } from './verifications';
 import * as hex from './hex';

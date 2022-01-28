@@ -1,4 +1,6 @@
-type CborDecodedType = {
+import yargs, { string } from 'yargs';
+
+export type CborDecodedType = {
   ipfs?: Buffer;
   bzzr0?: Buffer;
   bzzr1?: Buffer;
@@ -12,7 +14,7 @@ type CborDataType = {
   solc?: string;
 };
 
-type OpCodeType = {
+export type OpCodeType = {
   code: string;
   data?: Buffer;
   byte: number;
@@ -26,33 +28,33 @@ type OpCodeType = {
  * Automatically strips invalid non-hex characters and trims hex strings to
  * valid length
  */
-type HexBuffer = Buffer;
+export type HexBuffer = Buffer;
 
-type HexString = string;
+export type HexString = string;
 
-type Hexable = HexBuffer | HexString;
+export type Hexable = HexBuffer | HexString;
 
 /**
  * Hex string with length of 42, 40 without 0x
  */
-type Address = string;
+export type Address = string;
 
 /**
  * Sha256 hash
  *
  * Algorithm implementation comes from Web3 utils
  */
-type Keccak256 = string;
+export type Keccak256 = string;
 
 /**
  * Raw runtime bytecode of a contract on the blockchain
  */
-type RuntimeBytecode = string;
+export type RuntimeBytecode = string;
 
 /**
  * Bytecode with metadata stripped out
  */
-type MetadatalessBytecode = string;
+export type MetadatalessBytecode = string;
 
 /**
  * Map of hashes to addresses
@@ -64,7 +66,7 @@ interface HashList {
 /**
  * metadata.json contents
  */
-interface Metadata {
+export interface VerifiedMetadata {
   abi: any[];
   opcodeHash: string;
   runtimeHash: string;
@@ -78,7 +80,7 @@ interface Metadata {
   };
 }
 
-interface ContractObject {
+export interface ContractSourceObject {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   abi: any[];
   evm: {
@@ -100,10 +102,99 @@ interface ContractObject {
     };
   };
 }
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-interface ContractFile {
-  [objectname: string]: ContractObject;
+export interface ContractSourceFile {
+  [objectname: string]: ContractSourceObject;
 }
-interface CompiledOutput {
-  contracts: { [filename: string]: ContractFile };
+
+export interface CompiledOutput {
+  contracts: { [filename: string]: ContractSourceFile };
+}
+
+export interface ContractConfig {
+  name: string;
+  address: Address;
+  chainId: number | string;
+  compiler: string;
+}
+
+export interface ContractInput {
+  // TODO
+}
+
+export interface Command {
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  (argv: yargs.Argv<{}>): void;
+}
+
+
+// https://github.com/ChainSafe/web3.js/blob/1.x/packages/web3-utils/types/index.d.ts#L218
+export interface AbiItem {
+  anonymous?: boolean;
+  constant?: boolean;
+  inputs?: AbiInput[];
+  name?: string;
+  outputs?: AbiOutput[];
+  payable?: boolean;
+  stateMutability?: StateMutabilityType;
+  type: AbiType;
+  gas?: number;
+}
+
+export interface AbiInput {
+  name: string;
+  type: string;
+  indexed?: boolean;
+	components?: AbiInput[];
+  internalType?: string;
+}
+
+export interface AbiOutput {
+  name: string;
+  type: string;
+	components?: AbiOutput[];
+  internalType?: string;
+}
+
+export type ChainId = number;
+
+export interface HasChainId { chainId: ChainId; }
+export interface HasAddress { address: Address; }
+/** Minimal info required to locate a contract */
+export interface ContractIdentity extends HasChainId, HasAddress {}
+
+/**
+ * Define common filesystem locations & utilities for the project
+ */
+
+/**
+ * Contract info extractable from a filename
+ */
+export interface ContractFileMatch {
+  /**
+   * Everything in the path after the address
+   * contracts/:chainid/:address/:subpath
+   */
+  subpath: string;
+  original: string;
+  chainId: number;
+  address: string;
+  dir: string;
+}
+
+/**
+ * Contact compiler
+ */
+export interface ICompiler {
+  /**
+   * Compile a contract
+   *
+   * @param compilername        compiler name to use
+   * @param input               input for the compiler
+   */
+  async compile(
+    compilername: string,
+    input: ContractInput,
+  ): Promise<CompiledOutput>;
 }

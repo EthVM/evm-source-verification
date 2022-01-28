@@ -8,18 +8,26 @@
     "node": "16.x"
   },
   "dependencies": {
+    "@actions/core": "^1.6.0",
+    "@actions/github": "^5.0.0",
     "@ethereumjs/common": "^2.6.0",
     "@ethereumjs/vm": "^5.6.0",
+    "@nkp/delay": "^1.0.2",
+    "@nkp/percentage": "0.0.1",
+    "@nkp/result": "^1.0.1",
+    "async-mutex": "^0.3.2",
     "cbor": "^8.1.0",
     "dotenv": "^14.3.2",
     "multihashes": "^4.0.3",
+    "tmp": "^0.2.1",
     "web3": "^1.7.0",
     "web3-utils": "^1.7.0",
     "yargs": "^17.3.1"
   },
   "devDependencies": {
+    "@octokit/openapi-types": "^11.2.0",
     "@types/jest": "^27.0.2",
-    "@types/node": "^14.14.25",
+    "@types/node": "^14.18.10",
     "@types/tmp": "^0.2.3",
     "@typescript-eslint/eslint-plugin": "^4.33.0",
     "@typescript-eslint/parser": "^4.33.0",
@@ -31,7 +39,7 @@
     "eslint-plugin-jest": "^25.0.5",
     "eslint-plugin-module-resolver": "^1.4.0",
     "jest": "^27.3.1",
-    "tmp": "^0.2.1",
+    "rimraf": "^3.0.2",
     "ts-jest": "^27.0.7",
     "ts-node": "^9.1.1",
     "tsconfig-paths": "^3.9.0",
@@ -39,9 +47,12 @@
     "typescript-eslint": "0.0.1-alpha.0"
   },
   "scripts": {
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "build": "tsc -p tsconfig.build.json",
+    "x:verify": "node dist/bin verify",
+    "x:validate-git-diffs": "node dist/bin validate-git-diffs",
+    "test": "jest -c config/jest.config.ts",
+    "test:watch": "jest -c config/jest.config.ts --watch",
+    "build": "tsc -p config/tsconfig.build.json",
+    "build:watch": "rimraf dist && tsc -p config/tsconfig.build.json --watch --preserveWatchOutput",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx --fix"
   },
   "repository": {

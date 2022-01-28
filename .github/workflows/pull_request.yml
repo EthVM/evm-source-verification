@@ -1,0 +1,84 @@
+#
+# Execute tests and Validate new contracts on pull request
+#
+# Checks whether added contracts are valid
+#
+# TODO: do not execute scripts from the pulled-in branch...
+#
+
+name: validate
+
+on:
+  pull_request:
+    types: 
+      - opened
+      - synchronize
+      - reopened
+    branches:
+      - test/gha
+
+jobs:
+  pr:
+    runs-on: ubuntu-18.04
+    steps:
+      # checkout code on the branch
+      - uses: actions/checkout@v2
+      # https://github.com/actions/setup-node
+
+      - uses: actions/setup-node@v2
+        with:
+          # cache npm dependencies
+          # https://github.com/actions/setup-node#caching-packages-dependencies
+          cache: 'npm'
+          node-version: 16.13.2
+          registry-url: "https://registry.npmjs.org/"
+
+      # build & test
+      - run: npm i -g npm@6.14.16
+      - run: npm ci
+      - run: cp .env .env.example
+      - run: |
+          # set GITHUB_TOKEN in .env
+          sed -i'' 's/^GITHUB_TOKEN=/GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}/' .env
+      - run: npm run test
+      - run: npm run build
+
+      # get added files
+      - name: get git changes
+        uses: lots0logs/gh-action-get-changed-files@2.1.4
+        with:
+
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      # print changes
+      - name: 'view changes'
+        run: |
+            echo "=== files: ==="
+            cat ~/files.json
+
+            echo "=== added: ==="
+            cat ~/files_added.json
+
+            echo "=== modified: ==="
+            cat ~/files_modified.json
+
+            echo "=== removed: ==="
+            cat ~/files_removed.json
+
+      # verify contracts
+      - name: validate contracts
+        run: jq -r '.[]' ~/files_added.json | ./scripts/validate.sh - --verbose
+
+      # - name: change something
+      #   run: base64 /dev/urandom | head -c 10 | tr -d '\n' >> random.txt
+
+      # # https://github.com/marketplace/actions/create-pull-request
+      # # this *shouldn't* work because we're on the pull_request event
+      # # > Note: If you want pull requests created by this action to trigger an
+      # # on: push or on: pull_request workflow then you cannot use the default
+      # # GITHUB_TOKEN. See the documentation here for workarounds.
+      # # https://github.com/peter-evans/create-pull-request/blob/main/docs/concepts-guidelines.md#triggering-further-workflow-runs
+      # - name: Create Pull Request
+      #   uses: peter-evans/create-pull-request@v3
+      #   with:
+      #       base: ${{ github.base_ref }}

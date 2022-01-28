@@ -1,4 +1,4 @@
-import { getByteCodeMetadata } from "@src/libs/utils";
+import { getByteCodeMetadata } from '../src/libs/utils';
 
 describe("test for cbor metadata decode", () => {
   it("should properly decode cbor data", () => {

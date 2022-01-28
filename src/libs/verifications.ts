@@ -1,6 +1,7 @@
 import Common, { Chain, Hardfork } from "@ethereumjs/common";
 import { getOpcodesForHF } from "@ethereumjs/vm/dist/evm/opcodes";
 import { toBN } from "web3-utils";
+import { OpCodeType } from "../types";
 import { getBytecodeWithoutMetadata } from "./utils";
 
 /**
@@ -58,7 +59,7 @@ export function getOpCodes(bytecode: Buffer): OpCodeType[] {
   });
   const OPCODES = getOpcodesForHF(common);
   const opcodearr: OpCodeType[] = [];
-  let pushData;
+  let pushData: undefined | Buffer;
   for (let i = 0; i < bytecode.length; i++) {
     const pc = i;
     const curOpCode = OPCODES.get(bytecode[pc])?.name;
@@ -67,8 +68,8 @@ export function getOpCodes(bytecode: Buffer): OpCodeType[] {
       pushData = bytecode.slice(pc + 1, pc + jumpNum + 1);
       i += jumpNum;
     }
-    opcodearr.push({ code: curOpCode, data: pushData, byte: bytecode[pc] });
-    pushData = "";
+    opcodearr.push({ code: curOpCode!, data: pushData, byte: bytecode[pc] });
+    pushData = undefined;
   }
   return opcodearr;
 }
@@ -93,9 +94,8 @@ export function opCodeCodeVerification(
     if (liveOpCodes[i].code !== compiledOpCodes[i].code) return false;
     if (
       liveOpCodes[i].code === "PUSH" &&
-      liveOpCodes[i].data.toString("hex") !==
-        compiledOpCodes[i].data.toString("hex") &&
-      !toBN(`0x${compiledOpCodes[i].data.toString("hex")}`).eqn(0)
+      liveOpCodes[i].data!.toString("hex") !== compiledOpCodes[i].data!.toString("hex") &&
+      !toBN(`0x${compiledOpCodes[i].data!.toString("hex")}`).eqn(0)
     )
       return false;
   }

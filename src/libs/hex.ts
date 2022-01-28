@@ -1,3 +1,5 @@
+import { Hexable, HexString, HexBuffer } from "../types";
+
 export interface Options {
   /**
    * Throws if a hex string contains non-hex characters

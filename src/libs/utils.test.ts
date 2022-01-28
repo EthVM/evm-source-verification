@@ -1,10 +1,6 @@
-import { promisify } from 'util';
 // eslint-disable-next-line import/no-extraneous-dependencies
-import _tmp from 'tmp';
 import fs from 'fs';
-import { arrObjPush, arrPush, hasOwn, readJsonFile, writeJsonFile } from './utils';
-
-const tmpfile = promisify(_tmp.file);
+import { arrObjPush, arrPush, tmpFile, hasOwn, randomAddress, readJsonFile, writeJsonFile, isSafeFilename } from './utils';
 
 describe('utils', () => {
   describe('hasOwn', () => {
@@ -26,42 +22,62 @@ describe('utils', () => {
 
   describe('readJsonFile', () => {
     it('should read and parse JSON from a JSON formatted file', async () => {
-      const filename = await tmpfile();
-      const data = { hello: 'world' };
-      await fs.promises.writeFile(filename, JSON.stringify(data), 'utf-8');
-      const out = await readJsonFile<typeof data>(filename);
-      expect(out).toEqual(data);
+      const [filename] = await tmpFile({ discardDescriptor: true });
+      try {
+        const data = { hello: 'world' };
+        await fs.promises.writeFile(filename, JSON.stringify(data), 'utf-8');
+        const out = await readJsonFile<typeof data>(filename);
+        expect(out).toEqual(data);
+      } finally {
+        await fs.promises.rm(filename, { recursive: true });
+      }
     });
 
     it('should throw if the file is not JSON formatted', async () => {
-      const filename = await tmpfile();
-      await fs.promises.writeFile(filename, 'not a json file', 'utf-8');
-      await expect(() => readJsonFile(filename)).rejects.toThrow();
+      const [filename] = await tmpFile({ discardDescriptor: true });
+      try {
+        await fs.promises.writeFile(filename, 'not a json file', 'utf-8');
+        await expect(() => readJsonFile(filename)).rejects.toThrow();
+      } finally {
+        await fs.promises.rm(filename, { recursive: true });
+      }
     });
 
     it('should return undefined if the file does not exist', async () => {
-      const filename = await tmpfile();
-      await fs.promises.rm(filename);
-      const out = await readJsonFile(filename);
-      expect(out).toBeUndefined();
+      const [filename] = await tmpFile({ discardDescriptor: true });
+      try {
+        await fs.promises.rm(filename);
+        const out = await readJsonFile(filename);
+        expect(out).toBeUndefined();
+      } finally {
+        //
+      }
     });
   });
 
   describe('writeJsonFile', () => {
     it('should write JSON format to a file', async () => {
-      const filename = await tmpfile();
-      const data = { hello: 'world' };
-      await writeJsonFile(filename, data);
-      const out = await fs.promises.readFile(filename, 'utf-8');
-      expect(out).toEqual(JSON.stringify(data));
+      const [filename] = await tmpFile({ discardDescriptor: true });
+      try {
+        const data = { hello: 'world' };
+        await writeJsonFile(filename, data);
+        const out = await fs.promises.readFile(filename, 'utf-8');
+        expect(out).toEqual(JSON.stringify(data));
+      } finally {
+        await fs.promises.rm(filename, { recursive: true });
+      }
     });
 
     it('should respect options.pretty', async () => {
-      const filename = await tmpfile();
-      const data = { hello: 'world' };
-      await writeJsonFile(filename, data, { pretty: true });
-      const out = await fs.promises.readFile(filename, 'utf-8');
-      expect(out).toEqual(JSON.stringify(data, null, 2));
+      const [filename] = await tmpFile({ discardDescriptor: true });
+      try {
+        const data = { hello: 'world' };
+        await writeJsonFile(filename, data, { pretty: true });
+        const out = await fs.promises.readFile(filename, 'utf-8');
+        expect(out).toEqual(JSON.stringify(data, null, 2));
+      } finally {
+        await fs.promises.rm(filename, { recursive: true });
+      }
     });
   });
 
@@ -100,6 +116,41 @@ describe('utils', () => {
       const arr: string[] = ['ethvm']; 
       expect(arrPush(arr, 'ethvm')).toBeFalsy();
       expect(arr).toEqual(['ethvm']);
+    });
+  });
+
+  describe('randomAddress', () => {
+    it('should create a random ethereum address', () => {
+      const address = randomAddress();
+      expect(address).toMatch(/^0x[a-f0-9]{40}$/);
+    });
+  });
+
+  describe('fexists', () => {
+    it('todo: should work', () => {
+      expect(true).toBeTruthy();
+    });
+  });
+
+  describe('isSafeFilename', () => {
+    describe('should pass', () => {
+      // 0-9, a-z, A-Z, _, -, ., ' ', +
+      const pass = 'a123B345c678D90_e.F_g+H=I-j.K l.M n';
+      it(`name: ${pass}`, () => expect(isSafeFilename(pass)).toBeTruthy());
+
+      const sol1 = 'solc-v0.8.6+commit.11564f7e'
+      it(`name: ${sol1}`, () => expect(isSafeFilename(sol1)).toBeTruthy());
+
+      const sol2 = 'solc-v0.8.7+commit.e28d00a7'
+      it(`name: ${sol2}`, () => expect(isSafeFilename(sol2)).toBeTruthy());
+    });
+
+    describe('should reject', () => {
+      const empty = '';
+      it(`name: ${empty}`, () => expect(isSafeFilename(empty)).toBeFalsy());
+
+      const slashes = 'has/dashes';
+      it(`name: ${slashes}`, () => expect(isSafeFilename(slashes)).toBeFalsy());
     });
   });
 });
