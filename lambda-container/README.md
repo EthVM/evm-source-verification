@@ -4,6 +4,13 @@ This let users compile solidity standard input file online without needing to do
 
 This container is based on the tutorial provided at https://aripalo.com/blog/2020/aws-lambda-container-image-support/
 
+Currently api end point is located at `https://solc.ethvm.com`
+
+```sh
+curl -d @input.json -H 'Content-Type: application/json' https://solc.ethvm.com/?compiler=v0.8.2+commit.661d1103
+```
+replace `v0.8.2+commit.661d1103` to your desired compiler and `@input.json` file is the [solidity standard input](https://docs.soliditylang.org/en/v0.8.10/using-the-compiler.html#compiler-input-and-output-json-description)
+
 ## Building
 This will build the docker container
 
@@ -37,17 +44,14 @@ docker tag lambda-solidity-compiler:latest 453490899549.dkr.ecr.us-west-2.amazon
 AWS_PROFILE=serverless AWS_DEFAULT_REGION=us-west-2 aws ecr get-login-password | docker login --username AWS --password-stdin 453490899549.dkr.ecr.us-west-2.amazonaws.com
 docker push 453490899549.dkr.ecr.us-west-2.amazonaws.com/lambda-solidity-compiler:latest
 ```
+replace `AWS_PROFILE, AWS_DEFAULT_REGION` your values then replace `us-west-2` to your region and `453490899549` to your acount id
 
+## Redeploying after changes
+This will build and rand redeploy
 
-
-after changes
+```sh
 docker build --no-cache -t lambda-solidity-compiler .
+
 docker tag lambda-solidity-compiler:latest 453490899549.dkr.ecr.us-west-2.amazonaws.com/lambda-solidity-compiler:latest
 docker push 453490899549.dkr.ecr.us-west-2.amazonaws.com/lambda-solidity-compiler:latest
-
-run locally
-docker build -t lambda-container-demo . && docker run -p 9000:8080 lambda-container-demo:latest
-
-http://localhost:9000/2015-03-31/functions/function/invocations
-
-curl -d @input.json -H 'Content-Type: application/json' https://0klkvk58y4.execute-api.us-west-2.amazonaws.com/default/solidity-compiler?compiler=v0.8.11+commit.d7f03943
+```
