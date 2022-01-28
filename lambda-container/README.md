@@ -13,3 +13,5 @@ run locally
 docker build -t lambda-container-demo . && docker run -p 9000:8080 lambda-container-demo:latest
 
 http://localhost:9000/2015-03-31/functions/function/invocations
+
+curl -d @input.json -H 'Content-Type: application/json' https://0klkvk58y4.execute-api.us-west-2.amazonaws.com/default/solidity-compiler?compiler=v0.8.11+commit.d7f03943
