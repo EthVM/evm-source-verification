@@ -173,7 +173,7 @@ do
     if [[ "$exit_status" -ne "0" ]]; then
         # nodejs errored
         echo "[$(date '+%Y-%m-%d %H:%M:%S')] $(hostname) $dir $i $contractname" >> ./state/logs/failed.log
-        exit $exit_status
+        continue
     fi
 
     # move previous files & new nodejs output back into the contract's directory
