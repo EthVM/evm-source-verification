@@ -1,4 +1,4 @@
-# Lambda container for Solidiy compiling
+# Lambda container for Solidity compiling
 
 This let users compile solidity standard input file online without needing to download any binary files
 
