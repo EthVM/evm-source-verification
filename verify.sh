@@ -26,7 +26,7 @@ for i in "$@"; do
             shift;
             ;;
 
-        # build before executing
+        # clean all generated data
         -c=*|--clean=*)
             CLEAN="${i#*=}";
             shift;
@@ -63,8 +63,8 @@ fi
 if [ "$BUILD" == "true" ]; then
     # (it's fast with tsconfig.json#compilerOptions#incremental)
     echo "building"
-    npm run build
-    if [[ $? -ne 0 ]]; then exit 1; fi
+    # exit on fail
+    npm run build || exit $?
 fi
 
 mkdir -p ./out
@@ -122,14 +122,18 @@ do
     # download compiler if we don't have it
     COMPILER_FILE="./compilers/solc-$compiler"
     if ! test -f "$COMPILER_FILE"; then
-        # todo: download compiler for architecture
-        wget https://raw.githubusercontent.com/ethereum/solc-bin/gh-pages/linux-amd64/solc-linux-amd64-$compiler -q -O $COMPILER_FILE
-        chmod +x $COMPILER_FILE
+        # TODO: download compiler for architecture
+        # download to tmp file in-case process exits while compiler is dling
+        # otherwise can be left with a zero-size compiler executable
+        compilertmp=$(mktemp)
+        wget https://raw.githubusercontent.com/ethereum/solc-bin/gh-pages/linux-amd64/solc-linux-amd64-$compiler -q -O $compilertmp
+        mv $compilertmp $COMPILER_FILE
     fi
+    chmod +x $COMPILER_FILE
 
     # register use of the compiler
     used=./state/compilers/$chainId.json
-    usedtmp=/tmp/compilers_$RANDOM.json;
+    usedtmp=$(mktemp)
 
     # initialise compilers/$chainId.json
     [[ ! -f "$used" ]] && echo "[]" >> $used
@@ -154,7 +158,8 @@ do
     # verify using nodejs
     pwd=`pwd`
     # to use source maps, add flag --enable-source-maps after `node`
-    node ./dist/src/index.js verify \
+    # node ./dist/src/index.js verify \
+    node --enable-source-maps ./dist/src/index.js verify \
         --file $pwd/out/output.json \
         --name $contractname \
         --chainid $chainId \
@@ -164,17 +169,16 @@ do
         --hashlists.dir $pwd/state/hashes \
         --verifiedlists.dir $pwd/state/verified;
 
-    if [[ $? -ne 0 ]]; then
+    exit_status=$?
+    if [[ "$exit_status" -ne "0" ]]; then
         # nodejs errored
         echo "[$(date '+%Y-%m-%d %H:%M:%S')] $(hostname) $dir $i $contractname" >> ./state/logs/failed.log
-        continue
+        exit $exit_status
     fi
 
     # move previous files & new nodejs output back into the contract's directory
-    echo "coping ./out/* to $dir/";
-    # do not copy the compiled file
-    rm ./out/output.json
-    mv ./out/* $dir/
+    echo "moving ./out/metadata.json to $dir/metadata.json";
+    mv ./out/metadata.json $dir/metadata.json
 done
 # # echo $abc
 # #./out/solc --bin-runtime ./out/sourcecode.sol --optimize --optimize-runs=200 -o ./out/runtime --overwrite --evm-version
