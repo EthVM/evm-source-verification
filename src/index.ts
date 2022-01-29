@@ -3,11 +3,11 @@ import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import fs from "fs";
 import Web3 from "web3";
+import { config as dotenv } from 'dotenv';
 import {
   opCodeCodeVerification,
   runtimeCodeVerification,
   directVerification,
-  getOpCodes,
 } from "./libs/verifications";
 import {
   arrObjPush,
@@ -18,8 +18,10 @@ import {
   readJsonFile,
   writeJsonFile,
 } from "./libs/utils";
+import * as hash from './libs/hash';
 
-const { keccak256, toBN } = Web3.utils;
+const toBN = Web3.utils.toBN.bind(Web3.utils);
+
 
 interface CliArgs {
   file: string;
@@ -33,12 +35,15 @@ interface CliArgs {
   verifiedlists: {
     dir: string;
   };
+  providerUri: undefined | string;
 }
+
+dotenv();
 
 yargs(hideBin(process.argv))
   .usage("Usage: $0 <cmd> [args]")
   .command<CliArgs>(
-    "verify [file] [name] [chainid] [address] [out] [hashlists.dir] [verifiedlists.dir]",
+    "verify [file] [name] [chainid] [address] [out] [provider-uri] [hashlists.dir] [verifiedlists.dir]",
     "compile source file and verify the code on evm based chain",
     (_yargs) => {
       _yargs.positional("file", {
@@ -62,6 +67,11 @@ yargs(hideBin(process.argv))
         type: "string",
         describe: "directory to output data",
       });
+      _yargs.positional("provider-uri", {
+        type: "string",
+        describe: "web3 provider",
+        default: process.env.PROVIDER_URI,
+      });
       _yargs.positional("hashlists.dir", {
         type: "string",
         describe: "directory with the hash lists",
@@ -75,8 +85,14 @@ yargs(hideBin(process.argv))
     },
     async (argv) => {
       // process cli args
-      const { file, name, address, out, hashlists, verifiedlists } = argv;
+      const { file, name, address, out, hashlists, verifiedlists, providerUri } = argv;
       const chainid = toBN(argv.chainid).toString(10);
+
+      if (!providerUri) {
+        throw new TypeError('You muse give either a --provider-uri'
+          + ' argument or set a PROVIDER_URI environment variable for your Web3'
+          + ' endpoint');
+      }
 
       const hashlistsDirname = path.normalize(
         path.isAbsolute(hashlists.dir)
@@ -90,8 +106,9 @@ yargs(hideBin(process.argv))
           : path.join(process.cwd(), verifiedlists.dir)
       );
 
+
       // TOOD: load web3 endpoint in environment or ar
-      const web3 = new Web3("https://nodes.mewapi.io/rpc/eth");
+      const web3 = new Web3(providerUri);
       const liveCode = await web3.eth.getCode(address);
       const compiledOutput: CompiledOutput = JSON.parse(
         fs.readFileSync(file, "utf-8")
@@ -174,24 +191,16 @@ yargs(hideBin(process.argv))
 
       // metadata & hashes
       const { abi } = mainContract;
-      const liveByteCode = getBytecodeWithoutMetadata(
-        liveCode.replace(/^0x/, "")
-      );
-      const liveOpCodes = getOpCodes(Buffer.from(liveByteCode, "hex"));
-      const opcodeHash = keccak256(
-        `0x${Buffer.from(liveOpCodes.map((opcode) => opcode.byte)).toString(
-          "hex"
-        )}`
-      );
-      const metalessHash = keccak256(`0x${liveByteCode}`);
-      const runtimeHash = keccak256(liveCode);
+      const metalessBytecode = getBytecodeWithoutMetadata(liveCode);
+      const opcodeHash = hash.opcode.fromMetadatalessBytecode(metalessBytecode);
+      const metalessHash = hash.metaless.fromMetadatalessBytecode(metalessBytecode);
+      const runtimeHash = hash.runtime.fromRuntimeBytecode(liveCode);
 
       // keep only unique encoded metadata
       // TODO: it seems every call to `getBytecodeMetadatas` produces duplicate
       // metadata elements, can this be resoled in `getBytecodeMetadatas`?
-      const encodedMetadata: CborDataType[] = getBytecodeMetadatas(
-        liveCode.replace(/^0x/, "")
-      );
+      const encodedMetadata: CborDataType[] = getBytecodeMetadatas(liveCode);
+
       const uniqueEncodedMetadata: CborDataType[] = Array.from(
         new Set(encodedMetadata.map(JSON.stringify.bind(JSON)))
       ).map(JSON.parse.bind(JSON));

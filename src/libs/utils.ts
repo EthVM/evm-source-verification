@@ -68,10 +68,12 @@ export function getByteCodeMetadata(bytecode: Buffer): CborDataType {
  * Removes post-fixed metadata from a bytecode string
  * (for partial bytecode match comparisons )
  *
- * @param  {string} bytecode
- * @return {string} bytecode minus metadata
+ * @param  {HexString} bytecode
+ * @return {HexString} bytecode   without leading & minus metadata
  */
-export function getBytecodeWithoutMetadata(bytecode: string): string {
+export function getBytecodeWithoutMetadata(bytecode: HexString): HexString {
+  if (bytecode.startsWith('0x')) bytecode = bytecode.replace(/^0x/, '');
+
   // Usually last 4 chars of bytecode specify byte size of metadata component,
   // however if the contract has create or create2 it is possible for metadata
   // info to exist in the middle of the code
@@ -108,6 +110,8 @@ export function getBytecodeWithoutMetadata(bytecode: string): string {
  * @returns
  */
 export function getBytecodeMetadatas(bytecode: string): CborDataType[] {
+  if (bytecode.startsWith('0x')) bytecode = bytecode.replace(/^0x/, '');
+
   // Usually last 4 chars of bytecode specify byte size of metadata component,
   // however if the contract has create or create2 it is possible for metadata
   // info to exist in the middle of the code
@@ -181,7 +185,7 @@ export function writeJsonFile(
   contents: object,
   options?: { pretty?: boolean },
 ): Promise<void> {
-  const pretty = options.pretty ?? false;
+  const pretty = options?.pretty ?? false;
   return fs.promises.writeFile(
     filename,
     pretty

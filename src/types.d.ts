@@ -18,8 +18,41 @@ type OpCodeType = {
   byte: number;
 };
 
+/**
+ * Buffer of type 'hex'
+ * 
+ * Created with `Buffer.from('0x...', 'hex')`
+ * 
+ * Automatically strips invalid non-hex characters and trims hex strings to
+ * valid length
+ */
+type HexBuffer = Buffer;
+
+type HexString = string;
+
+type Hexable = HexBuffer | HexString;
+
+/**
+ * Hex string with length of 42, 40 without 0x
+ */
 type Address = string;
+
+/**
+ * Sha256 hash
+ *
+ * Algorithm implementation comes from Web3 utils
+ */
 type Keccak256 = string;
+
+/**
+ * Raw runtime bytecode of a contract on the blockchain
+ */
+type RuntimeBytecode = string;
+
+/**
+ * Bytecode with metadata stripped out
+ */
+type MetadatalessBytecode = string;
 
 /**
  * Map of hashes to addresses
