@@ -1,6 +1,7 @@
 import cbor from "cbor";
 import { toB58String } from "multihashes";
 import { bytesToHex } from "web3-utils";
+import fs from 'fs';
 
 // https://github.com/ethereum/sourcify
 /**
@@ -58,7 +59,7 @@ export function cborParse(cborData: CborDecodedType): CborDataType {
  * @param  {bytecode} Buffer
  * @return {CborDataType}
  */
-export function getByteCodeMetaData(bytecode: Buffer): CborDataType {
+export function getByteCodeMetadata(bytecode: Buffer): CborDataType {
   return cborParse(cborDecode(bytecode));
 }
 
@@ -66,14 +67,22 @@ export function getByteCodeMetaData(bytecode: Buffer): CborDataType {
 /**
  * Removes post-fixed metadata from a bytecode string
  * (for partial bytecode match comparisons )
- * @param  {string} bytecode
- * @return {string} bytecode minus metadata
+ *
+ * @param  {HexString} bytecode
+ * @return {HexString} bytecode   without leading & minus metadata
  */
-export function getBytecodeWithoutMetadata(bytecode: string): string {
-  // Usually last 4 chars of bytecode specify byte size of metadata component, however if the contract has create or create2 it is possible for metadata info to exist in the middle of the code
+export function getBytecodeWithoutMetadata(bytecode: HexString): HexString {
+  if (bytecode.startsWith('0x')) bytecode = bytecode.replace(/^0x/, '');
+
+  // Usually last 4 chars of bytecode specify byte size of metadata component,
+  // however if the contract has create or create2 it is possible for metadata
+  // info to exist in the middle of the code
   try {
-    getByteCodeMetaData(Buffer.from(bytecode, "hex"));
-    const suffix = bytecode.slice(-4); // Last 4 chars of bytecode specify byte size of metadata component
+    // fail safe to make sure we are not removing anything other than metadata
+    // (skip to catch if there's no metadata)
+    getByteCodeMetadata(Buffer.from(bytecode, "hex")); 
+    // Last 4 chars of bytecode specify byte size of metadata component
+    const suffix = bytecode.slice(-4); 
     let index = 0;
     while (bytecode.indexOf(suffix, index) > -1) {
       const metapos = bytecode.indexOf(suffix, index);
@@ -81,7 +90,8 @@ export function getBytecodeWithoutMetadata(bytecode: string): string {
         parseInt(bytecode.slice(metapos, metapos + 4), 16) * 2;
       const metadata = bytecode.slice(metapos - metadataSize, metapos + 4);
       try {
-        getByteCodeMetaData(Buffer.from(metadata, "hex")); // fail safe to make sure we are not removing anything other than metadata
+        // fail safe to make sure we are not removing anything other than metadata
+        getByteCodeMetadata(Buffer.from(metadata, "hex")); 
         bytecode = bytecode.replace(metadata, "");
       } catch (e) {
         index = metapos + 4;
@@ -91,4 +101,130 @@ export function getBytecodeWithoutMetadata(bytecode: string): string {
   } catch (e) {
     return bytecode;
   }
+}
+
+/**
+ * Extract all metadata from the bytecode
+ *
+ * @param bytecode
+ * @returns
+ */
+export function getBytecodeMetadatas(bytecode: string): CborDataType[] {
+  if (bytecode.startsWith('0x')) bytecode = bytecode.replace(/^0x/, '');
+
+  // Usually last 4 chars of bytecode specify byte size of metadata component,
+  // however if the contract has create or create2 it is possible for metadata
+  // info to exist in the middle of the code
+  const metadatas: CborDataType[] = [];
+  try {
+    metadatas.push(getByteCodeMetadata(Buffer.from(bytecode, "hex")));
+    // Last 4 chars of bytecode specify byte size of metadata component
+    const suffix = bytecode.slice(-4); 
+    let index = 0;
+    while (bytecode.indexOf(suffix, index) > -1) {
+      const metapos = bytecode.indexOf(suffix, index);
+      const metadataSize =
+        parseInt(bytecode.slice(metapos, metapos + 4), 16) * 2;
+      const metadata = bytecode.slice(metapos - metadataSize, metapos + 4);
+      try {
+        // fail safe to make sure we are not removing anything other than metadata
+        metadatas.push(getByteCodeMetadata(Buffer.from(metadata, "hex"))); 
+        bytecode = bytecode.replace(metadata, "");
+      } catch (e) {
+        index = metapos + 4;
+      }
+    }
+    return metadatas;
+  } catch (e) {
+    return metadatas;
+  }
+}
+
+/**
+ * Does the object have the property on itself? (not its prototype chain)
+ *
+ * @param object 
+ * @param property 
+ * @returns 
+ */
+export function hasOwn(
+  object: Record<string, unknown>,
+  property: PropertyKey,
+): boolean {
+  return Object.prototype.hasOwnProperty.call(object, property);
+}
+
+/**
+ * Read a JSON file from the filesystem
+ *
+ * @param filename  filename to read from the filesystem
+ * @returns         the json object or undefined if the file was not found
+ */
+export function readJsonFile<T>(filename: string): Promise<undefined | T> {
+  return fs
+    .promises
+    .readFile(filename, 'utf-8')
+    .then(raw => JSON.parse(raw) as T)
+    .catch((err: NodeJS.ErrnoException) => {
+      if (err && err.code !== 'ENOENT') throw err;
+      return undefined;
+    });
+}
+
+/**
+ * Save a JSON object to a filesystem
+ * 
+ * @param filename  filename to save as
+ * @param contents  object to save
+ * @param options
+ * @returns
+ */
+export function writeJsonFile(
+  filename: string,
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  contents: object,
+  options?: { pretty?: boolean },
+): Promise<void> {
+  const pretty = options?.pretty ?? false;
+  return fs.promises.writeFile(
+    filename,
+    pretty
+      ? JSON.stringify(contents, null, 2)
+      : JSON.stringify(contents),
+    'utf-8',
+  );
+}
+
+/**
+ * Append a value to an record whose values are arrays
+ * 
+ * Return true if the record was modified, otherwise return false
+ * 
+ * @param record    object with array values
+ * @param key       key on the object
+ * @param value     value to push
+ */
+export function arrObjPush<T>(
+  record: Record<string, T[]>,
+  key: string,
+  value: T,
+): boolean {
+  if (!hasOwn(record, key)) record[key] = [];
+  return arrPush(record[key], value);
+}
+
+/**
+ * Push an item on the array if it isn't already
+ *
+ * @param arr     array
+ * @param value   value to push
+ * @returns       whether the item was pushed
+ */
+export function arrPush<T>(
+  arr: T[],
+  value: T,
+): boolean {
+  if (arr.includes(value)) return false;
+  arr.push(value);
+  return true;
 }

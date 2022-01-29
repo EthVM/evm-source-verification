@@ -36,15 +36,15 @@ export function runtimeCodeVerification(
  * Runs through bytecodes and return opcode array
  *
  * @param  {Buffer} raw
- * @return {OpCodeType}
+ * @return {OpCodeType[]}
  */
-export function getOpCodes(bytecode: Buffer): [OpCodeType?] {
+export function getOpCodes(bytecode: Buffer): OpCodeType[] {
   const common = new Common({
     chain: Chain.Mainnet,
     hardfork: Hardfork.London,
   });
   const OPCODES = getOpcodesForHF(common);
-  const opcodearr: [OpCodeType?] = [];
+  const opcodearr: OpCodeType[] = [];
   let pushData;
   for (let i = 0; i < bytecode.length; i++) {
     const pc = i;
@@ -54,7 +54,7 @@ export function getOpCodes(bytecode: Buffer): [OpCodeType?] {
       pushData = bytecode.slice(pc + 1, pc + jumpNum + 1);
       i += jumpNum;
     }
-    opcodearr.push({ code: curOpCode, data: pushData });
+    opcodearr.push({ code: curOpCode, data: pushData, byte: bytecode[pc] });
     pushData = "";
   }
   return opcodearr;
@@ -62,16 +62,16 @@ export function getOpCodes(bytecode: Buffer): [OpCodeType?] {
 /**
  * Strips metadata and runtime opcodes, this helps to verify contracts with immutable keyword
  *
- * @param  {string} liveByteCode
- * @param  {string} compiedByteCode
+ * @param  {string} liveCode
+ * @param  {string} compiledCode
  * @return {boolean} true if bytecode matches
  */
 export function opCodeCodeVerification(
-  liveByteCode: string,
-  compiledByteCode: string
+  liveCode: string,
+  compiledCode: string
 ): boolean {
-  liveByteCode = getBytecodeWithoutMetadata(liveByteCode);
-  compiledByteCode = getBytecodeWithoutMetadata(compiledByteCode);
+  const liveByteCode = getBytecodeWithoutMetadata(liveCode);
+  const compiledByteCode = getBytecodeWithoutMetadata(compiledCode);
   if (liveByteCode.length !== compiledByteCode.length) return false;
   const liveOpCodes = getOpCodes(Buffer.from(liveByteCode, "hex"));
   const compiledOpCodes = getOpCodes(Buffer.from(compiledByteCode, "hex"));
