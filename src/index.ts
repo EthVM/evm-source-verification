@@ -94,20 +94,18 @@ yargs(hideBin(process.argv))
           + ' endpoint');
       }
 
-      const hashlistsDirname = path.normalize(
+      const hashlistsDir = path.normalize(
         path.isAbsolute(hashlists.dir)
           ? hashlists.dir
           : path.join(process.cwd(), hashlists.dir)
       );
 
-      const verifiedlistsDirname = path.normalize(
+      const verifielistsDir = path.normalize(
         path.isAbsolute(verifiedlists.dir)
           ? verifiedlists.dir
           : path.join(process.cwd(), verifiedlists.dir)
       );
 
-
-      // TOOD: load web3 endpoint in environment or ar
       const web3 = new Web3(providerUri);
       const liveCode = await web3.eth.getCode(address);
       const compiledOutput: CompiledOutput = JSON.parse(
@@ -137,18 +135,9 @@ yargs(hideBin(process.argv))
 
       const compiledCode = mainContract.evm.deployedBytecode.object;
 
-      const isDirectVerified = directVerification(
-        liveCode.replace("0x", ""),
-        compiledCode
-      );
-      const isRuntimeVerified = runtimeCodeVerification(
-        liveCode.replace("0x", ""),
-        compiledCode
-      );
-      const isOpCodeVerified = opCodeCodeVerification(
-        liveCode.replace("0x", ""),
-        compiledCode
-      );
+      const isDirectVerified = directVerification(liveCode, compiledCode);
+      const isRuntimeVerified = runtimeCodeVerification(liveCode, compiledCode);
+      const isOpCodeVerified = opCodeCodeVerification(liveCode, compiledCode);
       console.log("verified direct:", isDirectVerified);
       console.log("verified runtime:", isRuntimeVerified);
       console.log("verified opcodes:", isOpCodeVerified);
@@ -170,22 +159,22 @@ yargs(hideBin(process.argv))
 
       const metadataFilename = path.join(out, "metadata.json");
 
-      const verifiedlistsChainFilename = path.join(
-        verifiedlistsDirname,
+      const verifiedlistsFilename = path.join(
+        verifielistsDir,
         `${chainid}.json`
       );
 
-      const hashlistsChainDirname = path.join(hashlistsDirname, chainid);
+      const hashlistsDirname = path.join(hashlistsDir, chainid);
       const opcodeHashesFilename = path.join(
-        hashlistsChainDirname,
+        hashlistsDirname,
         "opcodes.json"
       );
       const runtimeHashesFilename = path.join(
-        hashlistsChainDirname,
+        hashlistsDirname,
         "runtime.json"
       );
       const metalessHashesFilename = path.join(
-        hashlistsChainDirname,
+        hashlistsDirname,
         "metaless.json"
       );
 
@@ -221,8 +210,8 @@ yargs(hideBin(process.argv))
 
       // create directories
       await Promise.all([
-        fs.promises.mkdir(hashlistsChainDirname, { recursive: true }),
-        fs.promises.mkdir(verifiedlistsDirname, { recursive: true }),
+        fs.promises.mkdir(hashlistsDirname, { recursive: true }),
+        fs.promises.mkdir(verifielistsDir, { recursive: true }),
         fs.promises.mkdir(out, { recursive: true }),
       ]);
 
@@ -267,9 +256,9 @@ yargs(hideBin(process.argv))
         // verifiedlists
         (async () => {
           const verifiedHashes =
-            (await readJsonFile<Address[]>(verifiedlistsChainFilename)) ?? [];
+            (await readJsonFile<Address[]>(verifiedlistsFilename)) ?? [];
           if (!arrPush(verifiedHashes, address)) return;
-          await writeJsonFile(verifiedlistsChainFilename, verifiedHashes, {
+          await writeJsonFile(verifiedlistsFilename, verifiedHashes, {
             pretty: true,
           });
         })(),
