@@ -14,6 +14,12 @@ export function directVerification(
   liveByteCode: string,
   compiledByteCode: string
 ): boolean {
+  if (liveByteCode.startsWith('0x'))
+    liveByteCode = liveByteCode.replace(/^0x/, '');
+
+  if (compiledByteCode.startsWith('0x'))
+    compiledByteCode = compiledByteCode.replace(/^0x/, '');
+
   return liveByteCode === compiledByteCode;
 }
 
@@ -28,8 +34,15 @@ export function runtimeCodeVerification(
   liveByteCode: string,
   compiledByteCode: string
 ): boolean {
+  if (liveByteCode.startsWith('0x'))
+    liveByteCode = liveByteCode.replace(/^0x/, '');
+
+  if (compiledByteCode.startsWith('0x'))
+    compiledByteCode = compiledByteCode.replace(/^0x/, '');
+
   liveByteCode = getBytecodeWithoutMetadata(liveByteCode);
   compiledByteCode = getBytecodeWithoutMetadata(compiledByteCode);
+
   return liveByteCode === compiledByteCode;
 }
 /**
