@@ -159,7 +159,7 @@ do
     pwd=`pwd`
     # to use source maps, add flag --enable-source-maps after `node`
     # node ./dist/src/index.js verify \
-    node --enable-source-maps ./dist/src/index.js verify \
+    node --enable-source-maps ./dist/index.js verify \
         --file $pwd/out/output.json \
         --name $contractname \
         --chainid $chainId \
