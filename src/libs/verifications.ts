@@ -14,6 +14,12 @@ export function directVerification(
   liveByteCode: string,
   compiledByteCode: string
 ): boolean {
+  if (liveByteCode.startsWith('0x'))
+    liveByteCode = liveByteCode.replace(/^0x/, '');
+
+  if (compiledByteCode.startsWith('0x'))
+    compiledByteCode = compiledByteCode.replace(/^0x/, '');
+
   return liveByteCode === compiledByteCode;
 }
 
@@ -28,8 +34,15 @@ export function runtimeCodeVerification(
   liveByteCode: string,
   compiledByteCode: string
 ): boolean {
+  if (liveByteCode.startsWith('0x'))
+    liveByteCode = liveByteCode.replace(/^0x/, '');
+
+  if (compiledByteCode.startsWith('0x'))
+    compiledByteCode = compiledByteCode.replace(/^0x/, '');
+
   liveByteCode = getBytecodeWithoutMetadata(liveByteCode);
   compiledByteCode = getBytecodeWithoutMetadata(compiledByteCode);
+
   return liveByteCode === compiledByteCode;
 }
 /**
@@ -54,7 +67,7 @@ export function getOpCodes(bytecode: Buffer): OpCodeType[] {
       pushData = bytecode.slice(pc + 1, pc + jumpNum + 1);
       i += jumpNum;
     }
-    opcodearr.push({ code: curOpCode, data: pushData });
+    opcodearr.push({ code: curOpCode, data: pushData, byte: bytecode[pc] });
     pushData = "";
   }
   return opcodearr;
