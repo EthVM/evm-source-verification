@@ -83,6 +83,11 @@ for i in "$@"; do
     esac
 done
 
+if [[ "$VERBOSE" ]]; then
+    echo "=== script: $programName ==="
+    echo "=== branch: $(git symbolic-ref --short HEAD) ==="
+fi
+
 # try to load input if not already given
 if [[ ! "$INPUT" ]]; then
     if [[ ! -t 0 ]]; then
@@ -103,10 +108,6 @@ fi
 if [[ ! "$INPUT" ]]; then
     echo "Error: no INPUT"
     exit 1
-fi
-
-if [[ "$VERBOSE" ]]; then
-    echo "=== branch: $(git symbolic-ref --short HEAD) ==="
 fi
 
 diff=$INPUT
