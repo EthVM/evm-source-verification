@@ -105,6 +105,10 @@ if [[ ! "$INPUT" ]]; then
     exit 1
 fi
 
+if [[ "$VERBOSE" ]]; then
+    echo "=== branch: $(git symbolic-ref --short HEAD) ==="
+fi
+
 diff=$INPUT
 
 if [[ "$VERBOSE" ]]; then
