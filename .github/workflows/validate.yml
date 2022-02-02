@@ -23,13 +23,15 @@ jobs:
       # checkout code on the branch
       - uses: actions/checkout@v2
       # https://github.com/actions/setup-node
-      - uses: actions/setup-node@v2
-        with:
-          # cache npm dependencies
-          # https://github.com/actions/setup-node#caching-packages-dependencies
-          cache: 'npm'
-          node-version: 16.13.2
-          registry-url: "https://registry.npmjs.org/"
+
+      # - uses: actions/setup-node@v2
+      #   with:
+      #     # cache npm dependencies
+      #     # https://github.com/actions/setup-node#caching-packages-dependencies
+      #     cache: 'npm'
+      #     node-version: 16.13.2
+      #     registry-url: "https://registry.npmjs.org/"
+
       # - run: npm i -g npm@6.14.16
       # - run: npm ci
       # - run: npm run test
@@ -38,18 +40,32 @@ jobs:
       # # fetch all branches from remote so we can diff with the current branch
       # - run: git fetch --no-tags --prune --depth=1 origin +refs/heads/*:refs/remotes/origin/*
 
-      - id: chainid
+      - id: vars
         run: |
-          echo "::set-output name=chainid::1"
+          chainid=1
+          provideruri=$(grep nodes "$chainid" | awk "{ print $2 }")
+          if [[ ! "$provideruri" ]]; then echo "no node for chainid $chainid"; exit 1; fi
+          primarybranch="origin/test/gha"
 
-      # get the desired node
-      - id: provideruri
-        run: |
-          echo "chainid 1: $chainid"
-          echo "chainid 2: ${{ steps.chainid.outputs.chainid }}"
-          # echo "chainid1: $chainid"
-          # echo "chainid2: $chainid"
-          # provideruri=$(grep nodes "$chainid" | awk "{ print $2 }")
+          echo "::set-output name=chainid::$chainid"
+          echo "::set-output name=provideruri::$provideruri"
+          echo "::set-output name=primarybranch::$primarybranch"
+
+      - run: |
+          chainid="${{ steps.vars.outputs.chainid }}"
+          provideruri="${{ steps.vars.outputs.provideruri }}"
+          $added=git --no-pager diff origin/test/gha HEAD
+          echo "getting changed files"
+
+      - uses: lots0logs/gh-action-get-changed-files@2.1.4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+
+      # # get the desired node
+      # - id: provideruri
+      #   run: |
+      #     chainid="${{ steps.chainid.outputs.chainid }}"
 
       # - run: |
       #       echo "chainid:"
