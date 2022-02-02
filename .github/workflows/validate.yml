@@ -31,5 +31,14 @@ jobs:
       # fetch all branches from remote
       - run: git fetch --no-tags --prune --depth=1 origin +refs/heads/*:refs/remotes/origin/*
       - run: git --no-pager diff origin/test/gha HEAD
-      - run: git --no-pager diff --name-status origin/test/gha HEAD | ./scripts/diffs.sh - --verbose
+      - run: |
+          git \
+            --no-pager \
+            diff \
+            --name-status \
+            origin/test/gha HEAD \
+            | ./scripts/diffs.sh \
+              - \
+              --verbose \
+              --provider-uri=https://nodes.mewapi.io/rpc/eth
       - run: "echo result: \"$?\""
