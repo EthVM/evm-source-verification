@@ -18,18 +18,19 @@ function usage {
     echo "   or: $programName -     [OPTION]..."
     echo "   or: $programName"
     echo ""
-    echo "  [file]          file with directories to read from"
-    echo "  -               read input directories from stdin (eg. pipe)"
-    echo "  -h --help       print the usage documentation of this program"
-    echo "     --verbose    print debug logs"
-    echo "     --skip       skip contracts who already have metadata"
-    echo "     --build      build the NodeJS app before verifying"
-    echo "     --clean      delete all previous metadata and state from target"
-    echo "                  directories before verifying"
-    echo "     -failfast   exit on first failure"
-    echo "     --save       save validation results"
-    echo "     --log        store failure log outputs"
-    echo "     --chainid    id of the chain"
+    echo "  [file]              file with directories to read from"
+    echo "  -                   read input directories from stdin (eg. pipe)"
+    echo "  -h --help           print the usage documentation of this program"
+    echo "     --verbose        print debug logs"
+    echo "     --skip           skip contracts who already have metadata"
+    echo "     --build          build the NodeJS app before verifying"
+    echo "     --clean          delete all previous metadata and state from"
+    echo "                      target directories before verifying"
+    echo "     --failfast       exit on first failure"
+    echo "     --save           save validation results"
+    echo "     --log            store failure log outputs"
+    echo "     --chainid        id of the chain"
+    echo "     --provider-uri=  web3 provider"
     exit $1 || "0";
 }
 
@@ -68,6 +69,7 @@ FAIL_FAST=
 SAVE=
 LOG=
 CHAIN_ID="1"
+PROVIDER_URI=
 for i in "$@"; do
     case $i in
         -) INPUT_TYPE="stdin"; shift; ;;
@@ -80,6 +82,7 @@ for i in "$@"; do
         --log) LOG="true"; shift; ;;
         --failfast) FAIL_FAST="true"; shift; ;;
         --chainid=*) CHAIN_ID="${i#*=}"; shift; ;;
+        --provider-uri=*) PROVIDER_URI="${i#*=}"; shift; ;;
         -*|--*) echo "ERROR: unknown option \"$i\""; exit 1; ;;
     esac
 done
@@ -212,7 +215,7 @@ echo "$contractDirs" | while IFS= read -r contractDir; do
     if [[ "$VERBOSE" ]]; then echo "source compiler: $compiler"; fi
     if [[ "$compiler" == *"vyper"* ]]; then
         msg=$(echo "[$(date '+%Y-%m-%d %H:%M:%S')] $(hostname) $contractDir $i $contractname")
-        >&2 echo "unsupported compiler" "$msg"
+        >&2 echo "ERROR: unsupported compiler" "$msg"
         if [[ "$LOG" ]]; then echo "$msg" >> ./state/logs/unsupported.log; fi
         if [[ "$FAIL_FAST" ]]; then exit 1; fi
         continue
@@ -250,7 +253,7 @@ echo "$contractDirs" | while IFS= read -r contractDir; do
     if [[ $exit_status -eq 124 ]]; then
         # compilation timed out
         msg=$(echo "[$(date '+%Y-%m-%d %H:%M:%S')] $(hostname) $contractDir $i $contractname")
-        >&2 echo "timed out" "$msg"
+        >&2 echo "ERROR: timed out" "$msg"
         if [[ "$LOG" ]]; then echo "$msg" >> ./state/logs/timeouts.log; fi
         if [[ "$FAIL_FAST" ]]; then exit 1; fi
         continue
@@ -258,23 +261,25 @@ echo "$contractDirs" | while IFS= read -r contractDir; do
 
     # verify using nodejs
     pwd=$(pwd)
-    # to use source maps, add flag --enable-source-maps after `node`
-    # node ./dist/src/index.js verify \
-    node ./dist/index.js verify \
-        --file $pwd/out/output.json \
-        --name $contractname \
-        --chainid $chainId \
-        --enable-source-maps \
-        --address $address \
-        --out $pwd/out \
-        --hashlists.dir $pwd/state/hashes \
-        --verifiedlists.dir $pwd/state/verified;
+    # to use source maps, add flag --enable-source-maps
+    nodeargs=( \
+        "--file=$pwd/out/output.json" \
+        "--name=$contractname" \
+        "--chainid=$chainId" \
+        "--address=$address" \
+        "--out=$pwd/out" \
+        "--hashlists.dir=$pwd/state/hashes" \
+        "--verifiedlists.dir=$pwd/state/verified" \
+    )
+    if [[ "" ]]; then nodeargs+=("--enable-source-maps"); fi
+    if [[ "$PROVIDER_URI" ]]; then nodeargs+=("--provider-uri=$PROVIDER_URI"); fi
+    node ./dist/index.js verify "${nodeargs[@]}"
 
     exit_status=$?
     if [[ "$exit_status" -ne "0" ]]; then
         # nodejs errored
         msg=$(echo "[$(date '+%Y-%m-%d %H:%M:%S')] $(hostname) $contractDir $i $contractname")
-        >&2 echo "NodeJS errored" "$msg"
+        >&2 echo "ERROR: NodeJS error" "$msg"
         if [[ "$LOG" ]]; then echo "$msg" >> ./state/logs/failed.log; fi
         if [[ "$FAIL_FAST" ]]; then exit 1; fi
         continue

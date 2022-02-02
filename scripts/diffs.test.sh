@@ -23,10 +23,16 @@ echo "A      contracts/1/0x0a1d5aab0964d96a47706d7416a24d8703842b53/input.json"
 echo "input:"
 indent "$input"
 
-echo "=================="
-echo ">>> test: diffs.sh"
-echo "=================="
+echo "========================="
+echo ">>> test: diffs.sh: begin"
+echo "========================="
 
-echo "$input" | ./scripts/diffs.sh --verbose --strict
+echo "$input" | ./scripts/diffs.sh \
+  - \
+  --verbose \
+  --strict \
+  # --provider-uri=
 
-echo "validated"
+echo "==========================="
+echo "<<< test: diffs.sh: success"
+echo "==========================="

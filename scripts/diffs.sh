@@ -3,14 +3,11 @@
 #
 # extract new contracts from git diffs
 #
-# diff.sh expects input from the git diff command with options 
+# diffs.sh expects input from the git diff command of format
 # --name-status
 #
-# input can come from -i, --input or pipe. 
-# TODO: default to INPUT=$(git --no-pager diff --name-status main HEAD)
-# 
 # --strict mode validates that *only* contracts were added and nothing else
-# was modified or deleted
+# was added, modified or deleted
 # 
 # example input:
 # A      contracts/1/0x1../...
@@ -37,12 +34,13 @@ function usage {
     echo "   or: $programName -     [OPTION]..."
     echo "   or: $programName"
     echo ""
-    echo "  [file]          file with git-diff input to read from"
-    echo "  -               read git-diff from stdin (eg. pipe)"
-    echo "  -h --help       print the usage documentation of this program"
-    echo "     --verbose    print debug logs"
-    echo "     --strict     error if any anything other than contracts have"
-    echo "                  been added"
+    echo "  [file]              file with git-diff input to read from"
+    echo "  -                   read git-diff from stdin (eg. pipe)"
+    echo "  -h --help           print the usage documentation of this program"
+    echo "     --verbose        print debug logs"
+    echo "     --strict         error if any anything other than contracts have"
+    echo "                      been added"
+    echo "     --provider-uri=  web3 provider"
     exit $1 || "0";
 }
 
@@ -74,15 +72,14 @@ fi
 INPUT=
 STRICT=
 VERBOSE=
+PROVIDER_URI=
 for i in "$@"; do
     case $i in
         -) INPUT_TYPE="stdin"; shift; ;;
         -h|--help) echo "help:"; usage 0; shift ;;
-        # error if non-contract values were found in the git diff
-        # error if the git diff includes modifications, deletions, or
-        # non contract-like additions
         --strict) STRICT="true"; shift; ;;
         --verbose) VERBOSE="true"; shift; ;;
+        --provider-uri=*) PROVIDER_URI="${i#*=}"; shift; ;;
         -*|--*) echo "ERROR: unknown option \"$i\""; usage 1; shift; ;;
     esac
 done
@@ -217,4 +214,5 @@ params=()
 params+=("-")
 params+=("--failfast")
 if [[ "$VERBOSE" ]]; then params+=("--verbose"); fi
+if [[ "$PROVIDER_URI" ]]; then params+=("--provider-uri=$PROVIDER_URI"); fi
 echo "$contractdirs" | ./scripts/verify.sh "${params[@]}"
