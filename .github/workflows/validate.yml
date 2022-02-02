@@ -24,21 +24,23 @@ jobs:
       - uses: actions/checkout@v2
       # https://github.com/actions/setup-node
 
-      # - uses: actions/setup-node@v2
-      #   with:
-      #     # cache npm dependencies
-      #     # https://github.com/actions/setup-node#caching-packages-dependencies
-      #     cache: 'npm'
-      #     node-version: 16.13.2
-      #     registry-url: "https://registry.npmjs.org/"
+      - uses: actions/setup-node@v2
+        with:
+          # cache npm dependencies
+          # https://github.com/actions/setup-node#caching-packages-dependencies
+          cache: 'npm'
+          node-version: 16.13.2
+          registry-url: "https://registry.npmjs.org/"
 
-      # - run: npm i -g npm@6.14.16
-      # - run: npm ci
-      # - run: npm run test
-      # - run: npm run build
-      # # https://github.com/actions/checkout/issues/160
-      # # fetch all branches from remote so we can diff with the current branch
+      - run: npm i -g npm@6.14.16
+      - run: npm ci
+      - run: npm run test
+      - run: npm run build
+      # https://github.com/actions/checkout/issues/160
+      # fetch all branches from remote so we can diff with the current branch
       # - run: git fetch --no-tags --prune --depth=1 origin +refs/heads/*:refs/remotes/origin/*
+
+      # validate contracts
 
       - name: generate variables
         id: vars
@@ -56,34 +58,46 @@ jobs:
           echo "provideruri: $provideruri"
           echo "primarybranch: $primarybranch"
 
+      # get added files
       - uses: lots0logs/gh-action-get-changed-files@2.1.4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-        # with:
-        #   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 
-      - name: get changed files
+      # get changed contracts
+      - name: get changed contracts
         run: |
           chainid="${{ steps.vars.outputs.chainid }}"
           provideruri="${{ steps.vars.outputs.provideruri }}"
-          # $added=git --no-pager diff origin/test/gha HEAD
-          # echo "getting changed files"
 
-          echo "=========== all"
-          cat ~/files.json
+          # extract the unique contract directories added
+          #   s/ command:   substitute  https://www.gnu.org/software/sed/manual/html_node/The-_0022s_0022-Command.html
+          #   /p flag:      "If the substitution was made, then print the new pattern space"
+          #   -n argument:  "disable automatic printing except when explicitly told to via the p command"
+          #                 this causes sed to output nothing if nothing was matched 
+          #                 otherwise sed outputs the whole line if nothing matched
+          #   -E            "Use extended regular expressions rather than basic regular expressions"
+          contractdirs=$( \
+            cat ~/files_added.json \
+              | sed -En 's/^(contracts\/[0-9]+\/0x[a-f0-9]{40})\/.*/\1/p' \
+              | sort -u)
 
-          echo "=========== modified"
-          cat ~/files_modified.json
+          if [[ ! "$contractdirs" ]]; then
+            echo "success - no contracts"
+          do
 
-          echo "=========== added"
-          cat ~/files_added.json
+          echo "validating $(echo "$contractdirs" | wc -l) contracts:"
+          echo "$contractdirs"
+          
+          echo "$contractdirs" \
+            | ./scripts/verify.sh \
+              - \
+              --verbose \
+              --failfast \
+              --provider-uri="$provideruri" \
+              --chainid="$chainid"
 
-          echo "=========== deleted"
-          cat ~/files_deleted.json
-
-          echo "=========== renamed"
-          cat ~/files_renamed.json
+          echo "success - $(echo "$contractdirs" | wc -l) contracts validated"
 
 
       # # get the desired node
