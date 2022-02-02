@@ -5,6 +5,7 @@ on:
   pull_request:
     types: 
       - opened
+      - synchronize
     branches:
       - test/gha
 
@@ -26,4 +27,9 @@ jobs:
       - run: npm ci
       - run: npm run test
       - run: npm run build
-      - run: ./scripts/diff.sh --verbose --strict
+      # https://github.com/actions/checkout/issues/160
+      # fetch all branches from remote
+      - run: git fetch --no-tags --prune --depth=1 origin +refs/heads/*:refs/remotes/origin/*
+      - run: git --no-pager diff origin/test/gha HEAD
+      - run: git --no-pager diff --name-status origin/test/gha HEAD | ./scripts/diffs.sh --verbose
+      - run: "echo result: \"$?\""

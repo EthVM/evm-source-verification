@@ -104,6 +104,11 @@ for i in "$@"; do
     esac
 done
 
+if [[ "$VERBOSE" ]]; then
+    echo "=== script: $programName ==="
+    echo "=== branch: $(git symbolic-ref --short HEAD) ==="
+fi
+
 # try to load dirs if not given in args
 if [[ ! "$DIRS" ]]; then
   if [[ ! -t 0 ]]; then
