@@ -46,11 +46,7 @@ jobs:
         id: vars
         run: |
           chainid=1
-          provideruri=$(\
-            grep -E "^$chainid:" nodes \
-            | sed -En 's/[0-9]+:[^:]+:(.*)/\1/p' \
-            | awk '{ print $2 }' \
-          )
+          provideruri=$( grep -E "^$chainid:" nodes | sed -En 's/^[0-9]+:[^:]+:(.*)/\1/p')
           if [[ ! "$provideruri" ]]; then echo "no node for chainid $chainid"; exit 1; fi
           primarybranch="origin/test/gha"
 
