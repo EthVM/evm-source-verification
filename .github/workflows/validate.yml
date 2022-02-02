@@ -40,7 +40,8 @@ jobs:
       # # fetch all branches from remote so we can diff with the current branch
       # - run: git fetch --no-tags --prune --depth=1 origin +refs/heads/*:refs/remotes/origin/*
 
-      - id: vars
+      - name: generate variables
+        id: vars
         run: |
           chainid=1
           provideruri=$(grep "^$chainid," | awk -F ',' "{ print $2 }")
@@ -54,8 +55,8 @@ jobs:
       - run: |
           chainid="${{ steps.vars.outputs.chainid }}"
           provideruri="${{ steps.vars.outputs.provideruri }}"
-          $added=git --no-pager diff origin/test/gha HEAD
-          echo "getting changed files"
+          # $added=git --no-pager diff origin/test/gha HEAD
+          # echo "getting changed files"
 
       - uses: lots0logs/gh-action-get-changed-files@2.1.4
         with:
