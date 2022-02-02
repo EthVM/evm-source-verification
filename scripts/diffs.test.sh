@@ -27,6 +27,6 @@ echo "=================="
 echo ">>> test: diffs.sh"
 echo "=================="
 
-echo "$input" | ./scripts/diffs.sh -v -s
+echo "$input" | ./scripts/diffs.sh --verbose --strict
 
 echo "validated"
