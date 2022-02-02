@@ -39,19 +39,23 @@ jobs:
       # - run: git fetch --no-tags --prune --depth=1 origin +refs/heads/*:refs/remotes/origin/*
 
       - id: chainid
-        run: echo "::set-output name=chainid::1"
+        run: |
+          echo "::set-output name=chainid::1"
 
       # get the desired node
       - id: provideruri
         run: |
-          provideruri= grep nodes "${{  steps.vars.outputs.chainid }}" | awk "{ print $2 }"
-          echo "::set-output name-provider-uri::$provideruri"
+          echo "chainid 1: $chainid"
+          echo "chainid 2: ${{ steps.vars.outputs.chainid }}"
+          # echo "chainid1: $chainid"
+          # echo "chainid2: $chainid"
+          # provideruri=$(grep nodes "$chainid" | awk "{ print $2 }")
 
-      - run: |
-            echo "chainid:"
-            echo "chainid: ${{ steps.vars.outputs.chainid }}"
-            echo "provideruri:"
-            echo "chainid: ${{ steps.vars.outputs.provideruri }}"
+      # - run: |
+      #       echo "chainid:"
+      #       echo "chainid: ${{ steps.vars.outputs.chainid }}"
+      #       echo "provideruri:"
+      #       echo "chainid: ${{ steps.vars.outputs.provideruri }}"
 
       # - run: git --no-pager diff origin/test/gha HEAD
       # - run: |
