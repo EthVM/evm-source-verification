@@ -43,7 +43,9 @@ jobs:
 
       # get the desired node
       - id: provideruri
-        run: echo "::set-output name-provider-uri::$(nodes grep nodes "${{  steps.vars.outputs.chainid }}" | awk '{ print $2 }')"
+        run: |
+          provideruri= grep nodes "${{  steps.vars.outputs.chainid }}" | awk "{ print $2 }"
+          echo "::set-output name-provider-uri::$provideruri"
 
       - run: |
             echo "chainid:"
