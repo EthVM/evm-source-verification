@@ -9,7 +9,7 @@
 name: validate
 
 on:
-  pull_request:
+  pull_request_target:
     types: 
       - opened
       - synchronize
@@ -52,15 +52,33 @@ jobs:
           echo "::set-output name=provideruri::$provideruri"
           echo "::set-output name=primarybranch::$primarybranch"
 
-      - run: |
+          echo "chainid: $chainid"
+          echo "provideruri: $provideruri"
+          echo "primarybranch: $primarybranch"
+
+      - uses: lots0logs/gh-action-get-changed-files@2.1.4
+
+      - name: get changed files
+        run: |
           chainid="${{ steps.vars.outputs.chainid }}"
           provideruri="${{ steps.vars.outputs.provideruri }}"
           # $added=git --no-pager diff origin/test/gha HEAD
           # echo "getting changed files"
 
-      - uses: lots0logs/gh-action-get-changed-files@2.1.4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          echo "=========== all"
+          cat ~/files.json
+
+          echo "=========== modified"
+          cat ~/files_modified.json
+
+          echo "=========== added"
+          cat ~/files_added.json
+
+          echo "=========== deleted"
+          cat ~/files_deleted.json
+
+          echo "=========== renamed"
+          cat ~/files_renamed.json
 
 
       # # get the desired node
