@@ -89,7 +89,6 @@ done
 
 if [[ "$VERBOSE" ]]; then
     echo "=== script: $programName ==="
-    echo "=== branch: $(git symbolic-ref --short HEAD) ==="
     # print where we're getting blobs from:
     if [[ "$INPUT_TYPE" == "stdin" ]]; then echo "=== reading from: /dev/stdin ==="
     elif [[ "$INPUT_TYPE" == "file" ]]; then echo "=== reading from: file://$FILE_INPUT ==="

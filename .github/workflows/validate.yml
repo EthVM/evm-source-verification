@@ -70,6 +70,9 @@ jobs:
           chainid="${{ steps.vars.outputs.chainid }}"
           provideruri="${{ steps.vars.outputs.provideruri }}"
 
+          echo "files added:"
+          cat ~/files_added.json
+
           # extract the unique contract directories added
           #   s/ command:   substitute  https://www.gnu.org/software/sed/manual/html_node/The-_0022s_0022-Command.html
           #   /p flag:      "If the substitution was made, then print the new pattern space"
@@ -84,6 +87,7 @@ jobs:
 
           if [[ ! "$contractdirs" ]]; then
             echo "success - no contracts"
+            exit 0
           fi
 
           echo "validating $(echo "$contractdirs" | wc -l) contracts:"

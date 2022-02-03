@@ -86,7 +86,6 @@ done
 
 if [[ "$VERBOSE" ]]; then
     echo "=== script: $programName ==="
-    echo "=== branch: $(git symbolic-ref --short HEAD) ==="
     if [[ "$INPUT_TYPE" == "file" ]]; then echo "=== reading from: file://$FILE_INPUT ==="
     elif [[ "$INPUT_TYPE" == "stdin" ]]; then echo "=== reading from: /dev/stdin ==="
     elif [[ "$INPUT_TYPE" == "default" ]]; then echo "=== reading from: default ==="
