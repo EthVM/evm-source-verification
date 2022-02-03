@@ -118,6 +118,14 @@ chainIds=$(echo "chainContractDirs" | awk '{ print $1 }' | sort -u)
 chainCount=$(echo "$chainIds" | wc -l)
 echo "chains: $chainCount"
 
+if [[ "$VERBOSE" ]]; then
+    echo "== chainIdsContractDirs:"
+    indent "$chainIdsContractDirs"
+
+    echo "== chainIds:"
+    indent "$chainIds"
+fi
+
 i=0
 echo "$chainIds" | while IFS= read -r chainId; do
     ((i++)) || true
