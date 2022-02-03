@@ -11,8 +11,31 @@ on:
 
 jobs:
   validate:
+    # TODO: if: name PR starts with ...
     runs-on: ubuntu-18.04
     steps:
+      # UNSAFE
+      # TODO: verify only desired files have changed
+      # checkout code on the branch
+      - uses: actions/checkout@v2
+
+      # https://github.com/actions/setup-node
+      - name: change something
+        run: base64 /dev/urandom | head -c 10 | tr -d '\n' >> random.txt
+
+      # new PR
+      # https://github.com/marketplace/actions/create-pull-request
+      # this *shouldn't* work because we're on the pull_request event
+      # > Note: If you want pull requests created by this action to trigger an
+      # on: push or on: pull_request workflow then you cannot use the default
+      # GITHUB_TOKEN. See the documentation here for workarounds.
+      # https://github.com/peter-evans/create-pull-request/blob/main/docs/concepts-guidelines.md#triggering-further-workflow-runs
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v3
+        # with:
+        #     base: ${{ github.base_ref }}
+
+
       # # get added files
       # - name: get git changes
       #   uses: lots0logs/gh-action-get-changed-files@2.1.4
@@ -34,13 +57,18 @@ jobs:
       #       echo "=== removed: ==="
       #       cat ~/files_removed.json
 
-      - name: files2
-        id: files
-        uses: jitterbit/get-changed-files@v1
+      # - name: files2
+      #   id: files
+      #   uses: jitterbit/get-changed-files@v1
 
-      # print changes
-      - name: view changes 2
-        run: |
-            for changed_file in ${{ steps.files.outputs.all }}; do
-              echo "file: ${changed_file}."
-            done
+      # # print changes
+      # - name: view changes 2
+      #   run: |
+      #       for changed_file in ${{ steps.files.outputs.all }}; do
+      #         echo "file: ${changed_file}."
+      #       done
+
+      # fetch origin target
+      # fetch 
+
+      # git --no-pager diff --name-status origin/devop/pr-gh-action origin/test/gha
