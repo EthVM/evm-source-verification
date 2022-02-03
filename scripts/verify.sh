@@ -166,6 +166,12 @@ mkdir -p "./state"
 mkdir -p "./state/compilers"
 mkdir -p "./state/logs"
 
+if [[ ! "$contractDirs" ]]; then
+    if [[ "$DEBUG" ]]; then echo "nothing to verify"; fi
+    exit 0
+fi
+
+
 i=0
 # dir=contracts/1/0x0131b36ad41b041db46ded4016bca296deb2136a/*    
 # https://unix.stackexchange.com/questions/275794/iterating-over-multiple-line-string-stored-in-variable
