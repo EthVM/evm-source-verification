@@ -45,6 +45,21 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      # print changes
+      - name: 'view changes'
+        run: |
+            echo "=== files: ==="
+            cat ~/files.json
+
+            echo "=== added: ==="
+            cat ~/files_added.json
+
+            echo "=== modified: ==="
+            cat ~/files_modified.json
+
+            echo "=== removed: ==="
+            cat ~/files_removed.json
+
       # verify contracts
       - name: validate contracts
         run: jq -r '.[]' ~/files_added.json | ./scripts/validate.sh - --verbose
