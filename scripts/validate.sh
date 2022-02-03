@@ -112,13 +112,16 @@ chainIdsContractDirs=$( \
     | sort -u)
 
 # new-line separated string of chain ids
-chainIds=$(echo "chainContractDirs" | awk '{ print $1 }' | sort -u)
+chainIds=$(echo "$chainContractDirs" | awk '{ print $1 }' | sort -u)
 
 # count the chains
 chainCount=$(echo "$chainIds" | wc -l)
 echo "chains: $chainCount"
 
 if [[ "$VERBOSE" ]]; then
+    echo "== files:"
+    indent "$files"
+
     echo "== chainIdsContractDirs:"
     indent "$chainIdsContractDirs"
 
