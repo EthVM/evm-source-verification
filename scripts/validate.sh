@@ -157,14 +157,13 @@ echo "$chainIds" | while IFS= read -r chainId; do
     fi
 
     verifyargs=( \
-        "-" \
         "--failfast" \
         "--chainid=$chainId" \
         "--provider-uri=$providerUri" \
     )
     if [[ "$VERBOSE" ]]; then verifyargs+=("--verbose"); fi
 
-    ./scripts/verify.sh "${verifyargs[@]}"
+    echo "$contractDirs" | ./scripts/verify.sh - "${verifyargs[@]}"
 done
 
 
