@@ -160,7 +160,7 @@ if [[ "$BUILD" ]]; then
 fi
 
 if [[ ! "$contractDirs" ]]; then
-    if [[ "$DEBUG" ]]; then echo "nothing to verify"; fi
+    if [[ "$VERBOSE" ]]; then echo "nothing to verify"; fi
     exit 0
 fi
 
