@@ -89,7 +89,7 @@ elif [[ "$INPUT_TYPE" == "stdin" ]]; then files=$(cat)
 else echo "ERROR: unexpected input type: \"$INPUT_TYPE\"" exit 1
 fi
 
-if [[ ! "$files"]]; then
+if [[ ! "$files" ]]; then
     echo "ERROR: no files"
     exit 1
 fi
