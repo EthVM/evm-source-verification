@@ -1,4 +1,11 @@
-# https://docs.github.com/en/actions
+#
+# Execute tests and Validate new contracts on pull request
+#
+# Checks whether added contracts are valid
+#
+# TODO: do not execute scripts from the pulled-in branch...
+#
+
 name: validate
 
 on:
@@ -6,16 +13,18 @@ on:
     types: 
       - opened
       - synchronize
+      - reopened
     branches:
       - test/gha
 
 jobs:
   validate:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     steps:
       # checkout code on the branch
       - uses: actions/checkout@v2
       # https://github.com/actions/setup-node
+
       - uses: actions/setup-node@v2
         with:
           # cache npm dependencies
@@ -23,13 +32,19 @@ jobs:
           cache: 'npm'
           node-version: 16.13.2
           registry-url: "https://registry.npmjs.org/"
+
+      # build & test
       - run: npm i -g npm@6.14.16
       - run: npm ci
       - run: npm run test
       - run: npm run build
-      # https://github.com/actions/checkout/issues/160
-      # fetch all branches from remote
-      - run: git fetch --no-tags --prune --depth=1 origin +refs/heads/*:refs/remotes/origin/*
-      - run: git --no-pager diff origin/test/gha HEAD
-      - run: git --no-pager diff --name-status origin/test/gha HEAD | ./scripts/diffs.sh --verbose
-      - run: "echo result: \"$?\""
+
+      # get added files
+      - name: get git changes
+        uses: lots0logs/gh-action-get-changed-files@2.1.4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      # verify contracts
+      - name: validate contracts
+        run: jq -r '.[]' ~/files_added.json | ./scripts/validate.sh - --verbose

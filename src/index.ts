@@ -22,7 +22,6 @@ import * as hash from './libs/hash';
 
 const toBN = Web3.utils.toBN.bind(Web3.utils);
 
-
 interface CliArgs {
   file: string;
   name: string;

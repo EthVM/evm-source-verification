@@ -12,20 +12,25 @@ cd "$project_root"
 programName=$0
 
 function usage {
-    echo "usage: $programName"
-    echo "  -h --help     [false]   print the usage documentation of this"
-    echo "                          program"
-    echo "  -v --verbose  [false]   print debug logs"
-    echo "  -s --skip     [false]   skip contracts who already have metadata"
-    echo "  -b --build    [false]   build the NodeJS app before verifying"
-    echo "  -c --clean    [false]   delete all previous metadata and state from"
-    echo "                          target directories before verifying"
-    echo "  -f --failfast [false]   exit on first failure"
-    echo "  -a --save     [false]   save validation results"
-    echo "  -l --log      [false]   store failure log outputs"
-    echo "  -d --dirs     [contracts/chainid/*] contract directories to"
-    echo "                          validate"
-    echo "  -c --chainid  [1]       id of the chain"
+    echo "Usage: $programName [OPTION]... FILE"
+    echo "   or: $programName [OPTION]... -"
+    echo "   or: $programName FILE  [OPTION]..."
+    echo "   or: $programName -     [OPTION]..."
+    echo "   or: $programName"
+    echo ""
+    echo "  [file]              contract directories to verify"
+    echo "  -                   contract directories to verify from stdsin (eg. pipe)"
+    echo "  -h --help           print the usage documentation of this program"
+    echo "     --verbose        print debug logs"
+    echo "     --skip           skip contracts who already have metadata"
+    echo "     --build          build the NodeJS app before verifying"
+    echo "     --clean          delete all previous metadata and state from"
+    echo "                      target directories before verifying"
+    echo "     --failfast       exit on first failure"
+    echo "     --save           save validation results"
+    echo "     --log            store failure log outputs"
+    echo "     --chainid        id of the chain"
+    echo "     --provider-uri=  web3 provider"
     exit $1 || "0";
 }
 
@@ -35,6 +40,27 @@ function indent {
 
 CONFIG_FILE="out/configs.json"
 
+# "default" | "file" | "stdin"
+INPUT_TYPE="default"
+INPUT_FILE=
+if [[ "$#" -gt "0" ]]; then
+    if [[ "$1" != -*  ]]; then
+        # first arg is <filename>, read from <filename>
+        INPUT_TYPE="file"
+        INPUT_FILE="$1"
+        # remove <filename> arg
+        shift
+
+    elif [[ "${@: -1}" != -* ]]; then
+        # last arg is <filename>, read from <filename>
+        INPUT_TYPE="file"
+        INPUT_FILE="${@: -1}"
+        # https://stackoverflow.com/questions/20398499/remove-last-argument-from-argument-list-of-shell-script-bash
+        # remove <filename> arg
+        set -- "${@:1:$(($#-1))}"
+    fi
+fi
+
 VERBOSE=
 SKIP=
 BUILD=
@@ -42,104 +68,54 @@ CLEAN=
 FAIL_FAST=
 SAVE=
 LOG=
-DIRS=
 CHAIN_ID="1"
+PROVIDER_URI=
 for i in "$@"; do
     case $i in
-        -h|--help)
-            echo "help:"
-            usage 0
-            shift
-            ;;
-
-        -v|--verbose)
-            VERBOSE="true"
-            shift;
-            ;;
-
-        -s|--skip)
-            SKIP="true";
-            shift;
-            ;;
-
-        -b|--build)
-            BUILD="true";
-            shift;
-            ;;
-
-        -c|--clean)
-            CLEAN="true";
-            shift;
-            ;;
-
-        -a|--save)
-            SAVE="true";
-            shift;
-            ;;
-
-        -l|--log)
-            LOG="true";
-            shift;
-            ;;
-
-        -f|--failfast)
-            FAIL_FAST="true";
-            shift;
-            ;;
-
-        -d=*|--dirs=*)
-            DIRS="${i#*=}";
-            shift;
-            ;;
-
-        -c=*|--chainid=*)
-            CHAIN_ID="${i#*=}";
-            shift;
-            ;;
-
-        -*|--*)
-            echo "ERROR: unknown option \"$i\"";
-            exit 1;
-            ;;
+        -) INPUT_TYPE="stdin"; shift; ;;
+        -h|--help) echo "help:"; usage 0; shift; ;;
+        --verbose) VERBOSE="true"; shift; ;;
+        --skip) SKIP="true"; shift; ;;
+        --build) BUILD="true"; shift; ;;
+        --clean) CLEAN="true"; shift; ;;
+        --save) SAVE="true"; shift; ;;
+        --log) LOG="true"; shift; ;;
+        --failfast) FAIL_FAST="true"; shift; ;;
+        --chainid=*) CHAIN_ID="${i#*=}"; shift; ;;
+        --provider-uri=*) PROVIDER_URI="${i#*=}"; shift; ;;
+        -*|--*) echo "ERROR: unknown option \"$i\""; exit 1; ;;
     esac
 done
 
 if [[ "$VERBOSE" ]]; then
     echo "=== script: $programName ==="
-    echo "=== branch: $(git symbolic-ref --short HEAD) ==="
+    # print where we're getting blobs from:
+    if [[ "$INPUT_TYPE" == "stdin" ]]; then echo "=== reading from: /dev/stdin ==="
+    elif [[ "$INPUT_TYPE" == "file" ]]; then echo "=== reading from: file://$FILE_INPUT ==="
+    elif [[ "$INPUT_TYPE" == "default" ]]; then echo "=== reading from: default ==="
+    else echo "=== reading from: ??? ==="
+    fi
 fi
 
-# try to load dirs if not given in args
-if [[ ! "$DIRS" ]]; then
-  if [[ ! -t 0 ]]; then
-    # read from stdin if it's not open (ie terminal is not interactive, we've
-    # probably received a pipe)
-    # https://stackoverflow.com/questions/911168/how-can-i-detect-if-my-shell-script-is-running-through-a-pipe/911213#911213
-    if [[ "$VERBOSE" ]]; then echo "loading DIRS from stdin"; fi
-    DIRS=$(cat)
-  else
-    # no pipe, load directly from contract dirs
-    if [[ "$VERBOSE" ]]; then echo "loading DIRS from filesystem"; fi
-    DIRS=$(find contracts/"$CHAIN_ID"/ -mindepth 1 -maxdepth 1)
-  fi
+# newline separated directrories / globs with contracts
+contractDirs=
+# get contract directories from new-line separated input file
+if [[ "$INPUT_TYPE" == "file" ]]; then contractDirs=${cat "$INPUT_FILE"}
+# get contract directories from stdin
+elif [[ "$INPUT_TYPE" == "stdin" ]]; then contractDirs=$(cat)
+# get contract directories from the target chain
+elif [[ "$INPUT_TYPE" == "default" ]]; then
+    contractDirs=$(find "contracts/$CHAIN_ID" -mindepth 1 -maxdepth 1 -type d)
+else echo "ERROR: unexpected input type: \"$INPUT_TYPE\"" exit 1
 fi
 
-# delete all metadata and state for a fresh start
+# delete metadata from matching directories and all state for a fresh start
 if [[ "$CLEAN" ]]; then
     # get the metadata files being deleted
-    echo "loading files to clean..."
-    # TODO: this takes some time because it executes find on every directory
-    #       should speed it up
-    rmFiles=$(echo "$DIRS" | xargs -I {} find {} -type f -name "metadata.json")
+    echo "finding metadata files..."
+    contractCount=$(echo "$contractDirs" | wc -l)
+    rmFiles=$(echo "$contractDirs" | xargs -I {} find {} -type f -name "metadata.json" 2>/dev/null)
     rmCount=$(echo "$rmFiles" | wc -l)
-    contractCount=$(echo "$DIRS" | wc -l)
-
-    echo "$DIRS"
-    echo "$rmFiles"
-    echo "$rmCount"
-    echo "$contractCount"
-    echo "fuck"
-    exit 1
 
     # log some of the files being removed
     if [[ "$rmFiles" ]]; then
@@ -159,6 +135,7 @@ if [[ "$CLEAN" ]]; then
     case "$confirm" in
         [yY])
             echo "removing metadata from $(rmCount) / ($contractCount) contracts"
+            exit 0
             for rmFile in "$rmFiles"; do
                 echo "removing: $rmFile"
                 rm $rmFile
@@ -182,6 +159,11 @@ if [[ "$BUILD" ]]; then
     npm run build || exit $?
 fi
 
+if [[ ! "$contractDirs" ]]; then
+    if [[ "$VERBOSE" ]]; then echo "nothing to verify"; fi
+    exit 0
+fi
+
 # create necessary directories
 mkdir -p "./out"
 mkdir -p "./compilers"
@@ -192,8 +174,8 @@ mkdir -p "./state/logs"
 i=0
 # dir=contracts/1/0x0131b36ad41b041db46ded4016bca296deb2136a/*    
 # https://unix.stackexchange.com/questions/275794/iterating-over-multiple-line-string-stored-in-variable
-total=$(echo "$DIRS" | wc -l)
-echo "$DIRS" | while IFS= read -r dir; do
+total=$(echo "$contractDirs" | wc -l)
+echo "$contractDirs" | while IFS= read -r contractDir; do
     ((i++)) || true
     echo "==== contract: $i / $total ===="
     if [[ "$i" -lt 0 ]]; then
@@ -201,16 +183,16 @@ echo "$DIRS" | while IFS= read -r dir; do
     fi
 
     # if using SKIP, skip if already verified
-    if [[ "$SKIP" ]] && [[ -f "$dir/metadata.json" ]]; then
-        echo "skipping $dir"
+    if [[ "$SKIP" ]] && [[ -f "$contractDir/metadata.json" ]]; then
+        echo "skipping $contractDir"
         continue
     fi
 
-    echo "verifying $dir"
+    echo "verifying $contractDir"
 
     # reset out directory
     rm -rf ./out/* || exit $?
-    cp -R $dir/* ./out || exit $?
+    cp -R $contractDir/* ./out || exit $?
 
     # extract contract details from copied files
     contractname=$(jq -r .name $CONFIG_FILE) || exit $?
@@ -226,18 +208,18 @@ echo "$DIRS" | while IFS= read -r dir; do
 
     # ensure chainid's match
     if [[ ! "$chainId" == "$CHAIN_ID" ]]; then
-        echo "chainid in $CONFIG_FILE ($chainId) does not match chainid provided ($CHAIN_ID)"
+        >&2 echo "chainid in $CONFIG_FILE ($chainId) does not match chainid provided ($CHAIN_ID)"
         exit 1
     fi
 
-    echo $contractname
+    if [[ "$VERBOSE" ]]; then echo "name: $contractname"; fi
 
     # find the required compiler
     compiler=`jq -r .compiler $CONFIG_FILE | cut -c1-23`
-    echo "source compiler: $compiler"
+    if [[ "$VERBOSE" ]]; then echo "source compiler: $compiler"; fi
     if [[ "$compiler" == *"vyper"* ]]; then
-        msg=$(echo "[$(date '+%Y-%m-%d %H:%M:%S')] $(hostname) $dir $i $contractname")
-        echo "unsupported compiler" "$msg"
+        msg=$(echo "[$(date '+%Y-%m-%d %H:%M:%S')] $(hostname) $contractDir $i $contractname")
+        >&2 echo "ERROR: unsupported compiler" "$msg"
         if [[ "$LOG" ]]; then echo "$msg" >> ./state/logs/unsupported.log; fi
         if [[ "$FAIL_FAST" ]]; then exit 1; fi
         continue
@@ -267,15 +249,15 @@ echo "$DIRS" | while IFS= read -r dir; do
     echo "$usedtmp" > $used
 
     # try to compile
-    $COMPILER_FILE --version
+    if [[ "$VERBOSE" ]]; then $COMPILER_FILE --version; fi
     timeout 15s bash -c "cat ./out/input.json \
         | $COMPILER_FILE --standard-json \
         | jq '.' > ./out/output.json";
     exit_status=$?
     if [[ $exit_status -eq 124 ]]; then
         # compilation timed out
-        msg=$(echo "[$(date '+%Y-%m-%d %H:%M:%S')] $(hostname) $dir $i $contractname")
-        echo "timed out" "$msg"
+        msg=$(echo "[$(date '+%Y-%m-%d %H:%M:%S')] $(hostname) $contractDir $i $contractname")
+        >&2 echo "ERROR: timed out" "$msg"
         if [[ "$LOG" ]]; then echo "$msg" >> ./state/logs/timeouts.log; fi
         if [[ "$FAIL_FAST" ]]; then exit 1; fi
         continue
@@ -283,23 +265,25 @@ echo "$DIRS" | while IFS= read -r dir; do
 
     # verify using nodejs
     pwd=$(pwd)
-    # to use source maps, add flag --enable-source-maps after `node`
-    # node ./dist/src/index.js verify \
-    node ./dist/index.js verify \
-        --file $pwd/out/output.json \
-        --name $contractname \
-        --chainid $chainId \
-        --enable-source-maps \
-        --address $address \
-        --out $pwd/out \
-        --hashlists.dir $pwd/state/hashes \
-        --verifiedlists.dir $pwd/state/verified;
+    # to use source maps, add flag --enable-source-maps
+    nodeargs=( \
+        "--file=$pwd/out/output.json" \
+        "--name=$contractname" \
+        "--chainid=$chainId" \
+        "--address=$address" \
+        "--out=$pwd/out" \
+        "--hashlists.dir=$pwd/state/hashes" \
+        "--verifiedlists.dir=$pwd/state/verified" \
+    )
+    if [[ "" ]]; then nodeargs+=("--enable-source-maps"); fi
+    if [[ "$PROVIDER_URI" ]]; then nodeargs+=("--provider-uri=$PROVIDER_URI"); fi
+    node ./dist/index.js verify "${nodeargs[@]}"
 
     exit_status=$?
     if [[ "$exit_status" -ne "0" ]]; then
         # nodejs errored
-        msg=$(echo "[$(date '+%Y-%m-%d %H:%M:%S')] $(hostname) $dir $i $contractname")
-        echo "NodeJS errored" "$msg"
+        msg=$(echo "[$(date '+%Y-%m-%d %H:%M:%S')] $(hostname) $contractDir $i $contractname")
+        >&2 echo "ERROR: NodeJS error" "$msg"
         if [[ "$LOG" ]]; then echo "$msg" >> ./state/logs/failed.log; fi
         if [[ "$FAIL_FAST" ]]; then exit 1; fi
         continue
@@ -307,8 +291,10 @@ echo "$DIRS" | while IFS= read -r dir; do
 
     if [[ "$SAVE" ]]; then
         # move previous files & new nodejs output back into the contract's directory
-        echo "saving results ./out/metadata.json to $dir/metadata.json";
-        mv ./out/metadata.json $dir/metadata.json
+        if [[ "$VERBOSE" ]]; then
+            echo "saving results ./out/metadata.json to $contractDir/metadata.json";
+        fi
+        mv ./out/metadata.json $contractDir/metadata.json
     fi
 done
 
