@@ -141,7 +141,7 @@ echo "$chainIds" | while IFS= read -r chainId; do
     fi
 
     if [[ ! "$providerUri" ]]; then
-      &2> echo "ERROR: chain \"$chainId\" is not supported (has no providerUri)"
+      >&2 echo "ERROR: chain \"$chainId\" is not supported (has no providerUri)"
       exit 1
     fi
 
