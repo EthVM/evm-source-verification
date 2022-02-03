@@ -157,6 +157,7 @@ echo "$chainIds" | while IFS= read -r chainId; do
     fi
 
     verifyargs=( \
+        "-" \
         "--failfast" \
         "--chainid=$chainId" \
         "--provider-uri=$providerUri" \
