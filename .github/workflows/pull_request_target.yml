@@ -14,6 +14,23 @@ jobs:
     # TODO: if: name PR starts with ...
     runs-on: ubuntu-18.04
     steps:
+
+      - name: check diffs
+        run: |
+          src="${{ github.event.pull_request.base.ref }""
+          dest="${{ github.head_ref }}""
+
+          echo "fetching base $src"
+          git fetch "$src"
+
+          echo "fetching head $dest"
+          git fetch "$dest"
+
+          echo "differences:"
+          git --no-pager diff --name-status "$dest" "$src"
+
+      # git --no-pager diff --name-status origin/devop/pr-gh-action origin/test/gha
+
       # UNSAFE
       # TODO: verify only desired files have changed
       # checkout code on the branch
@@ -71,4 +88,3 @@ jobs:
       # fetch origin target
       # fetch 
 
-      # git --no-pager diff --name-status origin/devop/pr-gh-action origin/test/gha
