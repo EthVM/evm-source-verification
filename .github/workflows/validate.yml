@@ -32,16 +32,15 @@ jobs:
           node-version: 16.13.2
           registry-url: "https://registry.npmjs.org/"
 
+      # build & test
       - run: npm i -g npm@6.14.16
       - run: npm ci
       - run: npm run test
       - run: npm run build
-      # https://github.com/actions/checkout/issues/160
-      # fetch all branches from remote so we can diff with the current branch
-      # - run: git fetch --no-tags --prune --depth=1 origin +refs/heads/*:refs/remotes/origin/*
 
       # validate contracts
 
+      # get variables
       - name: generate variables
         id: vars
         run: |
@@ -54,25 +53,17 @@ jobs:
           echo "::set-output name=provideruri::$provideruri"
           echo "::set-output name=primarybranch::$primarybranch"
 
-          echo "chainid: $chainid"
-          echo "provideruri: $provideruri"
-          echo "primarybranch: $primarybranch"
-
       # get added files
       - name: get git changes
         uses: lots0logs/gh-action-get-changed-files@2.1.4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-
-      # get changed contracts
+      # verify added contracts
       - name: get changed contracts
         run: |
           chainid="${{ steps.vars.outputs.chainid }}"
           provideruri="${{ steps.vars.outputs.provideruri }}"
-
-          echo "files added:"
-          cat ~/files_added.json
 
           # extract the unique contract directories added
           #   s/ command:   substitute  https://www.gnu.org/software/sed/manual/html_node/The-_0022s_0022-Command.html
@@ -95,7 +86,7 @@ jobs:
           echo "$contractdirs"
           
           echo "$contractdirs" \
-            | ./scripts/verify.sh \
+            | ./verify.sh \
               - \
               --verbose \
               --failfast \
@@ -103,28 +94,3 @@ jobs:
               --chainid="$chainid"
 
           echo "success - $(echo "$contractdirs" | wc -l) contracts validated"
-
-
-      # # get the desired node
-      # - id: provideruri
-      #   run: |
-      #     chainid="${{ steps.chainid.outputs.chainid }}"
-
-      # - run: |
-      #       echo "chainid:"
-      #       echo "chainid: ${{ steps.vars.outputs.chainid }}"
-      #       echo "provideruri:"
-      #       echo "chainid: ${{ steps.vars.outputs.provideruri }}"
-
-      # - run: git --no-pager diff origin/test/gha HEAD
-      # - run: |
-      #     git \
-      #       --no-pager \
-      #       diff \
-      #       --name-status \
-      #       origin/test/gha HEAD \
-      #       | ./scripts/diffs.sh \
-      #         - \
-      #         --verbose \
-      #         --provider-uri=https://nodes.mewapi.io/rpc/eth
-      # - run: "echo result: \"$?\""
