@@ -13,23 +13,34 @@ jobs:
   validate:
     runs-on: ubuntu-18.04
     steps:
-      # get added files
-      - name: get git changes
-        uses: lots0logs/gh-action-get-changed-files@2.1.4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+      # # get added files
+      # - name: get git changes
+      #   uses: lots0logs/gh-action-get-changed-files@2.1.4
+      #   with:
+      #     token: ${{ secrets.GITHUB_TOKEN }}
+
+      # # print changes
+      # - name: 'view changes'
+      #   run: |
+      #       echo "=== files: ==="
+      #       cat ~/files.json
+
+      #       echo "=== added: ==="
+      #       cat ~/files_added.json
+
+      #       echo "=== modified: ==="
+      #       cat ~/files_modified.json
+
+      #       echo "=== removed: ==="
+      #       cat ~/files_removed.json
+
+      - name: files2
+        id: files
+        uses: jitterbit/get-changed-files@v1
 
       # print changes
-      - name: 'view changes'
+      - name: view changes 2
         run: |
-            echo "=== files: ==="
-            cat ~/files.json
-
-            echo "=== added: ==="
-            cat ~/files_added.json
-
-            echo "=== modified: ==="
-            cat ~/files_modified.json
-
-            echo "=== removed: ==="
-            cat ~/files_removed.json
+            for changed_file in ${{ steps.files.outputs.all }}; do
+              echo "file: ${changed_file}."
+            done
