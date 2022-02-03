@@ -5,9 +5,9 @@
 # -o  exit on errors in pipes
 set -uo pipefail
 
-# # execute the script in the context of the project's root directory
-# project_root=$(cd "$(dirname ${BASH_SOURCE[0]})/.."; pwd -P)
-# cd "$project_root"
+# execute the script in the context of the project's root directory
+project_root=$(cd "$(dirname ${BASH_SOURCE[0]})/.."; pwd -P)
+cd "$project_root"
 
 programName=$0
 
@@ -18,8 +18,8 @@ function usage {
     echo "   or: $programName -     [OPTION]..."
     echo "   or: $programName"
     echo ""
-    echo "  [file]              file with directories to read from"
-    echo "  -                   read input directories from stdin (eg. pipe)"
+    echo "  [file]              contract directories to verify"
+    echo "  -                   contract directories to verify from stdsin (eg. pipe)"
     echo "  -h --help           print the usage documentation of this program"
     echo "     --verbose        print debug logs"
     echo "     --skip           skip contracts who already have metadata"
@@ -99,11 +99,11 @@ fi
 
 # newline separated directrories / globs with contracts
 contractDirs=
-# get contract directory blobs from input file
+# get contract directories from new-line separated input file
 if [[ "$INPUT_TYPE" == "file" ]]; then contractDirs=${cat "$INPUT_FILE"}
-# get contract directory blobs from stdin
+# get contract directories from stdin
 elif [[ "$INPUT_TYPE" == "stdin" ]]; then contractDirs=$(cat)
-# get contract dir blob from default
+# get contract directories from the target chain
 elif [[ "$INPUT_TYPE" == "default" ]]; then
     contractDirs=$(find "contracts/$CHAIN_ID" -mindepth 1 -maxdepth 1 -type d)
 else echo "ERROR: unexpected input type: \"$INPUT_TYPE\"" exit 1
@@ -159,18 +159,17 @@ if [[ "$BUILD" ]]; then
     npm run build || exit $?
 fi
 
+if [[ ! "$contractDirs" ]]; then
+    if [[ "$DEBUG" ]]; then echo "nothing to verify"; fi
+    exit 0
+fi
+
 # create necessary directories
 mkdir -p "./out"
 mkdir -p "./compilers"
 mkdir -p "./state"
 mkdir -p "./state/compilers"
 mkdir -p "./state/logs"
-
-if [[ ! "$contractDirs" ]]; then
-    if [[ "$DEBUG" ]]; then echo "nothing to verify"; fi
-    exit 0
-fi
-
 
 i=0
 # dir=contracts/1/0x0131b36ad41b041db46ded4016bca296deb2136a/*    

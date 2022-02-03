@@ -60,37 +60,5 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       # verify added contracts
-      - name: get changed contracts
-        run: |
-          chainid="${{ steps.vars.outputs.chainid }}"
-          provideruri="${{ steps.vars.outputs.provideruri }}"
-
-          # extract the unique contract directories added
-          #   s/ command:   substitute  https://www.gnu.org/software/sed/manual/html_node/The-_0022s_0022-Command.html
-          #   /p flag:      "If the substitution was made, then print the new pattern space"
-          #   -n argument:  "disable automatic printing except when explicitly told to via the p command"
-          #                 this causes sed to output nothing if nothing was matched 
-          #                 otherwise sed outputs the whole line if nothing matched
-          #   -E            "Use extended regular expressions rather than basic regular expressions"
-          contractdirs=$( \
-            jq -r '.[]' ~/files_added.json \
-              | sed -En 's/^(contracts\/[0-9]+\/0x[a-f0-9]{40})\/.*/\1/p' \
-              | sort -u)
-
-          if [[ ! "$contractdirs" ]]; then
-            echo "success - no contracts"
-            exit 0
-          fi
-
-          echo "validating $(echo "$contractdirs" | wc -l) contracts:"
-          echo "$contractdirs"
-          
-          echo "$contractdirs" \
-            | ./verify.sh \
-              - \
-              --verbose \
-              --failfast \
-              --provider-uri="$provideruri" \
-              --chainid="$chainid"
-
-          echo "success - $(echo "$contractdirs" | wc -l) contracts validated"
+      - name: verify added contracts
+        run: jq '.[]' ~/files_added.json | ./scripts/validate.sh - --verbose
