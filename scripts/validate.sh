@@ -112,11 +112,11 @@ chainIdsContractDirs=$( \
     | sort -u)
 
 # new-line separated string of chain ids
-chainsIds=$(echo "chainContractDirs" | awk '{ print $1 }' | sort -u)
+chainIds=$(echo "chainContractDirs" | awk '{ print $1 }' | sort -u)
 
 # count the chains
-echo "chains: $(echo "$chainIds" | wc -l)"
-chainCount=$(echo "$contractDirs" | wc -l)
+chainCount=$(echo "$chainIds" | wc -l)
+echo "chains: $chainCount"
 
 i=0
 echo "$chainIds" | while IFS= read -r chainId; do
