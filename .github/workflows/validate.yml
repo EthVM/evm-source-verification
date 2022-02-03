@@ -38,27 +38,12 @@ jobs:
       - run: npm run test
       - run: npm run build
 
-      # validate contracts
-
-      # get variables
-      - name: generate variables
-        id: vars
-        run: |
-          chainid=1
-          provideruri=$( grep -E "^$chainid:" nodes | sed -En 's/^[0-9]+:[^:]+:(.*)/\1/p')
-          if [[ ! "$provideruri" ]]; then echo "no node for chainid $chainid"; exit 1; fi
-          primarybranch="origin/test/gha"
-
-          echo "::set-output name=chainid::$chainid"
-          echo "::set-output name=provideruri::$provideruri"
-          echo "::set-output name=primarybranch::$primarybranch"
-
       # get added files
       - name: get git changes
         uses: lots0logs/gh-action-get-changed-files@2.1.4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      # verify added contracts
-      - name: verify added contracts
+      # verify contracts
+      - name: validate contracts
         run: jq '.[]' ~/files_added.json | ./scripts/validate.sh - --verbose
