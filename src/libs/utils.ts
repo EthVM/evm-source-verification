@@ -1,7 +1,56 @@
 import cbor from "cbor";
+import tmp from 'tmp';
+import cp from 'node:child_process';
 import { toB58String } from "multihashes";
-import { bytesToHex } from "web3-utils";
+import Web3 from "web3";
 import fs from 'fs';
+import path from 'path';
+import { promisify } from 'util';
+import { Address, CborDataType, CborDecodedType, HexString } from "../types";
+
+/**
+ * Execute a CLI command
+ */
+export const pexec = promisify(cp.exec);
+
+/**
+ * Create a temporary file
+ */
+export function tmpFile(
+  options: tmp.FileOptions,
+): Promise<[filename: string, fd: number]> {
+  return new Promise((res, rej) => {
+    tmp.file(options, (err, name, fd) => {
+      if (err) rej(err);
+      else res([name, fd]);
+    });
+  });
+}
+
+/**
+ * Create a temporary directory
+ */
+export function tmpDir(
+  options: tmp.FileOptions
+): Promise<[dirname: string, rm: tmp.DirCallback]> {
+  return new Promise((res, rej) => {
+    tmp.dir(options, (err, name, rm) => {
+      if (err) rej(err);
+      else res([name, rm]);
+    });
+  });
+}
+
+/**
+ * Convert bytes to hexidecimal
+ */
+export const bytesToHex = Web3.utils.bytesToHex.bind(Web3.utils);
+
+/**
+ * Convert a string or nubmer to a BN
+ */
+export const toBN = Web3.utils.toBN.bind(Web3.utils);
+
 
 // https://github.com/ethereum/sourcify
 /**
@@ -182,7 +231,7 @@ export function readJsonFile<T>(filename: string): Promise<undefined | T> {
 export function writeJsonFile(
   filename: string,
   // eslint-disable-next-line @typescript-eslint/ban-types
-  contents: object,
+  contents: object | unknown[],
   options?: { pretty?: boolean },
 ): Promise<void> {
   const pretty = options?.pretty ?? false;
@@ -227,4 +276,169 @@ export function arrPush<T>(
   if (arr.includes(value)) return false;
   arr.push(value);
   return true;
+}
+
+/**
+ * Create a random ethereum address
+ * 
+ * @returns
+ */
+export function randomAddress(): Address {
+  const address: string[] = [];
+  for (let i = 0; i < 40; i += 1) {
+    address.push(Math.floor(Math.random() * 16).toString(16));
+  }
+  return `0x${address.join('')}`;
+}
+
+
+/**
+ * Create a random chainId
+ *
+ * @returns 
+ */
+export function randomChainId(): number {
+  return (1 + Math.floor(Math.random() * 200));
+}
+
+
+/**
+ * Get date in format YYYY-MM-DD hh:mm:ss
+ * 
+ * @param date 
+ * @returns 
+ */
+export function ymdhms(date: Date = new Date()): string {
+  const YYYY = date.getUTCFullYear().toString().padStart(4, '0');
+  const MM = (date.getUTCMonth() + 1).toString().padStart(2, '0');
+  const DD = date.getUTCDate().toString().padStart(2, '0');
+
+  const hh = date.getUTCHours().toString().padStart(2, '0');
+  const mm = date.getUTCMinutes().toString().padStart(2, '0');
+  const ss = date.getUTCSeconds().toString().padStart(2, '0');
+
+  return `${YYYY}-${MM}-${DD} ${hh}:${mm}:${ss}`;
+}
+
+/**
+ * Get the file destination relative to the process cwd
+ *
+ * Leaves relative filenames unchanged
+ * 
+ * Normalises the filename
+ * 
+ * @param filename    relative or absolute filename
+ * @returns           relative normalised filename
+ */
+export function frel(filename: string): string {
+  return path.normalize(path.isAbsolute(filename)
+    ? path.relative(process.cwd(), filename)
+    : filename);
+}
+
+/**
+ * Get the absolute file destination assuming it's relatively based at the
+ * process cwd
+ *
+ * Leaves absolute filenames unchanged
+ * 
+ * Normalises the filename
+ * 
+ * @param filename    relative or absolute filename
+ * @returns           absolute normalised filename
+ */
+export function fabs(filename: string): string {
+  return path.normalize(path.isAbsolute(filename)
+    ? filename
+    : path.join(process.cwd(), filename))
+}
+
+/**
+ * Does the file exist?
+ * 
+ * @param filename  relative or absolute filename
+ *                  if the filename is relative it will be treated as relative
+ *                  to the cwd
+ * @returns         whether the file exists
+ */
+export async function fexists(filename: string): Promise<boolean> {
+  try {
+    await fs.promises.access(fabs(filename));
+    return true;
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'ENOENT') return false;
+    throw err;
+  }
+}
+
+/**
+ * Is the value a safe filename
+ * 
+ * asserts that the filename only contains safe expected characters
+ * (doesn't contain slashes or weird unexpected characters)
+ *
+ * Helps protect against simple script injection attacks
+ *
+ * @param filename    filename to check
+ * @returns           if the filename has only safe characters
+ */
+export function isSafeFilename(filename: string): boolean {
+  if (!filename) return false;
+  return isSafeFilename.regex.test(filename);
+}
+/**
+ * Allows: 0-9, a-z, A-Z, _, -, ., ' ', +
+ */
+isSafeFilename.regex = /^[0-9a-zA-Z_\-=. +]+$/;
+
+
+/**
+ * Execute a CLI command, piping the input into it
+ *
+ * Pipe the given input into it
+ *
+ * @param command   command to execute
+ * @param input     input to pipe into the command
+ * @param options   execution options, including max buffer size of stdout
+ * @returns         resulting stdout
+ */
+export function pexecPipe(
+  command: string,
+  input: string,
+  options: cp.ExecOptions,
+): Promise<{ stdout: string, stderr: string }> {
+  return new Promise((res, rej) => {
+    const proc = cp.exec(
+      command,
+      { ...options },
+      (err, stdout, stderr) => {
+        if (err) return rej(err);
+        res({ stdout, stderr });
+      },
+    );
+    proc.stdin!.write(input);
+    proc.stdin!.end();
+  });
+}
+
+
+/**
+ * Get a value if if the key already exists
+ *
+ * Otherwise create a new value
+ * 
+ * @param map       host map
+ * @param key       target key
+ * @param create    value factory - creates the value if they key doesn't exist
+ * @returns         value (new or old) at the key
+ */
+export function mapGetOrCreate<K, V>(
+  map: Map<K, V>,
+  key: K,
+  create: () => V,
+): V {
+  if (map.has(key)) return map.get(key)!;
+  const value = create();
+  map.set(key, value);
+  return value;
 }

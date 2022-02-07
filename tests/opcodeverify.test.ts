@@ -1,4 +1,4 @@
-import { opCodeCodeVerification } from "@src/libs/verifications";
+import { opCodeCodeVerification } from "../src/libs/verifications";
 
 describe("test for opcode verified contracts", () => {
   it("should properly decode opcode and verify", () => {

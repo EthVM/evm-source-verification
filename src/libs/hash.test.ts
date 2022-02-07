@@ -1,7 +1,7 @@
-import { getBytecodeWithoutMetadata } from "@src/libs/utils";
 import { keccak256 } from "web3-utils";
-import { getOpCodes } from "@src/libs/verifications";
-import * as hash from '@src/libs/hash';
+import * as hash from './hash';
+import { getBytecodeWithoutMetadata } from "./utils";
+import { getOpCodes } from "./verifications";
 
 describe("test hashes", () => {
   // contract 0x0a0c7c7d8faa70e6d88aab1663b40da88115c228 on mainnet
