@@ -6,4 +6,5 @@ export interface ValidateGitDiffsCliArgs {
   base: string;
   head: string;
   strict: boolean;
+  verify: boolean;
 }

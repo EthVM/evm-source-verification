@@ -4,6 +4,7 @@ import https from "node:https";
 import { delay } from '@nkp/delay';
 import { fexists, mapGetOrCreate, tmpFile, frel, isSafeFilename, pexecPipe, fabs } from "../libs/utils";
 import { ContractInput, CompiledOutput, ICompiler } from "../types";
+import { SOLIDITY_COMPILE_TIMEOUT, SOLIDITY_MAX_OUTPUT_BUFFER_SIZE } from '../constants';
 
 /**
  * Configuration options for the SolidityService
@@ -140,10 +141,9 @@ async function solidityCompile(
     cmd,
     JSON.stringify(input),
     {
-      // 100 MiB
-      maxBuffer: 100 * 1024 * 1024,
+      maxBuffer: SOLIDITY_MAX_OUTPUT_BUFFER_SIZE,
       shell: 'bash',
-      timeout: 30_000,
+      timeout: SOLIDITY_COMPILE_TIMEOUT,
     },
   );
 

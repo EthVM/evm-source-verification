@@ -15,6 +15,9 @@ export const registerValidateGitDiffsCommand: Command = (argv) => {
       .positional('--token', {
         type: 'string',
         desc: 'GitHub token',
+        // can be loaded from environment
+        // to not set process.env.GITHUB_TOKEN as default value or it will
+        // print in help message
         demandOption: false,
       },)
 
@@ -45,6 +48,14 @@ export const registerValidateGitDiffsCommand: Command = (argv) => {
 
       .demandOption('--strict')
       .positional('--strict', {
+        type: 'boolean',
+        default: false,
+        desc: 'Throw if anything other than contracts have been mutated (added'
+          + ', modified, deleted',
+      },)
+
+      .demandOption('--verify')
+      .positional('--verify', {
         type: 'boolean',
         default: false,
         desc: 'Throw if anything other than contracts have been mutated (added'

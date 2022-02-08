@@ -2,6 +2,7 @@ import { Result } from "@nkp/result";
 import { getTestCases } from "../../tests/utils/get-test-cases";
 import { TestCase } from "../../tests/utils/test-case";
 import { SolidityCompiler } from "../compilers/solidity.compiler";
+import { SOLIDITY_COMPILE_TIMEOUT } from "../constants";
 import { getMetadata } from "../libs/metadata";
 import { ICompiler } from "../types";
 import { ICompilerService, CompilerService } from "./compiler.service";
@@ -26,7 +27,7 @@ describe('VerificationService', () => {
     verificationService = new VerificationService(nodeService);
   })
 
-  const count = 2;
+  const count = 1;
 
   it(`should verify ${count} test cases successfully`, async () => {
     for (const testCase of testCases) {
@@ -46,5 +47,5 @@ describe('VerificationService', () => {
 
       expect(actual).toEqual(expected);
     }
-  }, 20_000);
+  }, count * SOLIDITY_COMPILE_TIMEOUT);
 });

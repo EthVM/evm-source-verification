@@ -3,8 +3,8 @@ import { ValidateGitDiffsCliArgs } from "./validate-git-diffs.types";
 import { getGitDiffs } from "../../libs/git-diffs";
 import { processContracts } from "../../libs/contracts.process";
 import { getDiffs } from "../../libs/diffs";
-import { matchContractFiles } from "../../libs/contracts.match";
 import { bootstrap } from "../../bootstrap";
+import { MatchedChains, MatchedContract } from "../../services/contract.service";
 
 /**
  * Execution the `validate` command
@@ -18,13 +18,21 @@ export async function handleValidateGitDiffsCommand(
   args: Required<ValidateGitDiffsCliArgs>,
 ): Promise<void> {
   const {
-    token,
     base,
     head,
     owner,
     repo,
-    strict
+    strict,
+    verify,
   } = args;
+
+  const token = args.token ?? process.env.GITHUB_TOKEN;
+
+  if (!token) {
+    const msg = 'You must either provide a --token argument or set the' +
+      ' GITHUB_TOKEN environment varialbe';
+    throw new Error(msg);
+  }
 
   const services = await bootstrap();
 
@@ -33,7 +41,6 @@ export async function handleValidateGitDiffsCommand(
   console.info(`base: ${base}`);
   console.info(`head: ${head}`);
 
-
   const diffs = await getGitDiffs(client, {
     base,
     head,
@@ -41,34 +48,94 @@ export async function handleValidateGitDiffsCommand(
     repo
   });
 
-  const additions = validateDiffs(diffs, {
-    onlyAddedFiles: !!strict,
-  })
+  if (strict) {
+    // assert: only changes were additions
+    const nonAdditionFilenames = handleValidateGitDiffsCommand
+      .getNonAdditions(diffs)
+    if (nonAdditionFilenames.length) {
+      const msg = 'diffs can only contain additions, found non-additions:' +
+        `\n  ${nonAdditionFilenames.join('\n  ')}`;
+      throw new Error(msg);
+    }
+  }
 
-  const chains = matchContractFiles(
-    additions,
-    services.contractService,
-    {
-      noUnknownContractFiles: !!strict,
-      onlyContractLikeFiles: !!strict,
-      requireConfigFile: !!strict,
-      requireInputFile: !!strict,
-    },
-  );
+  const additions = diffs.added;
+
+  const chains = services
+    .contractService
+    .parseContractFilenames(additions);
+
+  if (strict) {
+    // assert: only contract-like files allowed
+    const nonContractLikeFilenames = handleValidateGitDiffsCommand
+      .getNonContractLikeFilenames(additions, chains);
+    if (nonContractLikeFilenames.length) {
+      const msg = 'diffs can only contain contract-like files,' +
+        ` found non-contracts:\n  ${nonContractLikeFilenames.join('\n  ')}`;
+      throw new Error(msg);
+    }
+  }
+
+  // assert: no contract-like but unknown files
+  if (strict) {
+    const unknownContractLikeFilenames = handleValidateGitDiffsCommand
+      .getUnknownContractLikeFilenames(additions, chains);
+    if (unknownContractLikeFilenames.length) {
+      const msg = 'diffs can only contain valid contract-like files,'  +
+        ` found contracts:\n  ${unknownContractLikeFilenames.join('\n  ')}`;
+      throw new Error(msg);
+    }
+  }
+
+  if (strict) {
+    // assert: no files without inputs or configs
+    const withoutConfigOrInput = handleValidateGitDiffsCommand
+      .getContractsWithoutConfigOrInput(chains);
+    if (withoutConfigOrInput) {
+      const msg = 'each new contract must include a config and input' +
+        ', found the following missing either config or input:' +
+        `\n  ${withoutConfigOrInput.flatMap(cntr => cntr.files).join('\n  ')}`;
+      throw new Error(msg);
+    }
+  }
+
+  // looks good
+  console.info('success: diff only contains valid additions');
+
+  if (!verify) {
+    console.info('success: not verifying');
+    return;
+  }
+
+  // validate all
+  let contractCount = 0;
+  chains.forEach(chain => { contractCount += chain.contracts.size });
+
+  if (!contractCount) {
+    console.info('no contracts to verify');
+    return;
+  }
+
+  const contractDirnames = Array
+    .from(chains.values())
+    .flatMap(chain => Array
+      .from(chain.contracts.values())
+      .flatMap(contract => contract.dirname));
+
+  console.info(`verifying ${contractCount} contracts:`
+    + `\n  ${contractDirnames
+      .map((contractDirname, idx) => `${idx + 1}. ${contractDirname}`)
+      .join('\n  ')}`);
 
   await processContracts(
     chains,
     services,
-    { save: false, failFast: true, skip: false, },
+    { failFast: true, save: false, skip: false },
   );
 
-  // got here? success!
+  console.info('success: all contracts validated');
 }
 
-
-export interface ValidateGitDiffsOptions {
-  onlyAddedFiles?: boolean;
-}
 
 /**
  * Extract added files
@@ -76,19 +143,71 @@ export interface ValidateGitDiffsOptions {
  * Optionally throw if there were any any modifications other than file
  * additions
  */
-export function validateDiffs(
-  diffs: getDiffs.Diffs,
-  options?: ValidateGitDiffsOptions,
-): string[] {
-  const onlyAddedFiles = options?.onlyAddedFiles ?? false;
+handleValidateGitDiffsCommand.getNonAdditions = (
+  diffs: getDiffs.Diffs
+): string[] => {
+  const additions = new Set(diffs.added);
+  const nonAdditions = diffs.all.filter(filename => !additions.has(filename));
+  return nonAdditions;
+}
 
-  if (onlyAddedFiles) {
-    // strict mode: only additions are allowed
-    if (diffs.all.length !== diffs.added.length) {
-      const msg = 'Strict: diffs contain more than additions';
-      throw new Error(msg);
-    }
-  }
 
-  return diffs.added;
+/**
+ * Assert that the filenames are all contained in the parsed contract-like files
+ * 
+ * @param filenames       filenames to check exist
+ * @param chains          result of parsing filenames
+ * @returns               trure iff all filenames were parsed
+ */
+handleValidateGitDiffsCommand.getNonContractLikeFilenames = (
+  filenames: string[],
+  chains: MatchedChains,
+): string[] => {
+  const parsedFilenames = new Set(Array
+    .from(chains.values())
+    .flatMap(chain => Array
+      .from(chain.contracts.values())
+      .flatMap(contract => contract.files)));
+
+  return filenames.filter(filename => !parsedFilenames.has(filename));
+}
+
+
+/**
+ * Assert that all of the filenames are known contract files
+ * 
+ * @param filenames       filenames to check exist
+ * @param chains          result of parsing filenames
+ * @returns               trure iff every filename was known
+ */
+handleValidateGitDiffsCommand.getUnknownContractLikeFilenames = (
+  filenames: string[],
+  chains: MatchedChains,
+): string[] => {
+  const unknownFilenames = new Set(Array
+    .from(chains.values())
+    .flatMap(chain => Array
+      .from(chain.contracts.values())
+      .flatMap(contract => contract.unknownFiles)));
+
+  return filenames.filter(filename => unknownFilenames.has(filename));
+}
+
+
+/**
+ * Get contracts whose files didn't include a config or input
+ * 
+ * @param chains 
+ * @returns 
+ */
+handleValidateGitDiffsCommand.getContractsWithoutConfigOrInput = (
+  chains: MatchedChains,
+): MatchedContract[] => {
+  const withoutConfig = Array
+    .from(chains.values())
+    .flatMap(chain => Array
+      .from(chain.contracts.values())
+      .filter(contract => !contract.hasConfig || !contract.hasInput));
+
+  return withoutConfig;
 }

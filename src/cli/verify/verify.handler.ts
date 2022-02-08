@@ -1,6 +1,5 @@
 import fs from "node:fs";
 import { VerifyCliArgs } from "./verify.types";
-import { matchContractFiles } from "../../libs/contracts.match";
 import { processChainContracts, processContracts } from "../../libs/contracts.process";
 import { bootstrap, IServices } from "../../bootstrap";
 import { Address, ChainId } from "../../types";
@@ -110,16 +109,9 @@ async function handleFile(
     .split('\n')      // split new lines
     .filter(Boolean); // remove empty lines
 
-  const chains = matchContractFiles(
-    dirs,
-    services.contractService,
-    {
-      noUnknownContractFiles: false,
-      onlyContractLikeFiles: false,
-      requireConfigFile: false,
-      requireInputFile: false,
-    },
-  );
+  const chains = services
+    .contractService
+    .parseContractFilenames(dirs);
 
   await processContracts(
     chains,
