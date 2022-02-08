@@ -29,6 +29,15 @@ jobs:
       - name: set NPM version
         run: npm i -g npm@6.14.16
 
+      - name: echo 1
+        run: |
+          echo "base_ref: ${{ github.base_ref }}"
+          echo "head_ref: ${{ github.head_ref }}"
+          echo "owner: ${{ github.event.pull_request.repository.owner  }}"
+          echo "repo: ${{ github.event.pull_request.repository.repo }}"
+          echo "head: ${{ github.event.pull_request.head }}"
+          echo "base: ${{ github.event.pull_request.base }}""
+
       # checkout repo/branch being pushed to
       # https://github.com/actions/checkout
       - name: "base: checkout"
@@ -39,9 +48,11 @@ jobs:
       #  ensure only valid changes have been made
       - name: "base: install, build, test"
         run: |
-          npm run ci
+          npm ci
           npm run test
           npm run build
+
+      - name: echo 2
 
       # https://github.community/t/how-do-you-figure-out-if-a-pr-is-from-a-work-in-pull-request-target-workflows/170001
       # https://docs.github.com/en/rest/reference/repos#get-a-repository
@@ -63,7 +74,7 @@ jobs:
 
       - name: "base: install, build, test"
         run: |
-          npm run ci
+          npm ci
           npm run test
           npm run build
 
