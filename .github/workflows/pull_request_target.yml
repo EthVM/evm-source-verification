@@ -7,19 +7,77 @@ on:
       - synchronize
       - reopened
     branches:
-      - test/gha
+      - devop/gha
 
+# ! danger !:
+# https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions#understanding-the-risk-of-script-injections
 jobs:
   prt:
     # TODO: if: name PR starts with ...
     runs-on: ubuntu-18.04
     steps:
-      - run: echo "TODO"
+      # build, run, test
+      - name: "install NodeJS"
+        uses: actions/setup-node@v2
+        with:
+          # cache npm dependencies
+          # https://github.com/actions/setup-node#caching-packages-dependencies
+          cache: 'npm'
+          node-version: 16.13.2
+          registry-url: "https://registry.npmjs.org/"
 
-      # # UNSAFE
-      # # TODO: verify only desired files have changed
-      # # checkout code on the branch
-      # - uses: actions/checkout@v2
+      - name: set NPM version
+        run: npm i -g npm@6.14.16
+
+      # checkout repo/branch being pushed to
+      # https://github.com/actions/checkout
+      - name: "base: checkout"
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.base_ref }}
+
+      #  ensure only valid changes have been made
+      - name: "base: install, build, test"
+        run: |
+          npm run ci
+          npm run test
+          npm run build
+
+      # https://github.community/t/how-do-you-figure-out-if-a-pr-is-from-a-work-in-pull-request-target-workflows/170001
+      # https://docs.github.com/en/rest/reference/repos#get-a-repository
+      - name: "base: validate head changes"
+        run: |
+          node dist/bin.js \
+            validate-git-diffs \
+            --token=${{ secrets.GITHUB_TOKEN }} \
+            --owner=${{ github.event.pull_request.repository.owner  }} \
+            --repo=${{ github.event.pull_request.repository.repo }} \
+            --head=${{ github.event.pull_request.head }} \
+            --base=${{ github.event.pull_request.base }}
+
+      # checkout the head now that we've verified it's safe
+      - name: "base: checkout"
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: "base: install, build, test"
+        run: |
+          npm run ci
+          npm run test
+          npm run build
+
+      - name: "base: verify"
+        run: |
+          node dist/bin.js \
+            validate-git-diffs \
+            --token=${{ secrets.GITHUB_TOKEN }} \
+            --owner=${{ github.event.pull_request.repository.owner  }} \
+            --repo=${{ github.event.pull_request.repository.repo }} \
+            --head=${{ github.event.pull_request.head }} \
+            --base=${{ github.event.pull_request.base }} \
+            --verify
+
 
       # # https://github.com/actions/setup-node
       # - name: change something
