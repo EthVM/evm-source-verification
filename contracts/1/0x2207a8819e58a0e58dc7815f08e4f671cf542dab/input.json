@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/BETH.sol": {
+      "content": "// SPDX-License-Identifier: GPL-3.0-or-later\npragma solidity >=0.5.16;\n\nlibrary SafeMath {\n    function add(uint x, uint y) internal pure returns (uint z) {\n        require((z = x + y) >= x, 'ds-math-add-overflow');\n    }\n\n    function sub(uint x, uint y) internal pure returns (uint z) {\n        require((z = x - y) <= x, 'ds-math-sub-underflow');\n    }\n\n    function mul(uint x, uint y) internal pure returns (uint z) {\n        require(y == 0 || (z = x * y) / y == x, 'ds-math-mul-overflow');\n    }\n}\n\ncontract BETH {\n    using SafeMath for uint;\n\n    string public name = 'BETHi';\n    string public symbol = 'BETHi';\n    uint8 public constant decimals = 18;\n    uint  public totalSupply = 400 * 10 ** 18;\n    mapping(address => uint) public balanceOf;\n    mapping(address => mapping(address => uint)) public allowance;\n\n    event Approval(address indexed owner, address indexed spender, uint value);\n    event Transfer(address indexed from, address indexed to, uint value);\n\n  \n    constructor (address receiver)  public {\n        balanceOf[receiver] = balanceOf[receiver].add(totalSupply);\n    } \n\n    function _approve(address owner, address spender, uint value) private {\n        allowance[owner][spender] = value;\n        emit Approval(owner, spender, value);\n    }\n\n    function _transfer(address from, address to, uint value) private {\n        require(balanceOf[from] >= value, 'ERC20Token: INSUFFICIENT_BALANCE');\n        balanceOf[from] = balanceOf[from].sub(value);\n        balanceOf[to] = balanceOf[to].add(value);\n        if (to == address(0)) { // burn\n            totalSupply = totalSupply.sub(value);\n        }\n        emit Transfer(from, to, value);\n    }\n\n    function approve(address spender, uint value) external returns (bool) {\n        _approve(msg.sender, spender, value);\n        return true;\n    }\n\n    function transfer(address to, uint value) external returns (bool) {\n        _transfer(msg.sender, to, value);\n        return true;\n    }\n\n    function transferFrom(address from, address to, uint value) external returns (bool) {\n        require(allowance[from][msg.sender] >= value, 'ERC20Token: INSUFFICIENT_ALLOWANCE');\n        allowance[from][msg.sender] = allowance[from][msg.sender].sub(value);\n        _transfer(from, to, value);\n        return true;\n    }\n}"
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/MinterProxy.sol": {
+      "content": "// SPDX-License-Identifier: MIT\npragma solidity >=0.7.6;\n\ninterface IERC20 {\n    function mint(address to, uint256 value) external;\n}\n\n\n\ninterface IUnipilotTokenProxy {\n    event TimelockUpdated(address previousTimelock, address newTimelock);\n    event MinterUpdated(address minter, bool status);\n\n    function updateTimelock(address _timelock) external;\n\n    function updateMinter(address _minter) external;\n\n    function mint(address _to, uint256 _value) external;\n}\n\n\ncontract UnipilotTokenProxy is IUnipilotTokenProxy {\n    IERC20 private constant UNIPILOT = IERC20(0x37C997B35C619C21323F3518B9357914E8B99525);\n\n    address public timelock;\n\n    modifier onlyMinter() {\n        require(minter[msg.sender], \"PILOT_TOKEN_PROXY:: NOT_MINTER\");\n        _;\n    }\n\n    modifier onlyTimelock() {\n        require(msg.sender == timelock, \"PILOT_TOKEN_PROXY:: NOT_TIMELOCK\");\n        _;\n    }\n\n    mapping(address => bool) public minter;\n\n    constructor(address _timelock) {\n        timelock = _timelock;\n    }\n\n    function updateTimelock(address _timelock) external override onlyTimelock {\n        emit TimelockUpdated(timelock, timelock = _timelock);\n    }\n\n    function updateMinter(address _minter) external override onlyTimelock {\n        bool status = !minter[_minter];\n        minter[_minter] = status;\n        emit MinterUpdated(_minter, status);\n    }\n\n    function mint(address _to, uint256 _value) external override onlyMinter {\n        UNIPILOT.mint(_to, _value);\n    }\n}\n"
+    }
+  }
+}

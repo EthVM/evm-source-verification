@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/AIP9.sol": {
+      "content": "// SPDX-License-Identifier: agpl-3.0\npragma solidity 0.7.5;\npragma abicoder v2;\n\ninterface IProposalExecutor {\n  function execute() external;\n}\n\ninterface IERC20 {\n  function totalSupply() external view returns (uint256);\n}\n\ninterface IProxyWithAdminActions {\n  function changeAdmin(address newAdmin) external;\n}\n\ninterface IAaveDistributionManager {\n  struct AssetConfigInput {\n    uint128 emissionPerSecond;\n    uint256 totalStaked;\n    address underlyingAsset;\n  }\n\n  function configureAssets(AssetConfigInput[] calldata assetsConfigInput) external;\n}\n\ninterface IAaveReserveImpl {\n  function initialize(address reserveController) external;\n\n  function approve(\n    IERC20 token,\n    address recipient,\n    uint256 amount\n  ) external;\n}\n\ninterface IControllerAaveEcosystemReserve {\n  function approve(\n    IERC20 token,\n    address recipient,\n    uint256 amount\n  ) external;\n}\n\ncontract AIP9 is IProposalExecutor {\n  event ProposalExecuted();\n\n  address public constant AAVE_TOKEN = 0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9;\n  address public constant LONG_EXECUTOR = 0x61910EcD7e8e942136CE7Fe7943f956cea1CC2f7;\n  IAaveDistributionManager public constant STK_ABPT_TOKEN =\n    IAaveDistributionManager(0xa1116930326D21fB917d5A27F1E9943A9595fb47);\n  IProxyWithAdminActions public constant STK_ABPT_PROXY =\n    IProxyWithAdminActions(0xa1116930326D21fB917d5A27F1E9943A9595fb47);\n  IProxyWithAdminActions public constant ABPT_PROXY =\n    IProxyWithAdminActions(0x41A08648C3766F9F9d85598fF102a08f4ef84F84);\n  IControllerAaveEcosystemReserve public constant CONTROLLER_AAVE_RESERVE =\n    IControllerAaveEcosystemReserve(0x1E506cbb6721B83B1549fa1558332381Ffa61A93);\n\n  // 3 months of amission\n  uint256 public constant NEW_ALLOWANCE = 50_000 ether;\n  // 550 per day\n  uint128 public constant NEW_EMISSION_PER_SECOND = 0.006365740740740741 ether;\n\n  function execute() external override {\n    STK_ABPT_PROXY.changeAdmin(LONG_EXECUTOR);\n\n    ABPT_PROXY.changeAdmin(LONG_EXECUTOR);\n\n    CONTROLLER_AAVE_RESERVE.approve(IERC20(AAVE_TOKEN), address(STK_ABPT_TOKEN), NEW_ALLOWANCE);\n\n    IAaveDistributionManager.AssetConfigInput[] memory config =\n      new IAaveDistributionManager.AssetConfigInput[](1);\n    config[0] = IAaveDistributionManager.AssetConfigInput({\n      emissionPerSecond: NEW_EMISSION_PER_SECOND,\n      totalStaked: IERC20(address(STK_ABPT_TOKEN)).totalSupply(),\n      underlyingAsset: address(STK_ABPT_TOKEN)\n    });\n\n    STK_ABPT_TOKEN.configureAssets(config);\n\n    emit ProposalExecuted();\n  }\n}\n"
+    }
+  }
+}

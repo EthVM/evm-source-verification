@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "DegenData-Paywall/degendata-access.sol": {
+      "content": "pragma solidity ^0.8.0;\n\ncontract DegenDataAccess {\n    \n    address private owner;\n    uint256 public registrationFee;\n    mapping(address => bool) public isUserRegistered; \n    \n \n     constructor(){\n         owner = msg.sender;\n         registrationFee = 0.1 ether; \n     }\n     \n     //modifiers\n     modifier onlyOwner() {\n        require(msg.sender == owner, \"Only Owner Can Perform this function\");\n         _;\n    }\n    \n    //fallback\n    fallback() external payable\n    {\n        revert();\n    }\n     \n     \n     //Getters\n     function getRegistrationFee() public view returns(uint256){\n         return(registrationFee);\n     }\n     \n     function getOwner() public view returns(address){\n         return owner;\n     }\n     \n     //Setters\n     function setNewOwner(address _newOwner) public onlyOwner {\n         owner = _newOwner;\n     }\n     \n     function setNewRegistrationPrice(uint256 _newFee) public onlyOwner{\n         registrationFee = _newFee;\n     }\n     \n     function register() public payable {\n      require(msg.value >= registrationFee, \"Insufficient funds sent\");\n      require(isUserRegistered[msg.sender] == false, \"You already registered you knucklehead\"); \n      isUserRegistered[msg.sender] = true;\n    }\n     \n    function withdraw() public onlyOwner {\n        payable(msg.sender).transfer(address(this).balance);\n    }\n}\n\n\n\n\n\n"
+    }
+  }
+}

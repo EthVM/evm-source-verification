@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "GovActions.sol": {
+      "content": "// hevm: flattened sources of src/govActions.sol\npragma solidity =0.5.12 >0.4.13 >0.4.20 >=0.4.23 >=0.5.0 <0.6.0 >=0.5.6 <0.6.0;\n\n////// src/govActions.sol\n/* pragma solidity 0.5.12; */\n\ncontract Setter {\n    function file(bytes32, address) public;\n    function file(bytes32, uint) public;\n    function file(bytes32, bytes32, uint) public;\n    function file(bytes32, bytes32, address) public;\n    function rely(address) public;\n    function deny(address) public;\n    function init(bytes32) public;\n    function drip() public;\n    function drip(bytes32) public;\n}\n\ncontract EndLike {\n    function cage() public;\n    function cage(bytes32) public;\n}\n\ncontract PauseLike {\n    function setAuthority(address) public;\n    function setDelay(uint) public;\n}\n\ncontract GovActions {\n    function file(address who, bytes32 what, address data) public {\n        Setter(who).file(what, data);\n    }\n\n    function file(address who, bytes32 what, uint data) public {\n        Setter(who).file(what, data);\n    }\n\n    function file(address who, bytes32 ilk, bytes32 what, uint data) public {\n        Setter(who).file(ilk, what, data);\n    }\n\n    function file(address who, bytes32 ilk, bytes32 what, address data) public {\n        Setter(who).file(ilk, what, data);\n    }\n\n    function dripAndFile(address who, bytes32 what, uint data) public {\n        Setter(who).drip();\n        Setter(who).file(what, data);\n    }\n\n    function dripAndFile(address who, bytes32 ilk, bytes32 what, uint data) public {\n        Setter(who).drip(ilk);\n        Setter(who).file(ilk, what, data);\n    }\n\n    function rely(address who, address to) public {\n        Setter(who).rely(to);\n    }\n\n    function deny(address who, address to) public {\n        Setter(who).deny(to);\n    }\n\n    function init(address who, bytes32 ilk) public {\n        Setter(who).init(ilk);\n    }\n\n    function cage(address end) public {\n        EndLike(end).cage();\n    }\n\n    function setAuthority(address pause, address newAuthority) public {\n        PauseLike(pause).setAuthority(newAuthority);\n    }\n\n    function setDelay(address pause, uint newDelay) public {\n        PauseLike(pause).setDelay(newDelay);\n    }\n\n    function setAuthorityAndDelay(address pause, address newAuthority, uint newDelay) public {\n        PauseLike(pause).setAuthority(newAuthority);\n        PauseLike(pause).setDelay(newDelay);\n    }\n}\n"
+    }
+  }
+}

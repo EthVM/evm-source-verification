@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/Test06.sol": {
+      "content": "// \"SPDX-License-Identifier: UNLICENSED\"\n\npragma solidity ^0.6.9;\n\ncontract Test06\n{\n    using SafeMath for uint256;\n    \n    address admin;\n\n    //@ Token attributes\n    string public name;\n    string public symbol;\n    uint256 public totalSupply;\n    uint256 decimal;\n  \n    \n    //@ Event logging\n    event Transfer (address payable indexed _to,uint256 indexed _value);\n    event Approve (address payable indexed _from, address payable indexed _to, uint256 indexed _value);\n    event TransferFrom (address payable indexed _owner,address payable indexed _from, address payable indexed _to, uint256 _amount);\n\n    //@ Maps: ethereum address to number of tokens\n    mapping (address => uint256) public balances;\n    \n    //@ Owner can allows some other ethereum address to spend the allocated amount of tokens.\n    mapping (address => mapping (address => uint256)) public allowance;\n    \n    //@ Constructor / Setup \n    constructor () public \n    {\n        admin = msg.sender;\n        name = \"Test07\";\n        symbol = \"TST07\";\n        totalSupply = 4000000000;\n        decimal = 16;\n        balances[admin] = (totalSupply) * (10 ** decimal);\n  \n    }\n    \n    // Checks value entered is valid or not.\n    modifier isValidAmount (uint256 _value)\n    {\n        require (_value > 0, \"Invalid amount!\");\n        _;\n    }\n    \n     //@ Usual transfer function transfer tokens from one accont to another.\n    function transfer (address payable _to, uint256 _value) public \n    isValidAmount (_value)\n    returns (bool success)\n    {\n        require (balances[msg.sender] > _value, \"Insuffcient balance\");\n        \n        _transfer (msg.sender, _to, _value);    \n       \n        emit Transfer (_to, _value);\n       \n        return true;\n    }\n    \n    //@ This fuction give approvement for allowance of a certain value to be spend by a third party address.\n    //@ Like a wallet put some value in it and number of token allocated in it is used by address to it the tokens are allocated.\n    function approve (address payable _spender, uint256 _value) public \n    isValidAmount (_value)\n    returns (bool success)\n    {\n        require (_spender != address(0), \"Address not Exist\");\n        require (_value > 0, \"Invalid amount\");\n        require (balances[msg.sender] > 0, \"Insuffcient balance\");\n        \n        allowance[_spender][msg.sender] = _value;\n        \n        emit Approve (msg.sender, _spender, _value);\n        \n        return true;\n    }\n    \n    //@ This function is specific to allowance mapping only the one's allocated with certain amount of token \n    //@ can access this function\n    function transferFrom (address payable _from, address payable _to, uint256 _amount) public \n    isValidAmount (_amount)\n    returns (bool success)\n    {\n        require (allowance[msg.sender][_from] >= _amount);\n        require (balances[_from] > _amount, \"The owner has Insufficent balance\");\n        \n        allowance[msg.sender][_from] -= _amount;\n        balances[_from] -=_amount;\n        balances[_to] += _amount;\n        \n        emit TransferFrom (_from, msg.sender, _to, _amount);\n        \n        return true;\n    }\n    \n    //@ Internal function\n    function _transfer (address _from, address _to, uint256 _value) internal isValidAmount (_value){\n        \n        require (_to != address(0), \"Address not Exist\");\n        require (balances[_from] > _value, \"Insufficent balance\");\n        \n        balances[_to] += _value;\n        balances[_from] -= _value;\n    }\n}\n\nlibrary SafeMath {\nfunction mul(uint256 a, uint256 b) internal pure returns (uint256) {\n    uint256 c = a * b;\n    assert(a == 0 || c / a == b);\n    return c;\n    }\n\nfunction div(uint256 a, uint256 b) internal pure returns (uint256) {\n    uint256 c = a / b;\n    return c;\n    }\n\nfunction sub(uint256 a, uint256 b) internal pure returns (uint256) {\n    assert(b <= a);\n    return a - b;\n    }\n\nfunction add(uint256 a, uint256 b) internal pure returns (uint256) {\n    uint256 c = a + b;\n    assert(c >= a);\n    return c;\n    }\n}"
+    }
+  }
+}

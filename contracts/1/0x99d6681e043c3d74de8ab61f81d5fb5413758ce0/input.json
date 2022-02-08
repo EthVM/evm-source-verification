@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/ponzi.sol": {
+      "content": "//SPDX-License-Identifier: unlicensed\r\npragma solidity ^0.8.0;\r\n\r\n\r\ncontract ReversePonzi {\r\n    \r\n    address payable owner; //the devs, gotta pay these cunts something\r\n    address payable leader; //the current leader, set to win 1000x returns\r\n    uint256 gameNumber;\r\n    uint256 lastBlockPlayedOn;\r\n    uint256 blocksPerGame;\r\n    uint256 betsThisGame;\r\n    \r\n    event newPayment(address player, uint amount, uint betsThisGame); // Event for when shit goes down bruh\r\n    \r\n    constructor() {\r\n        owner = payable(msg.sender); //the devs, gotta pay these cunts something\r\n        leader = payable(msg.sender); //the current leader, set to win 1000x returns\r\n        gameNumber = 1;\r\n        lastBlockPlayedOn = block.number;\r\n        blocksPerGame = 6646;\r\n        betsThisGame = 0;\r\n    }\r\n    \r\n    function getStats() public view returns (uint256, uint256, uint256, address, uint256){\r\n        //tell them the contract balance, game number, blocks left, current leader, minimum to become leader\r\n        uint256 blocksLeft = lastBlockPlayedOn + blocksPerGame - block.number;\r\n        uint256 minamount = address(this).balance * 90 / 100 / 1000;\r\n        return ( address(this).balance, gameNumber, blocksLeft, leader, minamount);\r\n    }\r\n    \r\n    receive() external payable { //when some cunt sends fundz\r\n\r\n        \r\n        //make sure they sent enough eth\r\n        uint256 amountRequired = (address(this).balance - msg.value) * 90 / 100 / 1000; //it's 90% of the contract balance, divided by 1000, so it's a 1000x multiple;\r\n        \r\n        if(amountRequired > msg.value){\r\n            //they didn't send enough, cunts\r\n            revert(\"Send more money cunt\");\r\n        }\r\n    \r\n        \r\n        //if it's been over 24hrs, then they're too late, game should be finishing\r\n        if(block.number > lastBlockPlayedOn + blocksPerGame){\r\n            revert(\"Too late cunt\");\r\n        }\r\n        \r\n        //well, they sent enough, its not too late, guess the cunt is the leader. Make it so.\r\n        leader = payable(msg.sender);\r\n        lastBlockPlayedOn = block.number;\r\n        \r\n        betsThisGame++;\r\n        \r\n        //tell the world about it\r\n        emit newPayment(msg.sender, msg.value, betsThisGame);\r\n    }\r\n    \r\n    function finishGame() public payable{\r\n        //anyone can 'finish' the game by calling this function, as long as the criteria is met. The devs will do it, but anyone could do it.\r\n        if(block.number < lastBlockPlayedOn + blocksPerGame){\r\n            revert(\"Slow down cunt, game aint done yet\");\r\n        }\r\n        \r\n        uint amountForLeader = address(this).balance * 90 / 100;\r\n        uint amountForDevs = address(this).balance * 5 / 100;\r\n        //5% remains for the next game\r\n        \r\n        //5% to the devs for being sick cunts\r\n        address payable devAddress = owner;\r\n        devAddress.transfer(amountForDevs);\r\n        \r\n        \r\n        //send 90% to the Leader\r\n        address payable leaderAddress = payable(leader);\r\n        //null address is just the devs, so if no-one ends up playing it'll just win\r\n        leader = payable(owner);\r\n        leaderAddress.transfer(amountForLeader);\r\n        \r\n        //increase game number\r\n        gameNumber++;\r\n        lastBlockPlayedOn = block.number;\r\n        betsThisGame = 0;\r\n        \r\n    }\r\n    \r\n}"
+    }
+  }
+}

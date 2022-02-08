@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "LottoCount.sol": {
+      "content": "pragma solidity ^0.4.19;\r\ncontract LottoCount {\r\n \r\n    //CONSTANT\r\n    uint256 private maxTickets;\r\n    uint256 public ticketPrice; \r\n     \r\n    //LOTO REGISTER\r\n    uint256 public lottoIndex;\r\n    uint256 lastTicketTime;\r\n    \r\n    //LOTTO VARIABLES\r\n\tuint8 _direction;\r\n    uint256 numtickets;\r\n    uint256 totalBounty;\r\n    \r\n    address worldOwner;   \r\n     \r\n    event NewTicket(address indexed fromAddress, bool success);\r\n    event LottoComplete(address indexed fromAddress, uint indexed lottoIndex, uint256 reward);\r\n    \r\n    /// Create a new Lotto\r\n    function LottoCount() public \r\n    {\r\n        worldOwner = msg.sender; \r\n        \r\n        ticketPrice = 0.0101 * 10**18;\r\n        maxTickets = 2000;\r\n        \r\n\t\t_direction = 0;\r\n        lottoIndex = 1;\r\n        lastTicketTime = 0;\r\n        \r\n        numtickets = 0;\r\n        totalBounty = 0;\r\n    }\r\n\r\n    \r\n    function getBalance() public view returns (uint256 balance)\r\n    {\r\n        balance = 0;\r\n        \r\n        if(worldOwner == msg.sender) balance = this.balance;\r\n        \r\n        return balance;\r\n    }\r\n    \r\n    \r\n\tfunction withdraw() public \r\n    {\r\n        require(worldOwner == msg.sender);  \r\n        \r\n\t\t//reset values\r\n        lottoIndex += 1;\r\n        numtickets = 0;\r\n        totalBounty = 0;\r\n\t\t\r\n\t\tworldOwner.transfer(this.balance); \r\n    }\r\n    \r\n    \r\n    function getLastTicketTime() public view returns (uint256 time)\r\n    {\r\n        time = lastTicketTime; \r\n        return time;\r\n    }\r\n    \r\n\t\r\n    function AddTicket() public payable \r\n    {\r\n        require(msg.value == ticketPrice); \r\n        require(numtickets < maxTickets);\r\n        \r\n\t\t//update bif\r\n\t\tlastTicketTime = now;\r\n        numtickets += 1;\r\n        totalBounty += ticketPrice;\r\n        bool success = numtickets == maxTickets;\r\n\t\t\r\n        NewTicket(msg.sender, success);\r\n        \r\n\t\t//check if winner\r\n        if(success) \r\n        {\r\n            PayWinner(msg.sender);\r\n        } \r\n    }\r\n    \r\n    \r\n    function PayWinner( address winner ) private \r\n    { \r\n        require(numtickets == maxTickets);\r\n        \r\n\t\t//calc reward\r\n        uint ownerTax = 50 * totalBounty / 100;\r\n        uint winnerPrice = totalBounty - ownerTax;\r\n        \r\n        LottoComplete(msg.sender, lottoIndex, winnerPrice);\r\n         \r\n\t\t//reset values\r\n        lottoIndex += 1;\r\n        numtickets = 0;\r\n        totalBounty = 0;\r\n\t\t\r\n\t\t//change max tickets to give unpredictability\r\n\t\tif(_direction == 0 && maxTickets < 4000) maxTickets += 1;\r\n\t\tif(_direction == 1 && maxTickets > 2000) maxTickets -= 1;\r\n\t\t\r\n\t\tif(_direction == 0 && maxTickets == 4000) _direction = 1;\r\n\t\tif(_direction == 1 && maxTickets == 2000) _direction = 0;\r\n         \r\n\t\t//give real money\r\n        worldOwner.transfer(ownerTax);\r\n        winner.transfer(winnerPrice); \r\n    }\r\n}"
+    }
+  }
+}

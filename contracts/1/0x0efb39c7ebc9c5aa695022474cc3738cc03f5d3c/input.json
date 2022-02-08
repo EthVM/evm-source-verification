@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/presale.sol": {
+      "content": "pragma solidity 0.6.0;\r\n\r\nlibrary SafeMath {\r\n\r\n  function mul(uint256 a, uint256 b) internal pure returns (uint256) {\r\n    if (a == 0) {\r\n        return 0;\r\n    }\r\n\r\n    uint256 c = a * b;\r\n    require(c / a == b);\r\n\r\n    return c;\r\n  }\r\n\r\n  function div(uint256 a, uint256 b) internal pure returns (uint256) {\r\n    require(b > 0);\r\n    uint256 c = a / b;\r\n\r\n    return c;\r\n  }\r\n\r\n  function sub(uint256 a, uint256 b) internal pure returns (uint256) {\r\n    require(b <= a);\r\n    uint256 c = a - b;\r\n\r\n    return c;\r\n  }\r\n\r\n  function add(uint256 a, uint256 b) internal pure returns (uint256) {\r\n    uint256 c = a + b;\r\n    require(c >= a);\r\n\r\n    return c;\r\n  }\r\n\r\n  function mod(uint256 a, uint256 b) internal pure returns (uint256) {\r\n    require(b != 0);\r\n    return a % b;\r\n  }\r\n}\r\n\r\ninterface ERC20 {\r\n  function balanceOf(address who) external view returns (uint256);\r\n  function transfer(address to, uint value) external  returns (bool success); \r\n}\r\n\r\ncontract PreSale {\r\n  using SafeMath for uint256;\r\n\r\n  ERC20 private timeToken;\r\n  address payable private owner;\r\n \r\n  constructor(address token) public {\r\n    owner = msg.sender;\r\n    timeToken = ERC20(token);\r\n  }\r\n\r\n  //Buy tokens\r\n  function buyTokensByETH() external payable {\r\n    require(msg.value >= 0.01 ether && msg.value <= 0.5 ether);\r\n    \r\n    uint256 amountOfTokens = msg.value;\r\n    \r\n    amountOfTokens = amountOfTokens.div(10 ** 12); //adjust decimal tokens\r\n    amountOfTokens = amountOfTokens.div(8); //adjust tokens count to eth\r\n    \r\n    owner.transfer(msg.value);\r\n        \r\n    timeToken.transfer(msg.sender, amountOfTokens);\r\n  }\r\n  \r\n  // Not sold tokens\r\n  function returnNotSoldTokens() public returns (bool success) {\r\n    require(msg.sender == owner);\r\n    timeToken.transfer(msg.sender, timeToken.balanceOf(address(this)));\r\n    return true;\r\n  }\r\n  \r\n  // Wrong Send Various Tokens\r\n  function returnVariousTokenFromContract(address tokenAddress) public returns (bool success) {\r\n      require(msg.sender == owner);\r\n      ERC20 tempToken = ERC20(tokenAddress);\r\n      tempToken.transfer(msg.sender, tempToken.balanceOf(address(this)));\r\n      return true;\r\n  }\r\n  \r\n  // Wrong Send ETH\r\n  function returnETHFromContract(uint256 value) public returns (bool success) {\r\n      require(msg.sender == owner);\r\n      msg.sender.transfer(value);\r\n      return true;\r\n  }\r\n}"
+    }
+  }
+}

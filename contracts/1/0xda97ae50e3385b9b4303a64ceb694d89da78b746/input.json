@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/1.sol": {
+      "content": "contract Proxy  {\n\n    address public owner;\n    address public implementation;\n        \n    constructor(address _impl) public {\n        owner = msg.sender;\n        implementation = _impl;\n    }\n\n    function setImplementation(address _newImpl) public {\n        require(msg.sender == owner);\n\n        implementation = _newImpl;\n    }\n   \n    fallback() external {\n        address impl = implementation;\n        assembly {\n            let ptr := mload(0x40)\n \n            // (1) copy incoming call data\n            calldatacopy(ptr, 0, calldatasize())\n \n             // (2) forward call to logic contract\n            let result := delegatecall(gas(), impl, ptr, calldatasize(), 0, 0)\n            let size := returndatasize()\n \n            // (3) retrieve return data\n            returndatacopy(ptr, 0, size)\n \n            // (4) forward return data back to caller\n            switch result\n            case 0 { revert(ptr, size) }\n            default { return(ptr, size) }\n        }   \n    }\n}"
+    }
+  }
+}

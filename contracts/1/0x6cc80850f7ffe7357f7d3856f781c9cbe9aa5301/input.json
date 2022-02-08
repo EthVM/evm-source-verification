@@ -1,0 +1,32 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/ETHUSD.sol": {
+      "content": "pragma solidity ^0.6.0;\n\nimport \"github.com/smartcontractkit/chainlink/evm-contracts/src/v0.6/interfaces/AggregatorInterface.sol\";\n\ncontract ReferenceConsumer {\n  AggregatorInterface internal ref;\n  // For ETH-USD on ropsten, input the address:\n  // 0x8468b2bDCE073A157E560AA4D9CcF6dB1DB98507\n\n  constructor(address _aggregator) public {\n    ref = AggregatorInterface(_aggregator);\n  }\n\n  function getLatestAnswer() public view returns (int256, uint256) {\n    return (ref.latestAnswer(), uint256(ref.latestAnswer()));\n  }\n}"
+    },
+    "github.com/smartcontractkit/chainlink/evm-contracts/src/v0.6/interfaces/AggregatorInterface.sol": {
+      "content": "pragma solidity >=0.6.0;\n\ninterface AggregatorInterface {\n  function latestAnswer() external view returns (int256);\n  function latestTimestamp() external view returns (uint256);\n  function latestRound() external view returns (uint256);\n  function getAnswer(uint256 roundId) external view returns (int256);\n  function getTimestamp(uint256 roundId) external view returns (uint256);\n\n  event AnswerUpdated(int256 indexed current, uint256 indexed roundId, uint256 timestamp);\n  event NewRound(uint256 indexed roundId, address indexed startedBy, uint256 startedAt);\n}\n"
+    }
+  }
+}

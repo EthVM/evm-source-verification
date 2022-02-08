@@ -1,0 +1,32 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/TribFinal.sol": {
+      "content": "pragma solidity ^0.6.6;\r\nimport 'https://github.com/Uniswap/uniswap-v2-core/blob/master/contracts/interfaces/IERC20.sol';\r\n\r\ninterface Genesis {\r\n    function concludeGME() external; //Used\r\n    function claim() external; //Used\r\n    function deposit(uint256 value) external;\r\n    \r\n    function totalReserveBalance() external view returns (uint256);\r\n    function totalTokenBalance() external view returns (uint256);\r\n    function getBalance(address account) external view returns (uint256);\r\n    function getShare(address account) external view returns (uint256);\r\n\r\n}\r\n\r\ninterface Contribute {\r\n    function sell(uint256 tokenAmount) external; //Used\r\n    function getTotalSupply() external view returns(uint256);\r\n    function getCurrentTokenPrice() external view returns(uint256);\r\n}\r\n\r\ncontract TribInteract {\r\n    \r\n    address owner = msg.sender;\r\n    Genesis g = Genesis(0xf48d1FfBed1D9b87cC0B4410d16230B35BdFC28A);\r\n    Contribute c = Contribute(0x0DdfE92234b9DCA2de799736bBBa1D2F25CFC3b8);\r\n    IERC20 TRIB = IERC20(0xe09216F1d343Dd39D6Aa732a08036fee48555Af0);\r\n    IERC20 musd = IERC20(0xe2f2a5C287993345a840Db3B0845fbC70f5935a5);\r\n\r\n    \r\n    modifier onlyOwner() {\r\n        require(msg.sender == owner);\r\n        _;\r\n    }\r\n    \r\n    function depositIntoPool(uint256 value) external {\r\n        require(value > 0, 'Value must not be 0');\r\n        g.deposit(value);\r\n    }\r\n    \r\n    function initiatePotGrab() external {\r\n        \r\n        g.claim();\r\n        g.concludeGME();\r\n        uint256 tokenBalance = TRIB.balanceOf(address(this));\r\n        c.sell(tokenBalance);\r\n       \r\n    }\r\n    \r\n    function balance() public view returns (uint256) {\r\n        return address(this).balance;\r\n    }\r\n    \r\n    function deposit() public payable {\r\n        require(msg.value > 0);\r\n    }\r\n    \r\n    function withdraw() public onlyOwner {\r\n        msg.sender.transfer(address(this).balance);\r\n    }\r\n    \r\n    function sell(uint tokenAmount) internal {\r\n        return c.sell(tokenAmount);\r\n    }\r\n    \r\n    function getTotalSupply() external view returns(uint256) {\r\n        return c.getTotalSupply();\r\n    }\r\n    \r\n    function getCurrentTokenPrice() external view returns(uint256) {\r\n        return c.getCurrentTokenPrice();\r\n    }\r\n\r\n    function getShare(address account) external view returns (uint256) {\r\n        return g.getShare(account);\r\n    }\r\n    \r\n    function getBalance(address account) external view returns (uint256) {\r\n        return g.getBalance(account);\r\n    }\r\n    \r\n    function concludeGME() internal {\r\n        g.concludeGME();\r\n    }\r\n    \r\n    function claim() internal {\r\n        g.claim();\r\n    }\r\n    \r\n    function totalReserveBalance() external view returns (uint256) {\r\n        return g.totalReserveBalance();\r\n    }\r\n    \r\n    function totalTokenBalance() external view returns (uint256) {\r\n        return g.totalTokenBalance();\r\n    }\r\n    \r\n    \r\n    function withdrawErc20(IERC20 token) public onlyOwner {\r\n        token.transfer(owner, token.balanceOf(address(this)));\r\n    }\r\n    \r\n    function approveMusd() public {\r\n       musd.approve(0xf48d1FfBed1D9b87cC0B4410d16230B35BdFC28A, 1000000000000000000000000);\r\n    }\r\n\r\n}\r\n"
+    },
+    "https://github.com/Uniswap/uniswap-v2-core/blob/master/contracts/interfaces/IERC20.sol": {
+      "content": "pragma solidity >=0.5.0;\n\ninterface IERC20 {\n    event Approval(address indexed owner, address indexed spender, uint value);\n    event Transfer(address indexed from, address indexed to, uint value);\n\n    function name() external view returns (string memory);\n    function symbol() external view returns (string memory);\n    function decimals() external view returns (uint8);\n    function totalSupply() external view returns (uint);\n    function balanceOf(address owner) external view returns (uint);\n    function allowance(address owner, address spender) external view returns (uint);\n\n    function approve(address spender, uint value) external returns (bool);\n    function transfer(address to, uint value) external returns (bool);\n    function transferFrom(address from, address to, uint value) external returns (bool);\n}\n"
+    }
+  }
+}

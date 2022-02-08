@@ -1,0 +1,32 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "SorbettoStrategy.sol": {
+      "content": "// SPDX-License-Identifier: MIT\r\npragma solidity 0.7.6;\r\n\r\nimport \"./interfaces/ISorbettoStrategy.sol\";\r\n\r\n/// @title Permissioned Sorbetto variables\r\n/// @notice Contains Sorbetto variables that may only be called by the governance\r\ncontract SorbettoStrategy is ISorbettoStrategy {\r\n\r\n    // Address of the Sorbetto's strategy owner\r\n    address public governance;\r\n    // Pending to claim ownership address\r\n    address public pendingGovernance;\r\n\r\n    /// @inheritdoc ISorbettoStrategy\r\n    uint32 public override twapDuration;\r\n    /// @inheritdoc ISorbettoStrategy\r\n    int24 public override maxTwapDeviation;\r\n    /// @inheritdoc ISorbettoStrategy\r\n    int24 public override tickRangeMultiplier;\r\n    /// @inheritdoc ISorbettoStrategy\r\n    uint24 public override protocolFee;\r\n    /// @inheritdoc ISorbettoStrategy\r\n    uint24 public override priceImpactPercentage;\r\n    \r\n    \r\n    /**\r\n     * @param _twapDuration TWAP duration in seconds for rebalance check\r\n     * @param _maxTwapDeviation Max deviation from TWAP during rebalance\r\n     * @param _tickRangeMultiplier Used to determine base order range\r\n     * @param _protocolFee  The protocol's fee in hundredths of a bip, i.e. 1e-6\r\n     * @param _priceImpactPercentage The price impact percentage during swap in hundredths of a bip, i.e. 1e-6\r\n     */\r\n    constructor(\r\n        uint32 _twapDuration,\r\n        int24 _maxTwapDeviation,\r\n        int24 _tickRangeMultiplier,\r\n        uint24 _protocolFee,\r\n        uint24 _priceImpactPercentage\r\n    ) {\r\n        twapDuration = _twapDuration;\r\n        maxTwapDeviation = _maxTwapDeviation;\r\n        tickRangeMultiplier = _tickRangeMultiplier;\r\n        protocolFee = _protocolFee;\r\n        priceImpactPercentage = _priceImpactPercentage;\r\n        governance = msg.sender;\r\n\r\n        require(_maxTwapDeviation >= 0, \"maxTwapDeviation\");\r\n        require(_twapDuration > 0, \"twapDuration\");\r\n        require(_protocolFee < 1e6 && _protocolFee > 0, \"PF\");\r\n        require(_priceImpactPercentage < 1e6 && _priceImpactPercentage > 0, \"PIP\");\r\n    }\r\n\r\n    modifier onlyGovernance {\r\n        require(msg.sender == governance, \"NOT ALLOWED\");\r\n        _;\r\n    }\r\n\r\n    function setTwapDuration(uint32 _twapDuration) external onlyGovernance {\r\n        require(_twapDuration > 0, \"twapDuration\");\r\n        twapDuration = _twapDuration;\r\n    }\r\n\r\n    function setMaxTwapDeviation(int24 _maxTwapDeviation) external onlyGovernance {\r\n        require(_maxTwapDeviation > 0, \"PF\");\r\n        maxTwapDeviation = _maxTwapDeviation;\r\n    }\r\n\r\n    function setTickRange(int24 _tickRangeMultiplier) external onlyGovernance {\r\n        tickRangeMultiplier = _tickRangeMultiplier;\r\n    }\r\n\r\n    function setProtocolFee(uint16 _protocolFee) external onlyGovernance {\r\n        require(_protocolFee < 1e6 && _protocolFee > 0, \"PF\");\r\n        protocolFee = _protocolFee;\r\n    }\r\n\r\n    function setPriceImpact(uint16 _priceImpactPercentage) external onlyGovernance {\r\n        require(_priceImpactPercentage < 1e6 && _priceImpactPercentage > 0, \"PIP\");\r\n        priceImpactPercentage = _priceImpactPercentage;\r\n    }\r\n\r\n    \r\n     /**\r\n     * @notice `setGovernance()` should be called by the existing governance\r\n     * address prior to calling this function.\r\n     */\r\n    function setGovernance(address _governance) external onlyGovernance {\r\n        pendingGovernance = _governance;\r\n    }\r\n\r\n    /**\r\n     * @notice Governance address is not updated until the new governance\r\n     * address has called `acceptGovernance()` to accept this responsibility.\r\n     */\r\n    function acceptGovernance() external {\r\n        require(msg.sender == pendingGovernance, \"PG\");\r\n        governance = msg.sender;\r\n    }\r\n}"
+    },
+    "interfaces/ISorbettoStrategy.sol": {
+      "content": "// SPDX-License-Identifier: MIT\r\npragma solidity 0.7.6;\r\n\r\ninterface ISorbettoStrategy {\r\n    /// @notice Period of time that we observe for price slippage\r\n    /// @return time in seconds\r\n    function twapDuration() external view returns (uint32);\r\n\r\n    /// @notice Maximum deviation of time waited avarage price in ticks\r\n    function maxTwapDeviation() external view returns (int24);\r\n\r\n    /// @notice Tick multuplier for base range calculation\r\n    function tickRangeMultiplier() external view returns (int24);\r\n\r\n    /// @notice The protocol's fee denominated in hundredths of a bip, i.e. 1e-6\r\n    /// @return The fee\r\n    function protocolFee() external view returns (uint24);\r\n\r\n    /// @notice The price impact percentage during swap denominated in hundredths of a bip, i.e. 1e-6\r\n    /// @return The max price impact percentage\r\n    function priceImpactPercentage() external view returns (uint24);\r\n}"
+    }
+  }
+}

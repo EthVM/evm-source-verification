@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "redeem.sol": {
+      "content": "// SPDX-License-Identifier: AGPL-3.0-or-later\npragma solidity 0.7.5;\n\ninterface IOwnable {\n  function policy() external view returns (address);\n\n  function renounceManagement() external;\n  \n  function pushManagement( address newOwner_ ) external;\n  \n  function pullManagement() external;\n}\n\ncontract Ownable is IOwnable {\n\n    address internal _owner;\n    address internal _newOwner;\n\n    event OwnershipPushed(address indexed previousOwner, address indexed newOwner);\n    event OwnershipPulled(address indexed previousOwner, address indexed newOwner);\n\n    constructor () {\n        _owner = msg.sender;\n        emit OwnershipPushed( address(0), _owner );\n    }\n\n    function policy() public view override returns (address) {\n        return _owner;\n    }\n\n    modifier onlyPolicy() {\n        require( _owner == msg.sender, \"Ownable: caller is not the owner\" );\n        _;\n    }\n\n    function renounceManagement() public virtual override onlyPolicy() {\n        emit OwnershipPushed( _owner, address(0) );\n        _owner = address(0);\n    }\n\n    function pushManagement( address newOwner_ ) public virtual override onlyPolicy() {\n        require( newOwner_ != address(0), \"Ownable: new owner is the zero address\");\n        emit OwnershipPushed( _owner, newOwner_ );\n        _newOwner = newOwner_;\n    }\n    \n    function pullManagement() public virtual override {\n        require( msg.sender == _newOwner, \"Ownable: must be new owner to pull\");\n        emit OwnershipPulled( _owner, _newOwner );\n        _owner = _newOwner;\n    }\n}\n\ninterface IBond {\n    function redeem( address _recipient, bool _stake ) external returns ( uint );\n    function pendingPayoutFor( address _depositor ) external view returns ( uint pendingPayout_ );\n}\n\ncontract RedeemHelper is Ownable {\n\n    address[] public bonds;\n\n    function redeemAll( address _recipient, bool _stake ) external {\n        for( uint i = 0; i < bonds.length; i++ ) {\n            if ( bonds[i] != address(0) ) {\n                if ( IBond( bonds[i] ).pendingPayoutFor( _recipient ) > 0 ) {\n                    IBond( bonds[i] ).redeem( _recipient, _stake );\n                }\n            }\n        }\n    }\n\n    function addBondContract( address _bond ) external onlyPolicy() {\n        require( _bond != address(0) );\n        bonds.push( _bond );\n    }\n\n    function removeBondContract( uint _index ) external onlyPolicy() {\n        bonds[ _index ] = address(0);\n    }\n}"
+    }
+  }
+}

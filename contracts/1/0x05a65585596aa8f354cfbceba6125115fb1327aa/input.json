@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/bless.sol": {
+      "content": "pragma solidity ^0.6.0;\n/// @author Ur Lord and Saviour\n\n\ncontract Blessings {\n    string public name;\n    string public symbol;\n    string public LordMessage;\n    string public OurChurch;\n\n    uint8 public decimals;\n    uint256 public totalSupply;\n    mapping(address => uint256) public balanceOf;\n    mapping (address => mapping(address => uint256)) public allowance;\n    constructor() public{\n        name = \"Blessings\";\n        symbol = \"BLS\";\n        decimals = 0;\n        totalSupply = 21110000;\n        balanceOf[msg.sender] = totalSupply;\n        LordMessage = \"2 Pedro 1:11. For so an entrance shall be ministered unto you abundantly into the everlasting kingdom of our Lord and Saviour JesusCrypto\";\n        OurChurch = \"https://t.me/joinchat/AL7enxUK4e-DuuKkZJV22w\";\n        \n    }\n    event Transfer(address indexed _from, address indexed _to, uint256 _value);\n    event Approval(address indexed _owner, address indexed _spender, uint256 _value);\n    function transfer(address _to, uint256 _value) public returns (bool success) {\n        require(balanceOf[msg.sender]>= _value);\n        balanceOf[msg.sender] -= _value;\n        balanceOf[_to] += _value;\n        emit Transfer(msg.sender, _to, _value);\n        return true;\n    }\n    function approve(address _spender, uint256 _value) public returns (bool success) {\n        allowance[msg.sender][_spender] = _value;\n        emit Approval(msg.sender, _spender, _value);\n        return true;\n    }\n    \n    function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) {\n        require(balanceOf[_from] >= _value);\n        require(allowance[_from][msg.sender] >= _value);\n        balanceOf[_from] -= _value;\n        balanceOf[_to] += _value;\n        allowance[_from] [msg.sender] -= _value;\n        emit Transfer(_from, _to, _value);\n        return true;\n    }\n} \n\n\n\n\n\n"
+    }
+  }
+}

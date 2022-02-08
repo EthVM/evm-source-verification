@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 2
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/multisender.sol": {
+      "content": "// polygon: 0xdb2F7FE850A5469EE05f96235221bAE7160e99c7\n// mainnet: \n// SPDX-License-Identifier: UNLICENSED\npragma solidity 0.8.5;\n\ncontract Multisender {\n    error BadValue(uint256 value);\n    \n    function multisendEther(address payable[] calldata receivers) external payable {\n        uint256 length = receivers.length;\n        if (msg.value % length != 0) {\n            revert BadValue(msg.value);\n        }\n        \n        uint256 amount = msg.value / length;\n        for (uint256 i = 0; i < length; i++) {\n            receivers[i].transfer(amount);\n        }\n    }\n}\n"
+    }
+  }
+}

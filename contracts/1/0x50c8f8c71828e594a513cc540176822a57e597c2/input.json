@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/UnchainedIndex.sol": {
+      "content": "// SPDX-License-Identifier: MIT\npragma solidity >=0.6.0 <0.7.0;\n\ncontract UnchainedIndex {\n    constructor() public {\n        owner = msg.sender;\n        indexHash = \"QmbFMke1KXqnYyBBWxB74N4c5SBnJMVAiMNRcGu6x1AwQH\"; // empty file\n        emit HashPublished(indexHash);\n        emit OwnerChanged(address(0), owner);\n    }\n\n    function publishHash(string memory hash) public {\n        require(msg.sender == owner, \"msg.sender must be owner\");\n        indexHash = hash;\n        emit HashPublished(hash);\n    }\n\n    function changeOwner(address newOwner) public returns (address oldOwner) {\n        require(msg.sender == owner, \"msg.sender must be owner\");\n        oldOwner = owner;\n        owner = newOwner;\n        emit OwnerChanged(oldOwner, newOwner);\n        return oldOwner;\n    }\n\n    event HashPublished(string hash);\n    event OwnerChanged(address oldOwner, address newOwner);\n\n    string public indexHash;\n    address public owner;\n}\n"
+    }
+  }
+}

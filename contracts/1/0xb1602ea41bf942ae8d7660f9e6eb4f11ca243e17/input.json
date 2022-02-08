@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/Token.sol": {
+      "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.0;\n\ninterface IToken {\n  function mint(address to, uint amount) external;\n  function burn(address owner, uint amount) external;\n}\n\ncontract MonsterVillageBridge {\n  address public admin;\n  IToken public token;\n  uint public nonce;\n  mapping(uint => bool) public processedNonces;\n\n  event Mint(\n    address from,\n    address to,\n    uint amount,\n    uint date,\n    uint nonce\n  );\n\n  event Burn(\n    address from,\n    address to,\n    uint amount,\n    uint date,\n    uint nonce\n  );\n\n  constructor(address _token) {\n    admin = msg.sender;\n    token = IToken(_token);\n  }\n\n  function burn(address to, uint amount) external {\n    token.burn(msg.sender, amount);\n    emit Burn(\n      msg.sender,\n      to,\n      amount,\n      block.timestamp,\n      nonce\n    );\n    nonce++;\n  }\n\n  function mint(address to, uint amount, uint otherChainNonce) external {\n    require(msg.sender == admin, 'only admin');\n    require(processedNonces[otherChainNonce] == false, 'transfer already processed');\n    processedNonces[otherChainNonce] = true;\n    token.mint(to, amount);\n    emit Mint(\n      msg.sender,\n      to,\n      amount,\n      block.timestamp,\n      otherChainNonce\n    );\n  }\n}\n"
+    }
+  }
+}

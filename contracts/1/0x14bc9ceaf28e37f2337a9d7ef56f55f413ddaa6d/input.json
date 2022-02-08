@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/Ethdistribution.sol": {
+      "content": "// SPDX-License-Identifier: Proprietary, qiibee \r\npragma solidity 0.6.12;\r\n\r\ncontract Ownable {\r\n    address public owner;\r\n\r\n    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);\r\n\r\n    constructor() public {\r\n        owner = msg.sender;\r\n    }\r\n\r\n    modifier onlyOwner() {\r\n        require(msg.sender == owner, \"Message sender should be owner\");\r\n        _;\r\n    }\r\n\r\n    function transferOwnership(address newOwner) public onlyOwner {\r\n        require(newOwner != address(0), \"Cannot be 0x address\");\r\n        emit OwnershipTransferred(owner, newOwner);\r\n        owner = newOwner;\r\n    }\r\n\r\n}\r\n\r\ncontract EthDistributor is Ownable {\r\n    \r\n    event Received(address, uint);\r\n    \r\n    function transferEthSame(address[] memory _toArray, uint256 _amount) public onlyOwner {\r\n        for (uint256 i = 0; i < _toArray.length; i++) {\r\n            address payable payableAddress = payable(_toArray[i]);\r\n            payableAddress.transfer(_amount);\r\n        }\r\n    }\r\n    \r\n    function transferEthDifferent(address[] memory _toArray, uint256[] memory _amountArray) public onlyOwner {\r\n        require(_toArray.length == _amountArray.length, \"Arrays must have equal length\");\r\n        for (uint256 i = 0; i < _toArray.length; i++) {\r\n            address payable payableAddress = payable(_toArray[i]);\r\n            payableAddress.transfer(_amountArray[i]);\r\n        }\r\n    }\r\n    \r\n    // to seed the contract with ETH\r\n    receive() external payable {\r\n        emit Received(msg.sender, msg.value);\r\n    } \r\n    \r\n    function destroy() public onlyOwner {\r\n        selfdestruct(payable(owner));\r\n    }\r\n}"
+    }
+  }
+}

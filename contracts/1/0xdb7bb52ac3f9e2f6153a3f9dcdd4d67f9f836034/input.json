@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "ERC20.sol": {
+      "content": "pragma solidity 0.6.12;\r\ncontract ERC20  {\r\n\tmapping(address => uint256) balances;\r\n\r\n\tmapping(address => mapping(address => uint256)) allowed;\r\n\r\n\tevent Transfer(address _from, address _to, uint256 amount);\r\n\r\n\tevent Approval(address _from, address _to, uint256 amount);\r\n\r\n\tstring public name = \"BiFi\";\r\n\r\n\tuint8 public decimals = 18;\r\n\r\n\tstring public symbol = \"BiFi\";\r\n\r\n\tuint256 public totalSupply;\r\n\r\n\tconstructor () public\r\n\t{\r\n\t\ttotalSupply = (10 ** 9) * (10 ** uint256(decimals));\r\n\t\tbalances[msg.sender] = totalSupply;\r\n\t}\r\n\r\n\tfunction transfer(address _to, uint256 _value) public returns (bool)\r\n\t{\r\n\t\tif ((balances[msg.sender] >= _value) && (_value > 0))\r\n\t\t{\r\n\t\t\tbalances[msg.sender] = balances[msg.sender] - _value;\r\n\t\t\tbalances[_to] = balances[_to] + _value;\r\n\t\t\temit Transfer(msg.sender, _to, _value);\r\n\t\t\treturn true;\r\n\t\t}\r\n\t\telse\r\n\t\t{\r\n\t\t\treturn false;\r\n\t\t}\r\n\t}\r\n\r\n\tfunction transferFrom(address _from, address _to, uint256 _value) public returns (bool)\r\n\t{\r\n\t\tif (((balances[_from] >= _value) && (allowed[_from][msg.sender] >= _value)) && (_value > 0))\r\n\t\t{\r\n\t\t\tbalances[_to] = balances[_to] + _value;\r\n\t\t\tbalances[_from] = balances[_from] - _value;\r\n\t\t\tallowed[_from][msg.sender] = allowed[_from][msg.sender] - _value;\r\n\t\t\temit Transfer(_from, _to, _value);\r\n\t\t\treturn true;\r\n\t\t}\r\n\t\telse\r\n\t\t{\r\n\t\t\treturn false;\r\n\t\t}\r\n\t}\r\n\r\n\tfunction balanceOf(address _owner) public view returns (uint256)\r\n\t{\r\n\t\treturn balances[_owner];\r\n\t}\r\n\r\n\tfunction approve(address _spender, uint256 _value) public returns (bool)\r\n\t{\r\n\t\tallowed[msg.sender][_spender] = _value;\r\n\t\temit Approval(msg.sender, _spender, _value);\r\n\t\treturn true;\r\n\t}\r\n\r\n\tfunction allowance(address _owner, address _spender) public view returns (uint256)\r\n\t{\r\n\t\treturn allowed[_owner][_spender];\r\n\t}\r\n}"
+    }
+  }
+}

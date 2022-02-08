@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "Treasury.sol": {
+      "content": "/**\r\n *Submitted for verification at Etherscan.io on 2019-02-28\r\n*/\r\n\r\npragma solidity 0.5.4;\r\n\r\ninterface IDGTXToken {\r\n    function transfer(address to, uint value) external returns (bool);\r\n    function balanceOf(address) external view returns (uint256);\r\n}\r\n\r\n\r\ninterface ITreasury {\r\n    function phaseNum() external view returns (uint256);\r\n}\r\n\r\ncontract Treasury is ITreasury {\r\n    address public sale;\r\n    address public token;\r\n    uint256 internal constant SINGLE_RELEASE_AMOUNT = 1e25;\r\n\r\n    uint256 public phaseNum = 7;\r\n    uint256[] public phases = [\r\n        1551448800, //1 March 2019 14:00 (GMT)\r\n        1559397600, //1 June 2019 14:00 (GMT)\r\n        1567346400, //1 September 2019 14:00 (GMT)\r\n        1575208800, //1 December 2019 14:00 (GMT)\r\n        1583071200, //1 March 2020 14:00 (GMT)\r\n        1591020000, //1 June 2020 14:00 (GMT)\r\n        1598968800, //1 September 2020 14:00 (GMT)\r\n        1606831200, //1 December 2020 14:00 (GMT)\r\n        1614607200, //1 March 2021 14:00 (GMT)\r\n        1622556000  //1 June 2021 14:00 (GMT)\r\n    ];\r\n\r\n    event PhaseStarted(uint256 newPhaseNum);\r\n\r\n    constructor(address _token, address _sale) public {\r\n        require(_token != address(0) && _sale != address(0));\r\n\r\n        token = _token;\r\n        sale = _sale;\r\n    }\r\n\r\n\r\n    function startNewPhase() external {\r\n        require(now >= phases[phaseNum]);\r\n\r\n        phaseNum += 1;\r\n\r\n        require(IDGTXToken(token).transfer(sale, SINGLE_RELEASE_AMOUNT));\r\n\r\n        emit PhaseStarted(phaseNum);\r\n    }\r\n}"
+    }
+  }
+}

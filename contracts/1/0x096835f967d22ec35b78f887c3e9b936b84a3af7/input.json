@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "GemForRewardChecker.sol": {
+      "content": "// hevm: flattened sources of src/gemForRewardChecker.sol\npragma solidity >0.4.13 >=0.4.23 >=0.5.12 >=0.5.0 <0.6.0 >=0.5.10 <0.6.0 >=0.5.12 <0.6.0;\n\n////// src/gemForRewardChecker.sol\n/* pragma solidity ^0.5.12; */\n\ncontract GemForRewardChecker {\n    address[] public checkers;\n    address public deployer;\n\n    constructor() public {\n        deployer = msg.sender;\n    }\n\n    function addChecker(address checker) public {\n        require(deployer == msg.sender, \"addChecker/auth-error\");\n        checkers.push(checker);\n    }\n\n    function check(address gem) external returns (bool) {\n        for (uint256 i = 0; i < checkers.length; i++) {\n            (bool ret, ) = checkers[i].call(abi.encodeWithSignature(\"check(address)\", gem));\n            if (ret) {\n                return true;\n            }\n        }\n\n        return false;\n    }\n}\n"
+    }
+  }
+}

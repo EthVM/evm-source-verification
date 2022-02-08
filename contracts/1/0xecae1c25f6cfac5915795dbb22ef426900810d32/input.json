@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "BridgeAssistE.sol": {
+      "content": "// SPDX-License-Identifier: MIT\npragma solidity 0.8.2;\ninterface IERC20 {\n    function allowance(address owner, address spender) external view returns (uint256);\n    function transfer(address recipient, uint256 amount) external returns (bool);\n    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);\n}\ncontract BridgeAssistE {\n    address public owner;\n    IERC20 public TKN;\n\n    modifier restricted {\n        require(msg.sender == owner, \"This function is restricted to owner\");\n        _;\n    }\n    \n    event Collect(address indexed sender, uint256 amount);\n    event Dispense(address indexed sender, uint256 amount);\n    event TransferOwnership(address indexed previousOwner, address indexed newOwner);\n\n    function collect(address _sender, uint256 _amount) public restricted returns (bool success) {\n        require(TKN.allowance(_sender, address(this)) >= _amount, \"Amount check failed\");\n        require(TKN.transferFrom(_sender, address(this), _amount), \"transferFrom() failure. Make sure that your balance is not lower than the allowance you set\");\n        emit Collect(_sender, _amount);\n        return true;\n    }\n\n    function dispense(address _sender, uint256 _amount) public restricted returns (bool success) {\n        require(TKN.transfer(_sender, _amount), \"transfer() failure. Contact contract owner\");\n        emit Dispense(_sender, _amount);\n        return true;\n    }\n\n    function transferOwnership(address _newOwner) public restricted {\n        require(_newOwner != address(0), \"Invalid address: should not be 0x0\");\n        emit TransferOwnership(owner, _newOwner);\n        owner = _newOwner;\n    }\n\n    constructor(IERC20 _TKN, address _owner) {\n        TKN = _TKN;\n        owner = _owner;\n    }\n}"
+    }
+  }
+}

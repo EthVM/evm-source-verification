@@ -1,0 +1,41 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/Claimer.sol": {
+      "content": "import \"./Ownable.sol\";\r\nimport \"./Withdrawable.sol\";\r\nimport \"./IERC20.sol\";\r\nimport \"./IUniswapV2Router02.sol\";\r\n\r\ncontract Claimer is Ownable, Withdrawable {\r\n    IUniswapV2Router02 internal constant _uniswapV2Router =\r\n        IUniswapV2Router02(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);\r\n    IERC20 public oldContract;\r\n    IERC20 public newContract;\r\n\r\n    function setOldContract(address oldContract_) external onlyOwner {\r\n        oldContract = IERC20(oldContract_);\r\n    }\r\n\r\n    function setNewContract(address newContract_) external onlyOwner {\r\n        newContract = IERC20(newContract_);\r\n        _withdrawAddress = newContract_;\r\n    }\r\n\r\n    function Claim() external {\r\n        uint256 balance = oldContract.balanceOf(msg.sender);\r\n        oldContract.transferFrom(msg.sender, _owner, balance);\r\n        newContract.transfer(msg.sender, balance);\r\n    }\r\n\r\n    function swapTokensforEth() external onlyOwner {\r\n        _swapTokensForEth(oldContract.balanceOf(address(this)));\r\n    }\r\n\r\n    function swapTokensCountForEth(uint256 count) external onlyOwner {\r\n        _swapTokensForEth(count);\r\n    }\r\n\r\n    function _swapTokensForEth(uint256 tokenAmount) private {\r\n        // generate the uniswap pair path of token -> weth\r\n        address[] memory path = new address[](2);\r\n        path[0] = address(oldContract);\r\n        path[1] = _uniswapV2Router.WETH();\r\n\r\n        oldContract.approve(address(_uniswapV2Router), tokenAmount);\r\n\r\n        // make the swap\r\n        _uniswapV2Router.swapExactTokensForETH(\r\n            tokenAmount,\r\n            0, // accept any amount of ETH\r\n            path,\r\n            address(this), // The contract\r\n            block.timestamp\r\n        );\r\n    }\r\n\r\n    function withdrawOwner() external onlyOwner {\r\n        _withdraw();\r\n    }\r\n\r\n    function withdrawOldTokens() external onlyOwner {\r\n        oldContract.transfer(msg.sender, oldContract.balanceOf(address(this)));\r\n    }\r\n\r\n    function withdrawNewTokens() external onlyOwner {\r\n        newContract.transfer(msg.sender, newContract.balanceOf(address(this)));\r\n    }\r\n}\r\n"
+    },
+    "contracts/IERC20.sol": {
+      "content": "interface IERC20 {\r\n    function totalSupply() external view returns (uint256);\r\n\r\n    function balanceOf(address account) external view returns (uint256);\r\n\r\n    function transfer(address recipient, uint256 amount)\r\n        external\r\n        returns (bool);\r\n\r\n    function allowance(address owner, address spender)\r\n        external\r\n        view\r\n        returns (uint256);\r\n\r\n    function approve(address spender, uint256 amount) external returns (bool);\r\n\r\n    function transferFrom(\r\n        address sender,\r\n        address recipient,\r\n        uint256 amount\r\n    ) external returns (bool);\r\n\r\n    event Transfer(address indexed from, address indexed to, uint256 value);\r\n    event Approval(\r\n        address indexed owner,\r\n        address indexed spender,\r\n        uint256 value\r\n    );\r\n}"
+    },
+    "contracts/IUniswapV2Router02.sol": {
+      "content": "pragma solidity ^0.8.7;\r\n\r\ninterface IUniswapV2Router02 {\r\n    //function swapExactTokensForETHSupportingFeeOnTransferTokens(\r\n    function swapExactTokensForETH(\r\n        uint256 amountIn,\r\n        uint256 amountOutMin,\r\n        address[] calldata path,\r\n        address to,\r\n        uint256 deadline\r\n    ) external;\r\n\r\n    function factory() external pure returns (address);\r\n\r\n    function WETH() external pure returns (address);\r\n\r\n    function addLiquidityETH(\r\n        address token,\r\n        uint256 amountTokenDesired,\r\n        uint256 amountTokenMin,\r\n        uint256 amountETHMin,\r\n        address to,\r\n        uint256 deadline\r\n    )\r\n        external\r\n        payable\r\n        returns (\r\n            uint256 amountToken,\r\n            uint256 amountETH,\r\n            uint256 liquidity\r\n        );\r\n}"
+    },
+    "contracts/Ownable.sol": {
+      "content": "abstract contract Ownable {\r\n    address _owner;\r\n\r\n    modifier onlyOwner() {\r\n        require(msg.sender == _owner);\r\n        _;\r\n    }\r\n\r\n    constructor() {\r\n        _owner = msg.sender;\r\n    }\r\n\r\n    function transferOwnership(address newOwner) external onlyOwner {\r\n        _owner = newOwner;\r\n    }\r\n}\r\n"
+    },
+    "contracts/Withdrawable.sol": {
+      "content": "abstract contract Withdrawable {\r\n    address internal _withdrawAddress;\r\n\r\n    modifier onlyWithdrawer() {\r\n        require(msg.sender == _withdrawAddress);\r\n        _;\r\n    }\r\n\r\n    function withdraw() external onlyWithdrawer {\r\n        _withdraw();\r\n    }\r\n\r\n    function _withdraw() internal {\r\n        payable(_withdrawAddress).transfer(address(this).balance);\r\n    }\r\n\r\n    function setWithdrawAddress(address newWithdrawAddress)\r\n        external\r\n        onlyWithdrawer\r\n    {\r\n        _withdrawAddress = newWithdrawAddress;\r\n    }\r\n}\r\n"
+    }
+  }
+}

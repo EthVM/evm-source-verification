@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/zap-mail.sol": {
+      "content": "// ███████╗░█████╗░██████╗░██████╗░███████╗██████╗░░░░███████╗██╗\n// ╚════██║██╔══██╗██╔══██╗██╔══██╗██╔════╝██╔══██╗░░░██╔════╝██║\n// ░░███╔═╝███████║██████╔╝██████╔╝█████╗░░██████╔╝░░░█████╗░░██║\n// ██╔══╝░░██╔══██║██╔═══╝░██╔═══╝░██╔══╝░░██╔══██╗░░░██╔══╝░░██║\n// ███████╗██║░░██║██║░░░░░██║░░░░░███████╗██║░░██║██╗██║░░░░░██║\n// ╚══════╝╚═╝░░╚═╝╚═╝░░░░░╚═╝░░░░░╚══════╝╚═╝░░╚═╝╚═╝╚═╝░░░░░╚═╝\n// Copyright (C) 2020 zapper\n\n// This program is free software: you can redistribute it and/or modify\n// it under the terms of the GNU Affero General Public License as published by\n// the Free Software Foundation, either version 2 of the License, or\n// (at your option) any later version.\n//\n// This program is distributed in the hope that it will be useful,\n// but WITHOUT ANY WARRANTY; without even the implied warranty of\n// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n// GNU Affero General Public License for more details.\n//\n\n///@author Zapper\n///@notice Zapper Mail implementation, based heavily on Melon Mail from Melonport\n\npragma solidity ^0.8.0;\n\ncontract Zapper_Mail_V1 {\n    mapping(bytes32 => bool) usernameHashExists;\n\n    event UserRegistered(bytes32 indexed usernameHash, address indexed addr, string username, string publicKey);\n    event EmailSent(address indexed from, address indexed to, string mailHash);\n    event ContactsUpdated(bytes32 indexed usernameHash, string fileHash);\n\n    function registerUser(\n        bytes32 usernameHash,\n        string calldata username,\n        string calldata publicKey\n    ) external {\n        require(usernameHashExists[usernameHash] == false, 'User already exists');\n        usernameHashExists[usernameHash] = true;\n        emit UserRegistered(usernameHash, msg.sender, username, publicKey);\n    }\n\n    function sendEmail(address recipient, string calldata mailHash) external {\n        emit EmailSent(tx.origin, recipient, mailHash);\n    }\n\n    function updateContacts(bytes32 usernameHash, string calldata fileHash) external {\n        emit ContactsUpdated(usernameHash, fileHash);\n    }\n}"
+    }
+  }
+}

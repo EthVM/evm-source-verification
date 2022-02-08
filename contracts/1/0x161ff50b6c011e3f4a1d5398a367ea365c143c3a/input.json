@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/dailySign.sol": {
+      "content": "// SPDX-License-Identifier: SimPL-2.0\npragma solidity ^0.7.0;\n\ncontract DailySign {\n    uint256 constant SECONDS_PER_DAY = 24 * 60 * 60;\n    int256 constant OFFSET19700101 = 2440588;\n    uint256 TIMEZONE_OFFSET = 28800;\n    mapping(address => mapping(uint256 => bool)) public signRecords;\n\n    function timestampToDate(uint256 timestamp)\n        internal\n        pure\n        returns (\n            uint256 year,\n            uint256 month,\n            uint256 day\n        )\n    {\n        (year, month, day) = _daysToDate(timestamp / SECONDS_PER_DAY);\n    }\n\n    function _daysToDate(uint256 _days)\n        internal\n        pure\n        returns (\n            uint256 year,\n            uint256 month,\n            uint256 day\n        )\n    {\n        int256 __days = int256(_days);\n\n        int256 L = __days + 68569 + OFFSET19700101;\n        int256 N = (4 * L) / 146097;\n        L = L - (146097 * N + 3) / 4;\n        int256 _year = (4000 * (L + 1)) / 1461001;\n        L = L - (1461 * _year) / 4 + 31;\n        int256 _month = (80 * L) / 2447;\n        int256 _day = L - (2447 * _month) / 80;\n        L = _month / 11;\n        _month = _month + 2 - 12 * L;\n        _year = 100 * (N - 49) + _year + L;\n\n        year = uint256(_year);\n        month = uint256(_month);\n        day = uint256(_day);\n    }\n\n    function signIn() external {\n        (uint256 year, uint256 month, uint256 day) = timestampToDate(\n            block.timestamp + TIMEZONE_OFFSET\n        );\n        uint256 nowDate = year * 10000 + month * 100 + day;\n        require(signRecords[msg.sender][nowDate] == false, \"already signed\");\n        signRecords[msg.sender][nowDate] = true;\n        emit SignIn(msg.sender, nowDate);\n    }\n\n    function getDate(uint256 timestamp) public view returns (uint256 date) {\n        if (timestamp == 0) {\n            timestamp = block.timestamp;\n        }\n        timestamp += TIMEZONE_OFFSET;\n        (uint256 year, uint256 month, uint256 day) = timestampToDate(timestamp);\n        uint256 nowDate = year * 10000 + month * 100 + day;\n        return nowDate;\n    }\n\n    event SignIn(address user, uint256 date);\n}\n"
+    }
+  }
+}

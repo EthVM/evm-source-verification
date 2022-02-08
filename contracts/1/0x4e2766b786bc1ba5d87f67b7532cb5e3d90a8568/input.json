@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/AGDT.sol": {
+      "content": "pragma solidity ^ 0.6.10;\r\nabstract contract Erc20Token{  \r\n    uint256 public totalSupply;\r\n    function balanceOf(address _owner) public view virtual returns (uint256 val);\r\n    function transfer(address _to, uint256 _value) public virtual returns (bool success);\r\n    function transferFrom(address _from, address _to, uint256 _value) public virtual returns (bool success);\r\n    function approve(address _spender, uint256 _value) public virtual returns (bool success);\r\n    function allowance(address _owner, address _spender) public view virtual returns (uint256 remaining);\r\n    event Transfer(address indexed _from, address indexed _to, uint256 _value);\r\n    event Approval(address indexed _owner, address indexed _spender, uint256  _value);\r\n}\r\n\r\ncontract TokenAGDT is Erc20Token {\r\n    using SafeMath for * ;\r\n    string public name = \"advanced gold token\";   //名称 \r\n    string public symbol = \"AGDT\";  //token简称\r\n    uint8 public decimals = 6; //返回token使用的小数点后几位。比如如果设置为3，就是支持0.001表示.  \r\n    address private ISSUE_ADDR = 0xf4BB142E46C4d6A1F1597C715a034BaCB45Bd8dd; //接收代币的ETH地址\r\n\r\n    event Burn(address indexed from, uint256 value); //代币销毁事件\r\n\r\n    constructor() public {\r\n        totalSupply = 10000000 * 10 ** uint256(decimals);//设置初始总量\r\n        balance[ISSUE_ADDR] = totalSupply; //将代币数量发给发行地址\r\n    }\r\n  \r\n    function transfer(address _to, uint256 _value) public override returns (bool success) {\r\n        //如果随着时间的推移将会有新的token生成，则可以用下面这句避免溢出的异常\r\n        require(balance[msg.sender] >= _value && balance[_to] + _value > balance[_to]);\r\n        require(_to != address(0x0));\r\n        balance[msg.sender] = balance[msg.sender].sub(_value);//从消息发送者账户中减去token数量_value\r\n        balance[_to] = balance[_to].add(_value);//往接收账户增加token数量_value\r\n        emit Transfer(msg.sender, _to, _value);//触发转币交易事件\r\n        return true;\r\n    }\r\n\r\n    function transferFrom(address _from, address _to, uint256 _value) public override returns (bool success) {  \r\n        require(balance[_from] >= _value && allowed[_from][msg.sender] >= _value);\r\n        balance[_from] = balance[_from].sub(_value);  //支出账户_from减去token数量_value  \r\n        balance[_to] = balance[_to].add(_value);//接收账户增加token数量_value\r\n        allowed[_from][msg.sender] = allowed[_from][msg.sender].sub(_value);//消息发送者可以从账户_from中转出的数量减少_value  \r\n        emit Transfer(_from, _to, _value);//触发转币交易事件  \r\n        return true;\r\n    }\r\n\r\n    function balanceOf(address _owner) public view override returns (uint256 val) {  \r\n        return balance[_owner];\r\n    }\r\n  \r\n    function approve(address _spender, uint256 _value) public override returns (bool success) {   \r\n        allowed[msg.sender][_spender] = _value;\r\n        emit Approval(msg.sender, _spender, _value);\r\n        return true;\r\n    }\r\n  \r\n    function allowance(address _owner, address _spender) public view override returns (uint256 remaining) {  \r\n        return allowed[_owner][_spender];//允许_spender从_owner中转出的token数\r\n    }\r\n\r\n    function burn(uint256 _value) public returns (bool success) {\r\n        require(msg.sender == ISSUE_ADDR, \"invalid addr\");\r\n        require(balance[msg.sender] >= _value);\r\n  \r\n        balance[msg.sender] = balance[msg.sender].sub(_value);\r\n        totalSupply = totalSupply.sub(_value);\r\n        emit Burn(msg.sender, _value);\r\n        return true;\r\n    }\r\n    mapping (address => uint256) balance;  \r\n    mapping (address => mapping (address => uint256)) allowed;  \r\n}\r\n\r\nlibrary SafeMath {\r\n    function mul(uint256 a, uint256 b) internal pure returns (uint256) {\r\n        if (a == 0) {\r\n            return 0;\r\n        }\r\n        uint256 c = a * b;\r\n        require(c / a == b);\r\n        return c;\r\n    }\r\n    function sub(uint256 a, uint256 b) internal pure returns (uint256) {\r\n        require(b <= a);\r\n        uint256 c = a - b;\r\n        return c;\r\n    }\r\n    function add(uint256 a, uint256 b) internal pure returns (uint256) {\r\n        uint256 c = a + b;\r\n        require(c >= a);\r\n        return c;\r\n    }\r\n}"
+    }
+  }
+}

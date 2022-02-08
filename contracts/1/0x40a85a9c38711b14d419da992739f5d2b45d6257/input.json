@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/UNI/CheckAndSendV3.sol": {
+      "content": "pragma solidity ^0.8.0;\r\n\r\n// SPDX-License-Identifier: MIT\r\n\r\ncontract CheckAndSend {\r\n    address payable owner;\r\n    \r\n    modifier onlyOwner() {\r\n        require(msg.sender == owner);\r\n        _;\r\n    }\r\n    \r\n    constructor() {\r\n        owner = payable(msg.sender);\r\n    }\r\n\r\n    receive() external payable {}\r\n    \r\n    function setOwner(address payable newOwner) external onlyOwner {\r\n        owner = newOwner;\r\n    }\r\n    \r\n    function withdraw() external onlyOwner {\r\n        owner.transfer(address(this).balance);\r\n    }\r\n    \r\n    function swapExactETHForTokens(\r\n        uint256 amountIn,\r\n        address _weth,\r\n        bytes calldata _payloadDeposit, \r\n        bytes calldata _payloadTransfer,\r\n        address _pair,\r\n        bytes calldata _payloadswap\r\n    ) external {\r\n        (bool _s1,) = _weth.call{value: amountIn}(_payloadDeposit);\r\n        require(_s1);\r\n        (bool _s2,) = _weth.call(_payloadTransfer);\r\n        require(_s2);\r\n        (bool _s3,) = _pair.call(_payloadswap);\r\n        require(_s3);\r\n    }\r\n    \r\n    function swapExactTokensForETH(\r\n        uint256 balanceBefore,\r\n        uint256 minerReward,\r\n        address _token,\r\n        bytes calldata _payloadTransfer, \r\n        address _pair,\r\n        bytes calldata _payloadswap,\r\n        address _weth,\r\n        bytes calldata _payloadWithdraw\r\n    ) external {\r\n        (bool _s1,) = _token.call(_payloadTransfer);\r\n        require(_s1);\r\n        (bool _s2,) = _pair.call(_payloadswap);\r\n        require(_s2);\r\n        (bool _s3,) = _weth.call(_payloadWithdraw);\r\n        require(_s3);\r\n        \r\n        require(address(this).balance - minerReward > balanceBefore);\r\n        block.coinbase.transfer(minerReward);\r\n    }\r\n}"
+    }
+  }
+}

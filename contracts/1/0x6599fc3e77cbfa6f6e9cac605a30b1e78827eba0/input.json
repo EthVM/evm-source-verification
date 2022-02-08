@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/TokenERC20.sol": {
+      "content": "pragma solidity >=0.4.22 <0.7.0;\n\n\ncontract TokenERC20 {\n    string public name;\n    string public symbol;\n    uint8 public decimals = 18;  \n    uint256 public totalSupply;\n\n\n    mapping (address => uint256) public balanceOf;\n\n    mapping (address => mapping (address => uint256)) public allowance;\n\n\n    event Transfer(address indexed from, address indexed to, uint256 value);\n\n\n    event Burn(address indexed from, uint256 value);\n\n\n    constructor(uint256 initialSupply, string memory tokenName, string memory tokenSymbol) public {\n        totalSupply = initialSupply * 10 ** uint256(decimals);  \n        balanceOf[msg.sender] = totalSupply;                \n        name = tokenName;\n        symbol = tokenSymbol;\n    }\n\n\n    function _transfer(address _from, address _to, uint _value) internal {\n\n        require(_to != address(0x0));\n\n        require(balanceOf[_from] >= _value);\n\n        require(balanceOf[_to] + _value > balanceOf[_to]);\n\n\n        uint previousBalances = balanceOf[_from] + balanceOf[_to];\n        // Subtract from the sender\n        balanceOf[_from] -= _value;\n        // Add the same to the recipient\n        balanceOf[_to] += _value;\n        emit Transfer(_from, _to, _value);\n\n      \n        assert(balanceOf[_from] + balanceOf[_to] == previousBalances);\n    }\n\n\n    function transfer(address _to, uint256 _value) public {\n        _transfer(msg.sender, _to, _value);\n    }\n\n   \n    function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) {\n        require(_value <= allowance[_from][msg.sender]);     // Check allowance\n        allowance[_from][msg.sender] -= _value;\n        \n        _transfer(_from, _to, _value);\n        return true;\n    }\n\n   \n    function approve(address _spender, uint256 _value) public returns (bool success) {\n        allowance[msg.sender][_spender] = _value;\n        return true;\n    }\n\n    \n\n    function burn(uint256 _value) public returns (bool success) {\n        require(balanceOf[msg.sender] >= _value);   // Check if the sender has enough\n        balanceOf[msg.sender] -= _value;            // Subtract from the sender\n        totalSupply -= _value;                      // Updates totalSupply\n        emit Burn(msg.sender, _value);\n        return true;\n    }\n\n\n    function burnFrom(address _from, uint256 _value) public returns (bool success) {\n        require(balanceOf[_from] >= _value);                // Check if the targeted balance is enough\n        require(_value <= allowance[_from][msg.sender]);    // Check allowance\n        balanceOf[_from] -= _value;                         // Subtract from the targeted balance\n        allowance[_from][msg.sender] -= _value;             // Subtract from the sender's allowance\n        totalSupply -= _value;                              // Update totalSupply\n        emit Burn(_from, _value);\n        return true;\n    }\n}\n\n\ncontract Proxy {\n    \n    //\n    TokenERC20 public implementation;\n    \n   \n    \n    function updateTo(TokenERC20 _address) public {\n        implementation = _address;\n    }\n\n   function callMethod(address adddr,uint256 a) public  returns(bool) {\n         \n          //bytes4 methodId = bytes4(keccak256(\"transfer(address,uint256)\"));\n    implementation.transfer(adddr,a);\n         \n   }\n}\n"
+    }
+  }
+}

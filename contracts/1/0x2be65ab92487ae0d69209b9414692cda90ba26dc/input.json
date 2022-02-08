@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "CTIS.sol": {
+      "content": "// SPDX-License-Identifier: MIT\r\npragma solidity 0.8.3;\r\ninterface IERC20 {\r\n    function balanceOf(address account) external view returns (uint256);\r\n    function transfer(address recipient, uint256 amount) external returns (bool);\r\n    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);\r\n}\r\ncontract Staking {\r\n    address public owner;\r\n    IERC20 public TKN;\r\n    \r\n    uint256[] public periods = [30 days, 90 days, 150 days];\r\n    uint256[] public rates = [106, 121, 140];\r\n    uint256 public limit = 20000000000000000000000000;\r\n    uint256 public finish_timestamp = 1633046400; // 00:00 1 Oct 2021 UTC\r\n    \r\n    struct Stake {\r\n        uint8 class;\r\n        uint8 cycle;\r\n        uint256 initialAmount;\r\n        uint256 finalAmount;\r\n        uint256 timestamp;\r\n    }\r\n    \r\n    mapping(address => Stake) public stakeOf;\r\n    \r\n    event Staked(address sender, uint8 class, uint256 amount, uint256 finalAmount);\r\n    event Prolonged(address sender, uint8 class, uint8 cycle, uint256 newAmount, uint256 newFinalAmount);\r\n    event Unstaked(address sender, uint8 class, uint8 cycle, uint256 amount);\r\n    \r\n    function stake(uint8 _class, uint256 _amount) public {\r\n        require(_class < 3 && _amount >= 10000000000000000000); // data valid\r\n        require(stakeOf[msg.sender].cycle == 0); // not staking currently\r\n        require(finish_timestamp > block.timestamp + periods[_class]); // not staking in the end of program\r\n        uint256 _finalAmount = _amount * rates[_class] / 100;\r\n        limit -= _finalAmount - _amount;\r\n        require(TKN.transferFrom(msg.sender, address(this), _amount));\r\n        stakeOf[msg.sender] = Stake(_class, 1, _amount, _finalAmount, block.timestamp);\r\n        emit Staked(msg.sender, _class, _amount, _finalAmount);\r\n    }\r\n    \r\n    function prolong() public {\r\n        Stake storage _s = stakeOf[msg.sender];\r\n        require(_s.cycle > 0); // staking currently\r\n        require(block.timestamp >= _s.timestamp + periods[_s.class]); // staking period finished\r\n        require(finish_timestamp > block.timestamp + periods[_s.class]); // not prolonging in the end of program\r\n        uint256 _newFinalAmount = _s.finalAmount * rates[_s.class] / 100;\r\n        limit -= _newFinalAmount - _s.finalAmount;\r\n        _s.timestamp = block.timestamp;\r\n        _s.cycle++;\r\n        emit Prolonged(msg.sender, _s.class, _s.cycle, _s.finalAmount, _newFinalAmount);\r\n        _s.finalAmount = _newFinalAmount;\r\n    }\r\n\r\n    function unstake() public {\r\n        Stake storage _s = stakeOf[msg.sender];\r\n        require(_s.cycle > 0); // staking currently\r\n        require(block.timestamp >= _s.timestamp + periods[_s.class]); // staking period finished\r\n        require(TKN.transfer(msg.sender, _s.finalAmount));\r\n        emit Unstaked(msg.sender, _s.class, _s.cycle, _s.finalAmount);\r\n        delete stakeOf[msg.sender];\r\n    }\r\n    \r\n    function transferOwnership(address _owner) public {\r\n        require(msg.sender == owner);\r\n        owner = _owner;\r\n    }\r\n    \r\n    function drain(address _recipient) public {\r\n        require(msg.sender == owner);\r\n        require(block.timestamp > finish_timestamp); // after 1st Oct\r\n        require(TKN.transfer(_recipient, limit));\r\n        limit = 0;\r\n    }\r\n    \r\n    function drainFull(address _recipient) public {\r\n        require(msg.sender == owner);\r\n        require(block.timestamp > finish_timestamp + 31 days); // After 1st Nov\r\n        uint256 _amount = TKN.balanceOf(address(this));\r\n        require(TKN.transfer(_recipient, _amount));\r\n        limit = 0;\r\n    }\r\n    \r\n    constructor(IERC20 _TKN) {\r\n        owner = msg.sender;\r\n        TKN = _TKN;\r\n    }\r\n}\r\n"
+    }
+  }
+}

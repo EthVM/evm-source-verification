@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/Airdrop.sol": {
+      "content": "// SPDX-License-Identifier: NONE\n\n//0x8D84B01B7777Ad2EBBb4399d8A1dc974926e18db\n\npragma solidity 0.7.6;\n\n\ninterface IERC20 {\n \n    function totalSupply() external view returns (uint256);\n    function balanceOf(address account) external view returns (uint256);\n    function transfer(address recipient, uint256 amount) external returns (bool);\n    function allowance(address owner, address spender) external view returns (uint256);\n    function approve(address spender, uint256 amount) external returns (bool);\n    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);\n\n}\n\n\n\ncontract Airdrop {\n    \n    address owner;\n    \n    constructor(){\n        owner = msg.sender;\n    }\n    \n    uint amount = 0.01 ether;\n    \n    function doNativeAirdrop(address[] memory _recipients) public {\n        require (msg.sender == owner, \"not owner\");\n        require (amount*_recipients.length < address(this).balance, \"insufficient funds\");\n        \n        for (uint i=0;i<_recipients.length;i++){\n          if(payable(_recipients[i]).send(amount)){}\n        }\n    }\n    \n    receive() external payable{}\n    \n    function airdropToken(address _tokenAddress, address[] memory _recipients, uint256 _amount) public {\n        require(IERC20(_tokenAddress).allowance(msg.sender,address(this))>0, \"contract is not allowed to spend that token\");\n        \n        for (uint i=0;i<_recipients.length;i++){\n           IERC20(_tokenAddress).transferFrom(msg.sender, _recipients[i], _amount);\n        }\n    }\n    \n}\n\n"
+    }
+  }
+}

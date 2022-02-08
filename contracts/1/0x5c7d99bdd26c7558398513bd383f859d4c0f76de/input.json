@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "github/Uniswap/uniswap-v3-core/contracts/libraries/LowGasSafeMath.sol": {
+      "content": "// SPDX-License-Identifier: GPL-2.0-or-later\npragma solidity >=0.7.0;\n\n/// @title Optimized overflow and underflow safe math operations\n/// @notice Contains methods for doing math operations that revert on overflow or underflow for minimal gas cost\nlibrary LowGasSafeMath {\n    /// @notice Returns x + y, reverts if sum overflows uint256\n    /// @param x The augend\n    /// @param y The addend\n    /// @return z The sum of x and y\n    function add(uint256 x, uint256 y) internal pure returns (uint256 z) {\n        require((z = x + y) >= x);\n    }\n\n    /// @notice Returns x - y, reverts if underflows\n    /// @param x The minuend\n    /// @param y The subtrahend\n    /// @return z The difference of x and y\n    function sub(uint256 x, uint256 y) internal pure returns (uint256 z) {\n        require((z = x - y) <= x);\n    }\n\n    /// @notice Returns x * y, reverts if overflows\n    /// @param x The multiplicand\n    /// @param y The multiplier\n    /// @return z The product of x and y\n    function mul(uint256 x, uint256 y) internal pure returns (uint256 z) {\n        require(x == 0 || (z = x * y) / x == y);\n    }\n\n    /// @notice Returns x + y, reverts if overflows or underflows\n    /// @param x The augend\n    /// @param y The addend\n    /// @return z The sum of x and y\n    function add(int256 x, int256 y) internal pure returns (int256 z) {\n        require((z = x + y) >= x == (y >= 0));\n    }\n\n    /// @notice Returns x - y, reverts if overflows or underflows\n    /// @param x The minuend\n    /// @param y The subtrahend\n    /// @return z The difference of x and y\n    function sub(int256 x, int256 y) internal pure returns (int256 z) {\n        require((z = x - y) <= x == (y >= 0));\n    }\n}\n"
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "src/MkrAuthority.sol": {
+      "content": "/// MkrAuthority -- custom authority for MKR token access control\n\n// Copyright (C) 2019 Maker Ecosystem Growth Holdings, INC.\n//\n// This program is free software: you can redistribute it and/or modify\n// it under the terms of the GNU Affero General Public License as published\n// by the Free Software Foundation, either version 3 of the License, or\n// (at your option) any later version.\n//\n// This program is distributed in the hope that it will be useful,\n// but WITHOUT ANY WARRANTY; without even the implied warranty of\n// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n// GNU Affero General Public License for more details.\n//\n// You should have received a copy of the GNU Affero General Public License\n// along with this program.  If not, see <https://www.gnu.org/licenses/>.\n\npragma solidity ^0.5.10;\n\ncontract MkrAuthority {\n  address public root;\n  modifier sudo { require(msg.sender == root); _; }\n  event LogSetRoot(address indexed newRoot);\n  function setRoot(address usr) public sudo {\n    root = usr;\n    emit LogSetRoot(usr);\n  }\n\n  mapping (address => uint) public wards;\n  event LogRely(address indexed usr);\n  function rely(address usr) public sudo { wards[usr] = 1; emit LogRely(usr); }\n  event LogDeny(address indexed usr);\n  function deny(address usr) public sudo { wards[usr] = 0; emit LogDeny(usr); }\n\n  constructor() public {\n    root = msg.sender;\n  }\n\n  // bytes4(keccak256(abi.encodePacked('burn(address,uint256)')))\n  bytes4 constant burn = bytes4(0x9dc29fac);\n  // bytes4(keccak256(abi.encodePacked('mint(address,uint256)')))\n  bytes4 constant mint = bytes4(0x40c10f19);\n\n  function canCall(address src, address dst, bytes4 sig)\n      public view returns (bool)\n  {\n    if (sig == burn || src == root) {\n      return true;\n    } else if (sig == mint) {\n      return (wards[src] == 1);\n    } else {\n      return false;\n    }\n  }\n}\n"
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "incrementer.sol": {
+      "content": "// SPDX-License-Identifier: AGPL-3.0-or-later\npragma solidity 0.7.5;\n\ninterface IERC20 {\n    function approve(address spender, uint256 amount) external returns (bool);\n    function transfer(address recipient, uint256 amount) external returns (bool);\n}\n\ninterface IBond {\n    function deposit( uint amount, uint maxPrice, address depositor ) external returns ( uint );\n    function redeem( address recipient, bool stake ) external returns ( uint );\n}\n\ncontract Incrementer {\n    \n    address bond;\n    address asset;\n    \n    address owner;\n    address newOwner;\n    \n    address OHM;\n    \n    constructor( address _OHM ) {\n        owner = msg.sender;\n        OHM = _OHM;\n    }\n    \n    function setInfo( address _bond, address _asset ) external {\n        require( msg.sender == owner );\n        bond = _bond;\n        asset = _asset;\n    }\n    \n    function depositMultiple( uint num, uint amountToUse, uint maxPrice ) external {\n        require( msg.sender == owner );\n        IERC20( OHM ).approve( bond, 10000e18 );\n        for( uint i = 0; i < num; i++ ) {\n            IBond( bond ).deposit( amountToUse, maxPrice, address(this));\n        }\n    }\n    \n    function redeem() external {\n        uint amount = IBond( bond ).redeem( address(this), false );\n        IERC20( OHM ).transfer( owner, amount );\n    }\n    \n    function pushOwnership( address _new ) external {\n        newOwner = _new;\n    }\n    \n    function pullOwnership() external {\n        require( msg.sender == newOwner );\n        owner = newOwner;\n        newOwner = address(0);\n    }\n}"
+    }
+  }
+}

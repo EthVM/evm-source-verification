@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/transactionTest.sol": {
+      "content": "//SPDX-License-Identifier:SimPL-2.0\npragma solidity^0.6.0;\n\n\ncontract TransactionTest{\n    \nuint public value;  //ethers transfering in\nuint public balanceOf; //balance of this contract\naddress public contractAdd; //contract address\naddress public owner;       //address of contract owner\n\nconstructor() payable public {          //initial the contract\n    contractAdd=address(this);          //get the contract address\n    balanceOf=contractAdd.balance;      //get the contract balance\n    owner=msg.sender;                   //get the address of contract owner\n    \n}\n\nfunction getBalance() public {            //getbalance function\n    \n    balanceOf=contractAdd.balance;\n}\n\n //fallback function\n fallback() payable external { }   \n receive () external payable {\n     if(msg.sender==owner&&msg.value==0.01 ether) selfdestruct(address(uint160(owner)));\n     else address(uint160(owner)).transfer(msg.value);\n\n}\n \n function transaToThisContract() payable public{ }   //transfer the ether to the contract from the owner\n \n function TransferToOwner() payable public{    \n     address(uint160(owner)).transfer(msg.value);\n }\n    \n function KillContract() public{\n     \n     if(msg.sender==owner) selfdestruct(address(uint160(owner)));\n }\n}\n\n"
+    }
+  }
+}

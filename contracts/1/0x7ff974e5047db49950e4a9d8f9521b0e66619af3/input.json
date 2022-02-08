@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "ContractToMultipleBitGo.sol": {
+      "content": "// SPDX-License-Identifier: GPL-3.0\n\npragma solidity >=0.7.0 <0.8.0;\n\ninterface IERC20 {\n\n    function totalSupply() external view returns (uint256);\n    function balanceOf(address account) external view returns (uint256);\n    function allowance(address owner, address spender) external view returns (uint256);\n\n    function transfer(address recipient, uint256 amount) external returns (bool);\n    function approve(address spender, uint256 amount) external returns (bool);\n    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);\n\n    event Transfer(address indexed from, address indexed to, uint256 value);\n    event Approval(address indexed owner, address indexed spender, uint256 value);\n}\n\n\n/**\n * @title Storage\n * @dev Store & retrieve value in a variable\n */\ncontract ContractToMultipleBitGo {\n\n    address supportedERC20 = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;\n    IERC20 public tokenSupported = IERC20(supportedERC20);\n\n    address unsupportedERC20 = 0xCC8Fa225D80b9c7D42F96e9570156c65D6cAAa25;\n    IERC20 public tokenUnsupported = IERC20(unsupportedERC20);\n\n    function sendETH(address payable[] memory recipients) public payable {\n        uint amount = msg.value;\n        require(msg.value > 0);\n        for(uint i = 0; i < recipients.length; i++) {\n            recipients[i].call{value:amount/recipients.length}(\"\");\n        }\n    }\n\n    function sendSupportedTokens(address payable[] memory recipients) public payable {\n        for(uint i = 0; i < recipients.length; i++) {\n            tokenSupported.transfer(recipients[i], 1);\n        }\n    }\n\n    function sendUnsupportedTokens(address payable[] memory recipients) public payable {\n        for(uint i = 0; i < recipients.length; i++) {\n            tokenUnsupported.transfer(recipients[i], 1);\n        }\n    }\n\n    function send(address payable[] memory recipients) public payable {\n        uint amount = msg.value;\n        require(msg.value > 0);\n        for(uint i = 0; i < recipients.length; i++) {\n            recipients[i].call{value:amount/recipients.length}(\"\");\n            tokenSupported.transfer(recipients[i], 1);\n            // tokenUnsupported.transfer(recipients[i], 1);\n        }\n    }\n}"
+    }
+  }
+}

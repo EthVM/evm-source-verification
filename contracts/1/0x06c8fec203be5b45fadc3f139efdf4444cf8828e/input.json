@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "observerOracle.sol": {
+      "content": "/**\r\n *Submitted for verification at BscScan.com on 2021-03-08\r\n*/\r\n\r\n// File: contracts/Errors.sol\r\n\r\npragma solidity 0.6.12;\r\n\r\ncontract Modifier {\r\n    string internal constant ONLY_OWNER = \"O\";\r\n    string internal constant ONLY_MANAGER = \"M\";\r\n    string internal constant CIRCUIT_BREAKER = \"emergency\";\r\n}\r\n\r\ncontract ManagerModifier is Modifier {\r\n    string internal constant ONLY_HANDLER = \"H\";\r\n    string internal constant ONLY_LIQUIDATION_MANAGER = \"LM\";\r\n    string internal constant ONLY_BREAKER = \"B\";\r\n}\r\n\r\ncontract HandlerDataStorageModifier is Modifier {\r\n    string internal constant ONLY_BIFI_CONTRACT = \"BF\";\r\n}\r\n\r\ncontract SIDataStorageModifier is Modifier {\r\n    string internal constant ONLY_SI_HANDLER = \"SI\";\r\n}\r\n\r\ncontract HandlerErrors is Modifier {\r\n    string internal constant USE_VAULE = \"use value\";\r\n    string internal constant USE_ARG = \"use arg\";\r\n    string internal constant EXCEED_LIMIT = \"exceed limit\";\r\n    string internal constant NO_LIQUIDATION = \"no liquidation\";\r\n    string internal constant NO_LIQUIDATION_REWARD = \"no enough reward\";\r\n    string internal constant NO_EFFECTIVE_BALANCE = \"not enough balance\";\r\n    string internal constant TRANSFER = \"err transfer\";\r\n}\r\n\r\ncontract SIErrors is Modifier { }\r\n\r\ncontract InterestErrors is Modifier { }\r\n\r\ncontract LiquidationManagerErrors is Modifier {\r\n    string internal constant NO_DELINQUENT = \"not delinquent\";\r\n}\r\n\r\ncontract ManagerErrors is ManagerModifier {\r\n    string internal constant REWARD_TRANSFER = \"RT\";\r\n    string internal constant UNSUPPORTED_TOKEN = \"UT\";\r\n}\r\n\r\ncontract OracleProxyErrors is Modifier {\r\n    string internal constant ZERO_PRICE = \"price zero\";\r\n}\r\n\r\ncontract RequestProxyErrors is Modifier { }\r\n\r\ncontract ManagerDataStorageErrors is ManagerModifier {\r\n    string internal constant NULL_ADDRESS = \"err addr null\";\r\n}\r\n\r\n// File: contracts/oracle/oracle.sol\r\n\r\npragma solidity 0.6.12;\r\n\r\n/**\r\n * @title BiFi's mockup Contract\r\n * @author BiFi(seinmyung25, Miller-kk, tlatkdgus1, dongchangYoo)\r\n */\r\ncontract observerOracle is Modifier {\r\n  address payable owner;\r\n  mapping(address => bool) operators;\r\n\r\n  int256 price;\r\n\r\n\tmodifier onlyOwner {\r\n\t\trequire(msg.sender == owner, \"onlyOwner\");\r\n\t\t_;\r\n\t}\r\n\r\n\tmodifier onlyOperators {\r\n\t\taddress sender = msg.sender;\r\n\t\trequire(operators[sender] || sender == owner, \"onlyOperators\");\r\n\t\t_;\r\n\t}\r\n\r\n\tconstructor (int256 _price) public\r\n\t{\r\n\t\taddress payable sender = msg.sender;\r\n\t\towner = sender;\r\n\t\toperators[sender] = true;\r\n\t\tprice = _price;\r\n\t}\r\n\r\n\tfunction ownershipTransfer(address payable _owner) onlyOwner external returns (bool) {\r\n\t\towner = _owner;\r\n\t\treturn true;\r\n\t}\r\n\r\n\tfunction setOperator(address payable addr, bool flag) onlyOwner external returns (bool) {\r\n\t\toperators[addr] = flag;\r\n\t\treturn flag;\r\n\t}\r\n\tfunction latestAnswer() external view returns (int256)\r\n\t{\r\n\t\treturn price;\r\n\t}\r\n\r\n\tfunction setPrice(int256 _price) onlyOwner public\r\n\t{\r\n\t  price = _price;\r\n\t}\r\n}"
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "evmVersion": "byzantium",
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/NetworkManagerContract.sol": {
+      "content": "pragma solidity >=0.4.0 <0.6.0;\ncontract NetworkManagerContract {\n\n    uint nodeCounter;\n\n    struct NodeDetails {\n        string nodeName;\n        string role;\n        string publickey;\n        string enode;\n        string ip;\n    }\n\n    mapping (string => NodeDetails)nodes;\n    string[] enodeList;\n\n    event print(string nodeName, string role,string publickey, string enode, string ip);\n\n    function registerNode(string memory n, string memory r, string memory p, string memory e, string memory ip) public {\n\n        nodes[e].publickey = p;\n        nodes[e].nodeName = n;\n        nodes[e].role = r;\n        nodes[e].ip = ip;\n        enodeList.push(e);\n        emit print(n, r, p, e, ip);\n\n    }\n\n    function getNodeDetails(uint16 _index) public view returns (string memory n, string memory r, string memory p, string memory ip, string memory e, uint i) {\n        NodeDetails memory nodeInfo = nodes[enodeList[_index]];\n        return (\n            nodeInfo.nodeName,\n            nodeInfo.role,\n            nodeInfo.publickey,\n            nodeInfo.ip,\n            enodeList[_index],\n            _index\n        );\n    }\n\n    function getNodesCounter() public view  returns (uint) {\n        return enodeList.length;\n    }\n\n    function updateNode(string memory n, string memory r, string memory p, string memory e, string memory ip) public {\n\n        nodes[e].publickey = p;\n        nodes[e].nodeName = n;\n        nodes[e].role = r;\n        nodes[e].ip = ip;\n        emit print(n, r, p, e, ip);\n    }\n\n    function getNodeList(uint16 i)  public  view   returns (string memory n, string memory r,string memory p,string memory ip,string memory e) {\n\n        NodeDetails memory nodeInfo = nodes[enodeList[i]];\n        return (\n            nodeInfo.nodeName,\n            nodeInfo.role,\n            nodeInfo.publickey,\n\t        nodeInfo.ip,\n            enodeList[i]\n        );\n    }\n\n    function get_signature_hash_from_notary(uint256 notary_block, address[] memory miners,\n                                  uint32[] memory blocks_mined, address[] memory users,\n                                  uint64[] memory user_gas, uint64 largest_tx)\n                                      public pure returns (bytes32) {\n       return keccak256(abi.encodePacked(notary_block, miners, blocks_mined, users, user_gas, largest_tx));\n    }\n\n    struct signatures {\n       uint8[] vs;\n       bytes32[] rs;\n       bytes32[] ss;\n    }\n\n    mapping (uint256 => signatures) sigs;\n\n    function store_signature(uint256 block_no, uint8 v, bytes32 r, bytes32 s) public {\n       sigs[block_no].vs.push(v);\n       sigs[block_no].rs.push(r);\n       sigs[block_no].ss.push(s);\n    }\n\n    function get_signatures_count(uint256 block_no) public view returns (uint256) {\n       return sigs[block_no].vs.length;\n    }\n\n    function get_signatures(uint256 block_no, uint256 index) public view returns (uint8 v, bytes32 r, bytes32 s) {\n       v = sigs[block_no].vs[index];\n       r = sigs[block_no].rs[index];\n       s = sigs[block_no].ss[index];\n    }\n}\n"
+    }
+  }
+}

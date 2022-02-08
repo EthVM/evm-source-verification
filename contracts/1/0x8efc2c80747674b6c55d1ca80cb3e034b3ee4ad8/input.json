@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contract-76747f6e19.sol": {
+      "content": "/**\n *Submitted for verification at Etherscan.io on 2021-03-18\n*/\n\n// SPDX-License-Identifier: UNLICENSED\npragma solidity ^0.6.7;\n\ninterface IERC1155 {\n    function safeTransferFrom(address _from, address _to, uint256 _id, uint256 value, bytes calldata _data) external;\n    function balanceOf(address _owner, uint256 _id) external view returns(uint256);\n}\n\ninterface IERC20 {\n    function balanceOf(address _who) external returns (uint256);\n}\n\nlibrary Math {\n    function add(uint a, uint b) internal pure returns (uint c) {require((c = a + b) >= b, \"BoringMath: Add Overflow\");}\n    function sub(uint a, uint b) internal pure returns (uint c) {require((c = a - b) <= a, \"BoringMath: Underflow\");}\n    function mul(uint a, uint b) internal pure returns (uint c) {require(a == 0 || (c = a * b)/b == a, \"BoringMath: Mul Overflow\");}\n}\n\ncontract NFTSale {\n    using Math for uint256;\n\n    IERC1155 public nft;\n    uint256  public price = 0.15 ether;\n    uint256  public id;\n    address  payable public multisig;\n    uint256  public start;\n    \n    event Buy(address buyer, uint256 amount);\n\n    constructor(address payable _multisig) public {\n        multisig = _multisig;\n        start = 1617922800;\n        nft = IERC1155(0x13bAb10a88fc5F6c77b87878d71c9F1707D2688A);\n        id = 57;\n    }\n\n    function buy(uint256 amount) public payable {\n        require(msg.sender == tx.origin, \"no contracts\");\n        require(block.timestamp >= start, \"early\");\n        require(amount <= supply(), \"ordered too many\");\n        require(amount <= 1, \"ordered too many\");\n        require(msg.value == price.mul(amount), \"wrong amount\");\n\n        nft.safeTransferFrom(address(this), msg.sender, id, amount, new bytes(0x0));\n        \n        multisig.transfer(address(this).balance);\n        \n        emit Buy(msg.sender, amount);\n    }\n    \n    function supply() public view returns(uint256) {\n        return nft.balanceOf(address(this), id);\n    }\n    \n    function onERC1155Received(address, address, uint256, uint256, bytes calldata) external pure returns(bytes4) {\n        return bytes4(keccak256(\"onERC1155Received(address,address,uint256,uint256,bytes)\"));\n    }\n\n}"
+    }
+  }
+}

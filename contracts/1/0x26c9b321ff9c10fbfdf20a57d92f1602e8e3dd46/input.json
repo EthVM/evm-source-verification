@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "Forwarder.sol": {
+      "content": "pragma solidity 0.4.21;\r\n\r\ncontract Forwarder {\r\n\r\n  address public destinationAddress;\r\n  event LogForwarded(address indexed sender, uint amount);\r\n  event LogFlushed(address indexed sender, uint amount);\r\n\r\n  function Forwarder() public {\r\n    destinationAddress = 0x0;\r\n  }\r\n\r\n  function() payable public {\r\n    emit LogForwarded(msg.sender, msg.value);\r\n    destinationAddress.transfer(msg.value);\r\n  }\r\n\r\n  function flush() public {\r\n    emit LogFlushed(msg.sender, address(this).balance);\r\n    destinationAddress.transfer(address(this).balance);\r\n  }\r\n\r\n}"
+    }
+  }
+}

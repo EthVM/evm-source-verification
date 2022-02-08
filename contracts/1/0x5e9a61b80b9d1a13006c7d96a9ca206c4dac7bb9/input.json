@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/4_Airdrop.sol": {
+      "content": "// SPDX-License-Identifier: MIT\npragma solidity 0.8.0;\n\ninterface IERC20 {\n    function totalSupply() external view returns (uint256);\n    function balanceOf(address account) external view returns (uint256);\n    function transfer(address recipient, uint256 amount) external returns (bool);\n    function allowance(address owner, address spender) external view returns (uint256);\n    function approve(address spender, uint256 amount) external returns (bool);\n    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);\n    event Transfer(address indexed from, address indexed to, uint256 value);\n    event Approval(address indexed owner, address indexed spender, uint256 value);\n}\n\ncontract AirDrop {\n    address private _owner;\n    IERC20 private _token;\n\n    constructor(IERC20 token) {\n        _owner = msg.sender;\n        _token = token;\n    }\n    modifier onlyAdmin() {\n        require(msg.sender == _owner, \"!owner\");\n        _;\n    }\n    event TokenAirDropped(address account, uint256 amount);\n\n    function airDropAll(address sender, address[] memory recipients, uint256[] memory amounts) public onlyAdmin {\n        require(recipients.length == amounts.length, \"recipients length != amounts length\");\n        for (uint8 i = 0; i < recipients.length; i++) {\n            IERC20(_token).transferFrom(sender ,recipients[i], amounts[i]);\n            emit TokenAirDropped(recipients[i], amounts[i]);\n        }\n    }\n\n    function kill() public onlyAdmin {\n        IERC20(_token).transfer(_owner, IERC20(_token).balanceOf(address(this)));\n        selfdestruct(payable(_owner));\n    }\n}"
+    }
+  }
+}

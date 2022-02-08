@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/Untitled.sol": {
+      "content": "//get 100 ZAI for every epoch (30 minutes)\n//token address 0x9d1233cc46795E94029fDA81aAaDc1455D510f15\n//website http://zai.finance/\n//if you want a generic rebase bot that can be configured to other coins, use this https://pastebin.com/DT2W8ZfQ\n//all ethereum bots should be open source\npragma solidity ^0.6.0;\npragma experimental ABIEncoderV2;\n \ninterface EIP20Interface {\n    function transfer(address _to, uint256 _value)\n        external\n        returns (bool success);\n \n    function balanceOf(address _owner) external view returns (uint256 balance);\n}\n \ninterface IFreeFromUpTo {\n    function freeFromUpTo(address from, uint256 value)\n        external\n        returns (uint256 freed);\n}\n \ncontract ChiGasSaver {\n    modifier saveGas(address payable sponsor) {\n        uint256 gasStart = gasleft();\n        _;\n        uint256 gasSpent = 21000 + gasStart - gasleft() + 16 * msg.data.length;\n        IFreeFromUpTo chi =\n            IFreeFromUpTo(0x0000000000004946c0e9F43F4Dee607b0eF1fA1c);\n        chi.freeFromUpTo(sponsor, (gasSpent + 14154) / 41947);\n    }\n}\n \ninterface IZAIS {\n    function balanceOfCoupons(address account, uint256 epoch)\n        external\n        view\n        returns (uint256);\n \n    function totalRedeemable() external view returns (uint256);\n \n    function advance() external;\n \n    function epoch() external view returns (uint256);\n \n    function epochTime() external view returns (uint256);\n \n    function commit(address candidate) external;\n}\n \ncontract Rebase is ChiGasSaver {\n    address internal constant ZAI = 0x9d1233cc46795E94029fDA81aAaDc1455D510f15;\n \n    //Replace with your address\n    address payable internal constant recipient =\n        0x0eb3E01Cfd6995ce0e9c5794df1cbf882a90B5FC;\n \n    IZAIS private constant ZAIS =\n        IZAIS(0x6A2E6510B2BBF8C9AD7bC817D0Dc711711E8d747);\n \n    function rebase() external saveGas(recipient) {\n        uint256 epoch = ZAIS.epochTime();\n        if (epoch > ZAIS.epoch()) {\n            ZAIS.advance();\n            withdraw(ZAI);\n        }\n    }\n \n    fallback() external payable {}\n \n    receive() external payable {}\n \n    function withdraw(address token) private {\n        EIP20Interface erc20 = EIP20Interface(token);\n        uint256 amount = erc20.balanceOf(address(this));\n        erc20.transfer(recipient, amount);\n    }\n}"
+    }
+  }
+}

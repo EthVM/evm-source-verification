@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/Untitled.sol": {
+      "content": "pragma solidity ^0.6.6;\n\ncontract Bombercoin {\n    \n    address payable public owner;\n    address payable public lastPlayerAddr;\n    uint public lastPlayerTime;\n    uint public ticketPrice;\n    uint public fee;\n    uint public timeInterval;\n    bool public gameSettled = false;\n    \n    event NewPlayer(address _from, uint _time);\n    \n    constructor(uint _ticketPrice, uint _fee, uint _timeInterval) public {\n        owner = msg.sender;\n        \n        require(_ticketPrice > 0);\n        require(_fee > 0);\n        require(_timeInterval > 0);\n        \n        ticketPrice = _ticketPrice;\n        fee = _fee;\n        timeInterval = _timeInterval;\n    }\n    \n    receive() external payable {\n        require(msg.value >= ticketPrice, \"value less than price\");\n        \n        // check if game active\n        if (lastPlayerTime > 0) {\n            require(isGameActive(), \"game is not active\");\n        }\n        \n        lastPlayerAddr = msg.sender;\n        lastPlayerTime = now;\n        \n        emit NewPlayer(lastPlayerAddr, lastPlayerTime);\n    }\n    \n    function settleGame() public {\n        require(gameSettled == false, \"game already settled\");\n        require(isGameActive() == false, \"game not ended\");\n        \n        uint totalFee = (address(this).balance / 100) * fee;\n        uint totalWon = address(this).balance - totalFee;\n        \n        require(owner.send(totalFee));\n        require(lastPlayerAddr.send(totalWon));\n        \n        gameSettled = true;\n    }\n    \n    function isGameActive() public view returns (bool) {\n        return now - lastPlayerTime < timeInterval;\n    }\n    \n    \n}\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"
+    }
+  }
+}

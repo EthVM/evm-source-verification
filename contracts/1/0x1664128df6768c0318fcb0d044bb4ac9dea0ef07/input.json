@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/sendeth.sol": {
+      "content": "pragma solidity ^0.5.16;\r\n\r\ncontract Wallet {\r\n    event Deposit(address sender,uint amount,uint balance);\r\n    event Withdraw(uint amount,uint balance);\r\n    event Transfer(address to,uint amount,uint balance);\r\n    \r\n    address payable public owner;\r\n    \r\n    // / Payable constructor can receive Ether\r\n    constructor() public payable {\r\n        owner = msg.sender;\r\n    }\r\n    \r\n    function deposit(uint _amount) public payable{\r\n         if (msg.value > msg.sender.balance) {\r\n             revert();\r\n         }else{\r\n           emit Deposit(msg.sender, _amount,address(this).balance);   \r\n         }\r\n    }\r\n    \r\n    // The function will throw an error since this function is not payable.\r\n    function notPayable() public {\r\n    }\r\n    \r\n    modifier onlyOwner(){\r\n        require(msg.sender ==owner,\"Not owner\");\r\n        _;\r\n    }\r\n    \r\n    function withdraw(uint _amount) public onlyOwner{\r\n        owner.transfer(_amount);\r\n        emit Withdraw(_amount,address(this).balance);\r\n    }\r\n    \r\n    function transfer(address payable  _to,uint _amount) public onlyOwner{\r\n        _to.transfer(_amount);\r\n        emit Transfer(_to, _amount, address(this).balance);\r\n    }\r\n    \r\n    function getBalance() public view returns(uint){\r\n        return address(this).balance;\r\n    }\r\n}"
+    }
+  }
+}

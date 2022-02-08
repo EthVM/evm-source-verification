@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "moonbeamBridge.sol": {
+      "content": "//SPDX-License-Identifier: MIT\npragma solidity ^0.8.0;\n\ninterface IERC20 {\n    function totalSupply() external view returns (uint256);\n    function balanceOf(address account) external view returns (uint256);\n    function transfer(address recipient, uint256 amount) external returns (bool);\n    function allowance(address owner, address spender) external view returns (uint256);\n    function approve(address spender, uint256 amount) external returns (bool);\n    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);\n}\n\ncontract bridge{\n\n    IERC20 token;\n    bool pause;\n    address connector;\n    address owner;\n    constructor(address _token, address _bridge) {\n        token = IERC20(_token);\n        pause = false;\n        connector = _bridge;\n        owner = msg.sender;\n    }\n\n    event bridged(address recv, uint256 amount);\n\n    function move(uint256 amount) public{\n        require(amount <= token.allowance(msg.sender, address(this)), \"approve the contract\");\n        require(!pause, \"bridge is paused\");\n        token.transferFrom(msg.sender, connector, amount);\n\n        emit bridged(msg.sender, amount);\n    }\n\n    function stop() public {\n        require(msg.sender == owner, \"only owner\");\n        pause = !pause;\n    }\n}\n"
+    }
+  }
+}

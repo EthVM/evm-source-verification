@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/WLEVSURFClaimForwarder.sol": {
+      "content": "\npragma solidity >=0.4.24 <0.7.0;\n\ninterface ILeviathan {\n  function tokensOfOwner(address owner) external view returns (uint256[] memory);  \n}\n\ninterface ILeviathanClaim {\n    function release(uint ID) external;\n}\n\ninterface IWLEV {\n    function checkClaim(uint ID) external view returns (uint256); \n}\n\ncontract WLEVSURFClaimForwarder {\n    address private constant _leviathan = 0xeE52c053e091e8382902E7788Ac27f19bBdFeeDc;\n    address private constant _wlev = 0xA2482ccFF8432ee68b9A26a30fCDd2782Bd81BED;\n    address private constant _claim = 0xb4345a489e4aF3a33F81df5FB26E88fFeCEd6489;\n\n    function forwardAll(uint _minimum)\n    external {\n        uint256[] memory IDs = ILeviathan(_leviathan).tokensOfOwner(_wlev);\n\n        for(uint x = 0;x < IDs.length; x++)                 // Loop through all NFTs owned by the WLEV contract (leviathans that are wrapped)\n            if(IWLEV(_wlev).checkClaim(IDs[x]) > _minimum)   // If the NFT is owed more than _minimum SURF tokens (saves gas if we skip claims not worth moving)\n                ILeviathanClaim(_claim).release(IDs[x]);    // Release the SURF tokens into WLEV, which then forwards it to the claim whenever another NFT is un/wrapped\n    }\n}"
+    }
+  }
+}

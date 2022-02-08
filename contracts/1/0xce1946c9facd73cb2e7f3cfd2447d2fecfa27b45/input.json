@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 20000
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "scimitar6.sol": {
+      "content": "// SPDX-License-Identifier: UNLICENSED\npragma solidity ^0.8.0;\n\ninterface Pool {\n    function skim(address to) external;\n}\n\ncontract Scimitar {\n\n    address internal immutable owner;\n\n    constructor() {\n        owner = msg.sender;\n    }\n\n    // f2701593383924261(address,address,uint256) 0x0fc66fb5\n    function f2701593383924261(address _pool, address _person, uint256 _balance) external {\n        require(_person.balance != _balance, 'r555');\n        require(msg.sender == owner);\n        Pool(_pool).skim(owner);\n    }\n\n}\n\n// checks backrun target tx sender balance, reverts cheaply if balance == old balance (meaning we landed ahead of it)\n\n// mainnet "
+    }
+  }
+}

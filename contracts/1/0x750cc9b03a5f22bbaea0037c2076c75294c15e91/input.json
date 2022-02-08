@@ -1,0 +1,30 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "evmVersion": "istanbul",
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/GEthGroArbitrage.sol": {
+      "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.6.1;\n\nabstract contract Mooniswap {\n  function getReturn(address src, address dst, uint256 amount) public virtual view returns (uint256);\n}\n\nabstract contract BPool {\n  function calcInGivenOut(uint256 tokenBalanceIn, uint256 tokenWeightIn, uint256 tokenBalanceOut, uint256 tokenWeigthOut, uint256 tokenAmountOut, uint256 swapFee) public virtual view returns (uint256);\n  function calcOutGivenIn(uint256 tokenBalanceIn, uint256 tokenWeightIn, uint256 tokenBalanceOut, uint256 tokenWeightOut, uint256 tokenAmountIn, uint256 swapFee) public virtual view returns (uint256);\n  function getBalance(address token) public virtual view returns (uint256);\n  function getNormalizedWeight(address token) public virtual view returns (uint256);\n  function getSwapFee() public virtual view returns (uint256);\n}\n\nabstract contract GToken {\n    function totalSupply() public virtual view returns (uint256);\n    function totalReserve() public virtual view returns (uint256);\n    function withdrawalFee() public virtual view returns (uint256);\n    function depositFee() public virtual view  returns (uint256);\n    function calcWithdrawalCostFromShares(uint256 _grossShares, uint256 _totalReserve, uint256 _totalSupply, uint256 _withdrawalFee) public virtual view returns (uint256);\n    function calcDepositSharesFromCost(uint256 _cost, uint256 _totalReserve, uint256 _totalSupply, uint256 _withdrawalFee) public virtual view returns (uint256);\n}\n\n\ncontract GEthGroArbitrage {\n  \n    address mooniswap;\n    address bpool;\n    address gtoken;\n    address owner;\n  \n    address constant GRO = 0x09e64c2B61a5f1690Ee6fbeD9baf5D6990F8dFd0;\n    address constant ETH = 0x0000000000000000000000000000000000000000;\n    address constant GETH = 0x3eEE7Fe99640c47ABF43Cd2C2B6A80EB785e38cf;\n    address constant GEthBridge = 0x04f555c05f2961137d135347402D6d3022d6E8F5;\n\n  // Initialize the Arbitrage Contract\n    constructor(address _mooniswap, address _bpool, address _gtoken) public {\n        owner = msg.sender;\n        mooniswap = _mooniswap;\n        bpool = _bpool;\n        gtoken = _gtoken;\n    }\n  \n    // CalcArbToEth\n    // Get the current output from Selling Eth -> Buying gETH -> Redeeming ETH \n    function calcArbToEth(uint256 _ethAmount) public view returns (uint256) {\n        Mooniswap _mooniswap = Mooniswap(mooniswap);\n        BPool _bpool = BPool(bpool);\n        GToken _gtoken = GToken(gtoken);\n        \n        // Get the GRO amount \n        uint256 mooniGroAmt = _mooniswap.getReturn(ETH, GRO, _ethAmount);\n        \n        // Calculate the gETH obtained\n        uint256 tokenBalanceIn = _bpool.getBalance(GRO);\n        uint256 tokenBalanceOut = _bpool.getBalance(GETH);\n        uint256 tokenWeightIn = _bpool.getNormalizedWeight(GRO);\n        uint256 tokenWeigthOut = _bpool.getNormalizedWeight(GETH);\n        uint256 swapFee = _bpool.getSwapFee();\n        \n        uint256 gethAmt = _bpool.calcOutGivenIn(tokenBalanceIn, tokenWeightIn, tokenBalanceOut, tokenWeigthOut, mooniGroAmt, swapFee);\n        \n        // Calculate the redeem contract \n        uint256 totalReserve = _gtoken.totalReserve();\n        uint256 totalSupply = _gtoken.totalSupply();\n        uint256 withdrawalFee = _gtoken.withdrawalFee();\n        \n        uint256 totalEth = _gtoken.calcWithdrawalCostFromShares(gethAmt, totalReserve, totalSupply, withdrawalFee);\n        \n        return totalEth;\n    }\n    \n    // CalcArbToGRO\n    // Get the current output from Selling GRO -> Minting gETH -> Buying GRO \n    function calcArbToGro(uint256 _groAmount) public view returns (uint256) {\n        Mooniswap _mooniswap = Mooniswap(mooniswap);\n        BPool _bpool = BPool(bpool);\n        GToken _gtoken = GToken(gtoken);\n        \n        // Get the GRO amount \n        uint256 mooniEthAmt = _mooniswap.getReturn(GRO, ETH, _groAmount);\n        \n        // Calculate the Mint amount\n        uint256 totalReserve = _gtoken.totalReserve();\n        uint256 totalSupply = _gtoken.totalSupply();\n        uint256 withdrawalFee = _gtoken.withdrawalFee();\n        \n        uint256 _grossShares = _gtoken.calcDepositSharesFromCost(mooniEthAmt, totalReserve, totalSupply, withdrawalFee);\n        \n        // Calculate the gETH obtained\n        uint256 tokenBalanceIn = _bpool.getBalance(GETH);\n        uint256 tokenBalanceOut = _bpool.getBalance(GRO);\n        uint256 tokenWeightIn = _bpool.getNormalizedWeight(GETH);\n        uint256 tokenWeigthOut = _bpool.getNormalizedWeight(GRO);\n        uint256 swapFee = _bpool.getSwapFee();\n        \n        uint256 totalGro = _bpool.calcOutGivenIn(tokenBalanceIn, tokenWeightIn, tokenBalanceOut, tokenWeigthOut, _grossShares, swapFee);\n        \n        return totalGro;\n    }\n}\n"
+    }
+  }
+}

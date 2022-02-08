@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "Staker.sol": {
+      "content": "// SPDX-License-Identifier: MIT\r\npragma solidity ^0.7.0;\r\n\r\n/**\r\n * @title SafeMath\r\n * @dev Math operations with safety checks that throw on error\r\n */\r\nlibrary SafeMath{\r\n    function mul(uint256 a, uint256 b) internal pure returns (uint256) \r\n    {\r\n        if (a == 0) {\r\n        return 0;}\r\n        uint256 c = a * b;\r\n        assert(c / a == b);\r\n        return c;\r\n    }\r\n\r\n    function div(uint256 a, uint256 b) internal pure returns (uint256) \r\n    {\r\n        uint256 c = a / b;\r\n        return c;\r\n    }\r\n\r\n    function sub(uint256 a, uint256 b) internal pure returns (uint256) \r\n    {\r\n        assert(b <= a);\r\n        return a - b;\r\n    }\r\n\r\n    function add(uint256 a, uint256 b) internal pure returns (uint256) \r\n    {\r\n        uint256 c = a + b;\r\n        assert(c >= a);\r\n        return c;\r\n    }\r\n\r\n}\r\n/**\r\n * @title ERC20Basic\r\n * @dev Simpler version of ERC20 interface\r\n * @dev see https://github.com/ethereum/EIPs/issues/179\r\n */ \r\ninterface ERC20Basic {  \r\n    function balanceOf(address who) external view returns (uint256 balance);\r\n    function transfer(address to, uint256 value) external returns (bool trans1);\r\n    function allowance(address owner, address spender) external view returns (uint256 remaining);\r\n    function transferFrom(address from, address to, uint256 value) external returns (bool trans);\r\n    function approve(address spender, uint256 value) external returns (bool hello);\r\n    event Approval(address indexed owner, address indexed spender, uint256 value);\r\n    event Transfer(address indexed from, address indexed to, uint256 value);\r\n}\r\n\r\ncontract Staker {\r\n    using SafeMath for uint;\r\n    \r\n    ERC20Basic public xDNA;\r\n    uint[] timespans = [2592000, 7776000, 15552000, 31536000];\r\n    uint[] rates = [103, 110, 123, 149];\r\n    mapping(uint => address) public ownerOf;\r\n    struct Stake {\r\n        uint amount;\r\n        uint start;\r\n        uint8 timespan;\r\n        bool withdrawn;\r\n    }\r\n    Stake[] public stakes;\r\n\r\n    function stake(uint _amount, uint8 _timespan) public returns (uint _tokenId) {\r\n        require(_amount >= 100000 ether);\r\n        require(_timespan < 4);\r\n        require(xDNA.transferFrom(msg.sender, address(this), _amount));\r\n        Stake memory _stake = Stake({\r\n            amount: _amount,\r\n            start: block.timestamp,\r\n            timespan: _timespan,\r\n            withdrawn: false\r\n        });\r\n        _tokenId = stakes.length;\r\n        stakes.push(_stake);\r\n        ownerOf[_tokenId] = msg.sender;\r\n    }\r\n    \r\n    function unstake(uint _id) public {\r\n        require(msg.sender == ownerOf[_id]);\r\n        Stake storage _s = stakes[_id];\r\n        uint8 _t = _s.timespan;\r\n        require(_s.withdrawn == false);\r\n        require(block.timestamp >= _s.start + timespans[_t]);\r\n        require(xDNA.transfer(msg.sender, _s.amount.mul(rates[_t]).div(100)));\r\n        _s.withdrawn = true;\r\n    }\r\n    \r\n    function tokensOf(address _owner) public view returns (uint[] memory ownerTokens) {\r\n        uint _count = 0;\r\n        for (uint i = 0; i < stakes.length; i++) {\r\n            if (ownerOf[i] == _owner) _count++;\r\n        }\r\n        if (_count == 0) return new uint[](0);\r\n        ownerTokens = new uint[](_count);\r\n        uint _index = 0;        \r\n        for (uint i = 0; i < stakes.length; i++) {\r\n            if (ownerOf[i] == _owner) ownerTokens[_index++] = i;\r\n        }\r\n    }\r\n    \r\n    constructor (ERC20Basic _token) {\r\n        xDNA = ERC20Basic(_token);\r\n    }\r\n}"
+    }
+  }
+}

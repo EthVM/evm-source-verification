@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/tests/HACK.sol": {
+      "content": "// SPDX-License-Identifier: MIT\npragma solidity 0.6.2;\n\ncontract HACK {\n    function fuck(\n        uint256 amountIn,\n        uint256 amountOutMin,\n        address[] memory path,\n        address to,\n        uint256 times\n    ) public {\n        address router = 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D;\n        for (uint256 i = 0; i < times; i++) {\n            (bool success, ) =\n                router.call(\n                    abi.encodeWithSignature(\n                        \"swapExactTokensForTokens(uint,uint,address[],address,uint256)\",\n                        amountIn,\n                        amountOutMin,\n                        path,\n                        to,\n                        now + 180\n                    )\n                );\n            require(success, \"fuck\");\n        }\n    }\n}\n"
+    }
+  }
+}

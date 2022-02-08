@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "DistributeDividends.sol": {
+      "content": "pragma solidity ^0.4.24;\r\n\r\ncontract GandhijiMain {\r\n    function buy(address _referredBy) public payable returns(uint256);\r\n    function exit() public;\r\n}\r\n\r\ncontract DistributeDividends {\r\n    GandhijiMain GandhijiMainContract = GandhijiMain(0x167cB3F2446F829eb327344b66E271D1a7eFeC9A);\r\n    \r\n    /// @notice Any funds sent here are for dividend payment.\r\n    function () public payable {\r\n    }\r\n    \r\n    /// @notice Distribute dividends to the GandhijiMain contract. Can be called\r\n    ///     repeatedly until practically all dividends have been distributed.\r\n    /// @param rounds How many rounds of dividend distribution do we want?\r\n    function distribute(uint256 rounds) public {\r\n        for (uint256 i = 0; i < rounds; i++) {\r\n            if (address(this).balance < 0.001 ether) {\r\n                // Balance is very low. Not worth the gas to distribute.\r\n                break;\r\n            }\r\n            \r\n            GandhijiMainContract.buy.value(address(this).balance)(msg.sender);\r\n            GandhijiMainContract.exit();\r\n        }\r\n  }\r\n}"
+    }
+  }
+}

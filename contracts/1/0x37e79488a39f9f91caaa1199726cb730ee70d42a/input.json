@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "ETH2Validator.sol": {
+      "content": "pragma solidity ^0.5.16;\r\n\r\n/**\r\n * Math operations with safety checks\r\n */\r\nlibrary SafeMath {\r\n    function add(uint a, uint b) internal pure returns (uint) {\r\n        uint c = a + b;\r\n        require(c >= a, \"SafeMath: addition overflow\");\r\n\r\n        return c;\r\n    }\r\n    function sub(uint a, uint b) internal pure returns (uint) {\r\n        return sub(a, b, \"SafeMath: subtraction overflow\");\r\n    }\r\n    function sub(uint a, uint b, string memory errorMessage) internal pure returns (uint) {\r\n        require(b <= a, errorMessage);\r\n        uint c = a - b;\r\n\r\n        return c;\r\n    }\r\n    function mul(uint a, uint b) internal pure returns (uint) {\r\n        if (a == 0) {\r\n            return 0;\r\n        }\r\n\r\n        uint c = a * b;\r\n        require(c / a == b, \"SafeMath: multiplication overflow\");\r\n\r\n        return c;\r\n    }\r\n    function div(uint a, uint b) internal pure returns (uint) {\r\n        return div(a, b, \"SafeMath: division by zero\");\r\n    }\r\n    function div(uint a, uint b, string memory errorMessage) internal pure returns (uint) {\r\n        // Solidity only automatically asserts when dividing by 0\r\n        require(b > 0, errorMessage);\r\n        uint c = a / b;\r\n\r\n        return c;\r\n    }\r\n}\r\n\r\n/**\r\n * @title Ownable\r\n * @dev The Ownable contract has an owner address, and provides basic authorization control\r\n * functions, this simplifies the implementation of \"user permissions\".\r\n */\r\ncontract Ownable {\r\n    address public owner;\r\n    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);\r\n    /**\r\n     * @dev The Ownable constructor sets the original `owner` of the contract to the sender\r\n     * account.\r\n     */\r\n    constructor() public {\r\n        owner = msg.sender;\r\n    }\r\n\r\n\r\n    /**\r\n     * @dev Throws if called by any account other than the owner.\r\n     */\r\n    modifier onlyOwner() {\r\n        require(msg.sender == owner);\r\n        _;\r\n    }\r\n\r\n\r\n    /**\r\n     * @dev Allows the current owner to transfer control of the contract to a newOwner.\r\n     * @param newOwner The address to transfer ownership to.\r\n     */\r\n    function transferOwnership(address newOwner) public onlyOwner {\r\n        require(newOwner != address(0));\r\n        emit OwnershipTransferred(owner, newOwner);\r\n        owner = newOwner;\r\n    }\r\n}\r\n\r\ncontract ETH2Validator is Ownable{\r\n    using SafeMath for uint;\r\n    mapping (address => uint8) private _vipPowerMap;\r\n\r\n    mapping (uint32  => address) private _userList;\r\n    uint32 private _currentUserCount;\r\n\r\n    event BuyPower(address indexed from, uint256 amount);\r\n    event GovWithdraw(address indexed to, uint256 value);\r\n\r\n    uint constant private basePrice = 1 ether;\r\n\r\n    constructor()public {\r\n    }\r\n\r\n    function buyPower() public payable{\r\n        uint8 addP = uint8(msg.value/ basePrice);\r\n        uint8 oldP = _vipPowerMap[msg.sender];\r\n        uint8 newP = oldP + addP;\r\n        require(newP > 0, \"vip level over min\");\r\n        require(newP <= 10, \"vip level over max\");\r\n        require(addP* basePrice == msg.value, \"1 to 10 ether only\");\r\n        \r\n        if(oldP==0){\r\n            _userList[_currentUserCount] = msg.sender;\r\n            _currentUserCount++;\r\n        }\r\n        \r\n        _vipPowerMap[msg.sender] = newP;\r\n        emit BuyPower(msg.sender, msg.value);\r\n    }\r\n\r\n    function govWithdraw(uint256 _amount)onlyOwner public {\r\n        require(_amount > 0, \"!zero input\");\r\n\r\n        msg.sender.transfer(_amount);\r\n        emit GovWithdraw(msg.sender, _amount);\r\n    }\r\n\r\n    function powerOf(address account) public view returns (uint) {\r\n        return _vipPowerMap[account];\r\n    }\r\n\r\n    function currentUserCount() public view returns (uint32) {\r\n        return _currentUserCount;\r\n    }\r\n\r\n    function userList(uint32 i) public view returns (address) {\r\n        return _userList[i];\r\n    }\r\n\r\n}"
+    }
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 1
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "OracleWrapperInverse.sol": {
+      "content": "// SPDX-License-Identifier: UNLICENCED\npragma solidity >=0.6.0 <0.8.0;\npragma abicoder v2;\n\nimport \"./Ownable.sol\";\n\n\ninterface OracleInterface{\n    function latestAnswer() external view returns (int256);\n}\n\ninterface tellorInterface{\n     function getLastNewValueById(uint _requestId) external view returns(uint,bool);\n}\n\ncontract OracleWrapperInverse is Ownable{\n    address public tellerContractAddress=0x0Ba45A8b5d5575935B8158a88C631E9F9C95a2e5;\n    struct TellorInfo{\n        uint256 id;\n        uint256 tellorPSR;\n    }\n    uint256 tellorId=1;\n    mapping(string=>address) public typeOneMapping;  // chainlink\n    string[] typeOneArray;\n    mapping(string=> TellorInfo) public typeTwomapping; // tellor\n    string[] typeTwoArray;\n   \n    function updateTellerContractAddress(address newAddress) public onlyOwner{\n        tellerContractAddress = newAddress;\n    }\n    \n    function addTypeOneMapping(string memory currencySymbol, address chainlinkAddress) external onlyOwner{\n        typeOneMapping[currencySymbol]=chainlinkAddress;\n        if(!checkAddressIfExists(typeOneArray,currencySymbol)){\n            typeOneArray.push(currencySymbol);\n        }\n    }\n    \n    function addTypeTwoMapping(string memory currencySymbol, uint256 tellorPSR) external onlyOwner{\n        TellorInfo memory tInfo= TellorInfo({\n            id:tellorId,\n            tellorPSR:tellorPSR\n        });\n        typeTwomapping[currencySymbol]=tInfo;\n        tellorId++;\n        if(!checkAddressIfExists(typeTwoArray,currencySymbol)){\n            typeTwoArray.push(currencySymbol);\n        }\n    }\n    function checkAddressIfExists(string[] memory arr, string memory currencySymbol) internal pure returns(bool){\n        for(uint256 i=0;i<arr.length;i++){\n            if((keccak256(abi.encodePacked(arr[i]))) == (keccak256(abi.encodePacked(currencySymbol)))){\n                return true;\n            }\n        }\n        return false;\n    }\n    function getPrice(string memory currencySymbol,\n        uint256 oracleType) external view returns (uint256){\n        //oracletype 1 - chainlink and  for teller\n        if(oracleType == 1){\n            require(typeOneMapping[currencySymbol]!=address(0), \"please enter valid currency\");\n            OracleInterface oObj = OracleInterface(typeOneMapping[currencySymbol]);\n            return uint256(oObj.latestAnswer());\n        }\n        else{\n            require(typeTwomapping[currencySymbol].id!=0, \"please enter valid currency\");\n            tellorInterface tObj = tellorInterface(tellerContractAddress);\n            uint256 actualFiatPrice;\n            bool statusTellor;\n            (actualFiatPrice,statusTellor) = tObj.getLastNewValueById(typeTwomapping[currencySymbol].tellorPSR);\n            return uint256(actualFiatPrice);\n        }\n    }\n    \n    function getTypeOneArray() external view returns(string[] memory){\n        return typeOneArray;\n    }\n    \n    function getTypeTwoArray() external view returns(string[] memory){\n        return typeTwoArray;\n    }\n}\n\n"
+    },
+    "Ownable.sol": {
+      "content": "// SPDX-License-Identifier: UNLICENCED\npragma solidity >=0.6.0 <0.8.0;\n\ncontract Ownable {\n\n    address public owner;\n\n    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);\n\n    /**\n     * @dev The Ownable constructor sets the original `owner` of the contract to the sender\n     * account.\n     */\n    constructor(){\n        owner = msg.sender;\n    }\n\n    /**\n     * @dev Throws if called by any account other than the owner.\n     */\n    modifier onlyOwner() {\n        require(msg.sender == owner);\n        _;\n    }\n\n    /**\n     * @dev Allows the current owner to transfer control of the contract to a newOwner.\n     * @param newOwner The address to transfer ownership to.\n     */\n    function transferOwnership(address newOwner) public onlyOwner {\n        require(newOwner != address(0));\n        emit OwnershipTransferred(owner, newOwner);\n        owner = newOwner;\n    }\n}\n\n\n\n"
+    }
+  }
+}

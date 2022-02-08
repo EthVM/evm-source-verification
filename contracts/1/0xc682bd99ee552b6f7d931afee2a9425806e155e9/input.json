@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "Count.sol": {
+      "content": "pragma solidity ^0.5.0;\r\n\r\ncontract Governance {\r\n\r\n    address public _governance;\r\n    bool  public isOpen;\r\n    constructor() public {\r\n        _governance = tx.origin;\r\n    }\r\n\r\n    event GovernanceTransferred(address indexed previousOwner, address indexed newOwner);\r\n\r\n    modifier onlyGovernance {\r\n        require(msg.sender == _governance, \"not governance\");\r\n        _;\r\n    }\r\n\r\n    function setGovernance(address governance)  public  onlyGovernance\r\n    {\r\n        require(governance != address(0), \"new governance the zero address\");\r\n        emit GovernanceTransferred(_governance, governance);\r\n        _governance = governance;\r\n    }\r\n\r\n\r\n}\r\n\r\ncontract Count is Governance{\r\n    mapping(address=>bool) set_pool;\r\n    mapping(address=>address) user_pool;\r\n    mapping(address=>bool) isPlayaddress;\r\n    mapping(string=>bool) name_set;\r\n    modifier onlyPlayAddress(){\r\n        require(isPlayaddress[msg.sender],\"not Playaddress\");\r\n        _;\r\n    }\r\n    function is_Re(address user,string memory name) view public onlyPlayAddress returns(bool){\r\n        return set_pool[user]||name_set[name];\r\n    }\r\n    \r\n    function is_Re(address user) view public onlyPlayAddress returns(bool){\r\n        return set_pool[user];\r\n    }\r\n    \r\n    function add_PlyAddress(address ply) onlyGovernance public {\r\n        isPlayaddress[ply] = true;\r\n    }\r\n    \r\n    function remove_PlyAddress(address ply) onlyGovernance public {\r\n        isPlayaddress[ply] = false;\r\n    }\r\n    \r\n    \r\n    function set_user_isRe(address user,address pool,string memory name) public onlyPlayAddress {\r\n        user_pool[user] = pool;\r\n        set_pool[user] = true;\r\n        name_set[name] = true;\r\n    }\r\n    \r\n    modifier is_open(){\r\n        require(isOpen==true || msg.sender==_governance);\r\n        _;\r\n    }\r\n    \r\n    function Open_() public onlyGovernance{\r\n        isOpen = !isOpen;\r\n    }\r\n    \r\n    function get_Address_pool(address user) view public is_open returns(address){\r\n        return user_pool[user];\r\n    }\r\n    \r\n}"
+    }
+  }
+}

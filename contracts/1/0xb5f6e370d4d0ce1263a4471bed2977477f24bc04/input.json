@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "balanceOf.sol": {
+      "content": "/**\r\n *Submitted for verification at Etherscan.io on 2020-06-05\r\n*/\r\n\r\npragma solidity =0.6.6;\r\n\r\n/**\r\n * @dev Interface of the ERC20 standard as defined in the EIP.\r\n */\r\ninterface IERC20 {\r\n    /**\r\n     * @dev Returns the amount of tokens owned by `account`.\r\n     */\r\n    function balanceOf(address account) external view returns (uint256);\r\n}    \r\n\r\ncontract BalanceOfContract {\r\n    \r\n    function balanceOf(address _add,address[] memory _contractid) public view returns(uint256[] memory){\r\n        uint256[] memory result = new uint256[](_contractid.length+1);\r\n        result[0] = _add.balance;\r\n        for(uint i=0;i<_contractid.length;i++){\r\n            IERC20 erc20 = IERC20(_contractid[i]);\r\n            result[i+1] = erc20.balanceOf(_add);\r\n        }\r\n        return result;\r\n    }\r\n    \r\n}\r\n"
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/Minter.sol": {
+      "content": "// SPDX-License-Identifier: MIT\r\npragma solidity ^0.8.0;\r\n\r\ninterface IERC20 {\r\n    function totalSupply() external view returns (uint256);\r\n    function decimals() external view returns (uint256);\r\n    function balanceOf(address account) external view returns (uint256);\r\n    function transfer(address recipient, uint256 amount) external returns (bool);\r\n    function allowance(address owner, address spender) external view returns (uint256);\r\n    function approve(address spender, uint256 amount) external returns (bool);\r\n    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);\r\n}\r\n\r\ninterface ISushiswapV2Pair {\r\n    function getReserves() external view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast);\r\n    function mint(address to) external returns (uint liquidity);\r\n    function burn(address to) external returns (uint amount0, uint amount1);\r\n    function swap(uint amount0Out, uint amount1Out, address to, bytes calldata data) external;\r\n    function sync() external;\r\n}\r\n\r\ncontract Minter {\r\n    ISushiswapV2Pair public constant PAIR = ISushiswapV2Pair(0x51F50aE3709292AdcCC33b922DF73f79EF0e72FF);\r\n    IERC20 public constant SIL = IERC20(0xbCDa9E0658f4eECF56A0bd099e6DBc0C91f6A8c2);\r\n    IERC20 public constant WYFI = IERC20(0x017E71e96f2Ae777C679740d2D8Dc15Ed4231981);\r\n    address public constant MINT = address(0x2D407dDb06311396fE14D4b49da5F0471447d45C);\r\n    function mint() external {\r\n        SIL.transferFrom(msg.sender, address(PAIR), SIL.balanceOf(msg.sender));\r\n        WYFI.transferFrom(msg.sender, address(PAIR), WYFI.balanceOf(msg.sender));\r\n        PAIR.mint(MINT);\r\n    }\r\n}"
+    }
+  }
+}

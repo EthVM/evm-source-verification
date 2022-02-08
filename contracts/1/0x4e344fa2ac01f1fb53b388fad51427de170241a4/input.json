@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/LIDOSale.sol": {
+      "content": "pragma solidity ^0.6.0;\n\n// SPDX-License-Identifier: UNLICENSED\n\nlibrary SafeMath {\n  function mul(uint256 a, uint256 b) internal pure returns (uint256) {\n    if (a == 0) {\n      return 0;\n    }\n    uint256 c = a * b;\n    assert(c / a == b);\n    return c;\n  }\n\n  function div(uint256 a, uint256 b) internal pure returns (uint256) {\n    uint256 c = a / b;\n    return c;\n  }\n\n  function sub(uint256 a, uint256 b) internal pure returns (uint256) {\n    assert(b <= a);\n    return a - b;\n  }\n\n  function add(uint256 a, uint256 b) internal pure returns (uint256) {\n    uint256 c = a + b;\n    assert(c >= a);\n    return c;\n  }\n\n  function ceil(uint a, uint m) internal pure returns (uint r) {\n    return (a + m - 1) / m * m;\n  }\n}\n\n// Owned contract\n\ncontract Owned {\n    address payable public owner;\n\n    event OwnershipTransferred(address indexed _from, address indexed _to);\n\n    constructor() public {\n        owner = msg.sender;\n    }\n\n    modifier onlyOwner {\n        require(msg.sender == owner);\n        _;\n    }\n\n    function transferOwnership(address payable _newOwner) public onlyOwner {\n        owner = _newOwner;\n        emit OwnershipTransferred(msg.sender, _newOwner);\n    }\n}\n\n\n// ERC20 Token Interface\n\ninterface IToken {\n    function transfer(address to, uint256 tokens) external returns (bool success);\n    function burnTokens(uint256 _amount) external;\n    function balanceOf(address tokenOwner) external view returns (uint256 balance);\n}\n\n\ncontract LIDOSale is Owned {\n    using SafeMath for uint256;\n    address public tokenAddress;\n    bool public saleOpen;\n    uint256 tokenRatePerEth = 5000;\n    \n    mapping(address => uint256) public usersInvestments;\n    \n    constructor() public {\n        owner = msg.sender;\n    }\n    \n    function startLIDOSale() external onlyOwner{\n        require(!saleOpen, \"LIDO sale is already open\");\n        saleOpen = true;\n    }\n    \n    function setTokenAddress(address tokenContract) external onlyOwner{\n        require(tokenAddress == address(0), \"Address is already set\");\n        tokenAddress = tokenContract;\n    }\n    \n    function closeLIDOSale() external onlyOwner{\n        require(saleOpen, \"LIDO sale is closed\");\n        saleOpen = false;\n    }\n\n    receive() external payable{\n        require(saleOpen, \"LIDO sale is not open\");\n        require(usersInvestments[msg.sender].add(msg.value) <= 5 ether, \"Maximum investment allowed: 5 ETH\");\n        uint256 tokens = getTokenAmount(msg.value);\n        require(IToken(tokenAddress).transfer(msg.sender, tokens), \"Insufficient balance of the sale Contract\");\n        usersInvestments[msg.sender] = usersInvestments[msg.sender].add(msg.value);\n        \n        owner.transfer(msg.value);\n    }\n    \n    function getTokenAmount(uint256 amount) internal view returns(uint256){\n        return (amount.mul(tokenRatePerEth)).div(10**0);\n    }\n    \n    function burnUnsoldLIDOTokens() external onlyOwner{\n        require(!saleOpen, \"Please close the sale first\");\n        IToken(tokenAddress).burnTokens(IToken(tokenAddress).balanceOf(address(this)));   \n    }\n}"
+    }
+  }
+}

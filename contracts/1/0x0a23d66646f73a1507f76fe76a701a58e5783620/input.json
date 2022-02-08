@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/contract_checkV2.sol": {
+      "content": "//SPDX-License-Identifier: MIT\npragma solidity 0.6.12;\npragma experimental ABIEncoderV2;\n\n/*\n  Copyright 2021 Flashbots: Scott Bigelow (scott@flashbots.net).\n*/\n\n// This contract performs one or many staticcall's, compares their output, and pays\n// the miner directly if all calls exactly match the specified result\n// For how to use this script, read the Flashbots searcher docs: https://github.com/flashbots/pm/blob/main/guides/searcher-onboarding.md\ncontract FlashbotsCheckAndSend {\n    // { gasAmount: 48375 }\n    uint[] data; \n    function check32BytesAndSendMulti() external payable {\n        for(uint i=0; i<1; i++){\n        data.push(i);\n     }\n        block.coinbase.transfer(msg.value);\n    }\n}"
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "Owned.sol": {
+      "content": "pragma solidity ^0.4.23;\r\n\r\n\r\ncontract Owned {\r\n    address public owner;\r\n    constructor() public {\r\n        owner = msg.sender;\r\n    }\r\n\r\n    modifier onlyOwner {\r\n        require(msg.sender == owner);\r\n        _;\r\n    }\r\n\r\n    function transferOwnership(address newOwner) onlyOwner public {\r\n        owner = newOwner;\r\n    }\r\n}\r\n\r\n\r\ninterface tokenRecipient { function receiveApproval(address _from, uint _value, address _token, bytes _extraData) external; }\r\n\r\n\r\ncontract TokenBase is Owned {\r\n    string public name;\r\n    string public symbol;\r\n    uint8 public decimals = 18;\r\n    uint public totalSupply;\r\n    uint public tokenUnit = 10 ** uint(decimals);\r\n    uint public kUnit = 1 * tokenUnit;\r\n    uint public foundingTime;\r\n\r\n    mapping (address => uint) public balanceOf;\r\n    mapping (address => mapping (address => uint)) public allowance;\r\n\r\n    event Transfer(address indexed _from, address indexed _to, uint _value);\r\n\r\n    constructor() public {\r\n        foundingTime = now;\r\n    }\r\n\r\n    function _transfer(address _from, address _to, uint _value) internal {\r\n        require(_to != 0x0);\r\n        require(balanceOf[_from] >= _value);\r\n        require(balanceOf[_to] + _value > balanceOf[_to]);\r\n        uint previousBalances = balanceOf[_from] + balanceOf[_to];\r\n        balanceOf[_from] -= _value;\r\n        balanceOf[_to] += _value;\r\n        emit Transfer(_from, _to, _value);\r\n        assert(balanceOf[_from] + balanceOf[_to] == previousBalances);\r\n    }\r\n\r\n    function transfer(address _to, uint _value) public {\r\n        _transfer(msg.sender, _to, _value);\r\n    }\r\n\r\n    function transferFrom(address _from, address _to, uint _value) public returns (bool success) {\r\n        require(_value <= allowance[_from][msg.sender]);\r\n        allowance[_from][msg.sender] -= _value;\r\n        _transfer(_from, _to, _value);\r\n        return true;\r\n    }\r\n\r\n    function approve(address _spender, uint _value) public returns (bool success) {\r\n        allowance[msg.sender][_spender] = _value;\r\n        return true;\r\n    }\r\n\r\n    function approveAndCall(address _spender, uint _value, bytes _extraData) public returns (bool success) {\r\n        tokenRecipient spender = tokenRecipient(_spender);\r\n        if (approve(_spender, _value)) {\r\n            spender.receiveApproval(msg.sender, _value, this, _extraData);\r\n            return true;\r\n        }\r\n    }\r\n}\r\n\r\n\r\n\r\ncontract Token is TokenBase {\r\n    uint public initialSupply = 0;\r\n    uint public reserveSupply = 6969 * kUnit;\r\n\r\n    constructor() public {\r\n        totalSupply = initialSupply;\r\n        balanceOf[msg.sender] = initialSupply;\r\n        name = \"SexyChain\";\r\n        symbol = \"Sexy\";\r\n    }\r\n\r\n    function releaseReserve(uint value) onlyOwner public {\r\n        require(reserveSupply >= value);\r\n        balanceOf[owner] += value;\r\n        totalSupply += value;\r\n        reserveSupply -= value;\r\n        emit Transfer(0, this, value);\r\n        emit Transfer(this, owner, value);\r\n    }\r\n\r\n}"
+    }
+  }
+}

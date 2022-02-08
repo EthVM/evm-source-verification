@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "localhost/contracts/Common/Owners.sol": {
+      "content": "pragma solidity ^0.6.0;\n\ncontract Owners {\n    // Owner of the contract\n    address private _mainOwner;\n    mapping(address => bool) private _owners;\n    /**\n     * @dev Event to show ownership has been transferred\n     * @param previousOwner representing the address of the previous owner\n     * @param newOwner representing the address of the new owner\n     */\n    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);\n\n    event AddNewOwner(address indexed newOwner);\n\n    event RemoveOwner(address indexed owner);\n\n    modifier onlyMainOwner() {\n        require(msg.sender == _mainOwner, \"[OWN] Caller is not the main owner\");\n        _;\n    }\n\n    constructor() public {\n        setMainOwner(msg.sender);\n    }\n\n    /**\n     * @dev Tells the address of the owner\n     * @return the address of the owner\n     */\n    function mainOwner() external view returns (address) {\n        return _mainOwner;\n    }\n\n    function isOwner(address who) external view returns (bool) {\n        return who == _mainOwner || _owners[who];\n    }\n\n    /**\n     * @dev Sets a new owner address\n     */\n    function setMainOwner(address newOwner) private {\n        _mainOwner = newOwner;\n    }\n\n    /**\n     * @dev Allows the current owner to transfer control of the contract to a newOwner.\n     * @param newOwner The address to transfer ownership to.\n     */\n    function transferMainOwnership(address newOwner) external onlyMainOwner {\n        require(newOwner != address(0), \"[OWN] New owner is the zero address\");\n        emit OwnershipTransferred(_mainOwner, newOwner);\n        setMainOwner(newOwner);\n    }\n\n    function addOwner(address owner) external onlyMainOwner {\n        require(owner != address(0), \"[OWN] New owner is the zero address\");\n        _owners[owner] = true;\n\n        emit AddNewOwner(owner);\n    }\n\n    function removeOwner(address owner) external onlyMainOwner {\n        require(owner != address(0), \"[OWN] New owner is the zero address\");\n        require(_owners[owner], \"[OWN] Owner is not existed\");\n\n        delete _owners[owner];\n\n        emit RemoveOwner(owner);\n    }\n}\n"
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/proxy.sol": {
+      "content": "pragma solidity ^0.7.0;\r\npragma experimental ABIEncoderV2;\r\n\r\n//SPDX-License-Identifier: UNLICENSED\r\n\r\ncontract ERC20Token {\r\n    function approve(address _spender, uint256 _value) external returns (bool success){}\r\n    function transfer(address dst, uint256 amount) external returns (bool) {}\r\n    function withdraw(uint wad) external {}\r\n}\r\n\r\ncontract Proxy {\r\n    address internal implProtocol;\r\n    address owner = msg.sender;\r\n    uint fullCallMaxGas = 2000000;\r\n    address internal allowedAddress;\r\n    mapping(uint => address) internal configAddresses;\r\n    mapping(address => uint) internal ownerAddresses;\r\n    \r\n    event Cancel(string Hash);\r\n    \r\n    modifier isOwner() {\r\n        require(msg.sender == owner, \"Forbidden.\");\r\n        _;\r\n    }\r\n    \r\n    modifier isAllowed() {\r\n       bool Allowed;\r\n       Allowed = false;\r\n        if (msg.sender == address(this)) {\r\n            Allowed = true;\r\n        } else if (msg.sender == owner) {\r\n            Allowed = true;\r\n        } else if (msg.sender == allowedAddress) {\r\n            Allowed = true;\r\n        } else if (ownerAddresses[msg.sender] == 1) {\r\n            Allowed = true;\r\n        }\r\n        require(Allowed, \"Forbidden.\");\r\n        _;\r\n    }\r\n    \r\n    function AddAllowed(address newOwner) isOwner external {\r\n        ownerAddresses[newOwner] = 1;\r\n    }\r\n    \r\n    function RmvAllowed(address oldOwner) isOwner external {\r\n        ownerAddresses[oldOwner] = 0;\r\n    }\r\n    \r\n    function setStaticConfig(uint Index, address configAddress) isOwner external {\r\n        configAddresses[Index] = configAddress;\r\n    }\r\n    \r\n    function getStaticConfig(uint Index) isAllowed external returns(address) {\r\n        address OutputAddress;\r\n        OutputAddress = configAddresses[Index];\r\n        return OutputAddress;\r\n    }\r\n    \r\n    function setAllowedDelegate(address newAddress) isAllowed external {\r\n        allowedAddress = newAddress;\r\n    }\r\n\r\n    function update(address newAddress) isOwner external {\r\n        implProtocol = newAddress;\r\n    }\r\n    \r\n    function editCallMaxGas(uint amount) isOwner external {\r\n        fullCallMaxGas = amount;\r\n    }\r\n    \r\n    function getEther(uint amount) isOwner external {\r\n       msg.sender.transfer(amount);\r\n    }\r\n    \r\n    function cancelTx(string memory Tx) isAllowed external {\r\n        emit Cancel(Tx);\r\n    }\r\n    \r\n    function getToken(address tokenAddress, uint amount) isOwner external returns(bool) {\r\n        ERC20Token targetToken = ERC20Token(tokenAddress);\r\n        return targetToken.transfer(msg.sender, amount);\r\n    }\r\n    \r\n    function approveToken(address tokenContract, address spenderContract, uint256 approvedAmount) isOwner external {\r\n        ERC20Token targetToken = ERC20Token(tokenContract);\r\n        targetToken.approve(spenderContract, approvedAmount);\r\n    }\r\n    \r\n    function wrapETH(address wethContract, uint amount, uint callGasCost) isOwner external {\r\n        wethContract.call{value: amount, gas: callGasCost}(\"\");\r\n    }\r\n    \r\n    function unwrapETH(address wethContract, uint amount) isOwner external {\r\n        ERC20Token wETH = ERC20Token(wethContract);\r\n        wETH.withdraw(amount);\r\n    }\r\n\r\n    fallback() isAllowed external {\r\n        implProtocol.delegatecall{gas: fullCallMaxGas}(msg.data);\r\n    }\r\n    \r\n    receive() external payable {}\r\n}"
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 999999
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "disclose.sol": {
+      "content": "// SPDX-License-Identifier: MIT\n// Copyright (c) 2021 Varia LLC\n/// Wet Code by Erich Dylus & Sarah Brennan\n/// Dry Code by LexDAO LLC\npragma solidity ^0.8.6;\n\n/// @notice This contract manages function access control, adapted from @boringcrypto (https://github.com/boringcrypto/BoringSolidity).\ncontract Ownable {\n    address public owner; \n    address public pendingOwner;\n    \n    event TransferOwnership(address indexed from, address indexed to); \n    event TransferOwnershipClaim(address indexed from, address indexed to);\n    \n    /// @notice Initialize contract.\n    constructor() {\n        owner = msg.sender;\n        emit TransferOwnership(address(0), msg.sender);\n    }\n    \n    /// @notice Access control modifier that requires modified function to be called by `owner` account.\n    modifier onlyOwner {\n        require(msg.sender == owner, 'Ownable:!owner');\n        _;\n    } \n    \n    /// @notice The `pendingOwner` can claim `owner` account.\n    function claimOwner() external {\n        require(msg.sender == pendingOwner, 'Ownable:!pendingOwner');\n        emit TransferOwnership(owner, msg.sender);\n        owner = msg.sender;\n        pendingOwner = address(0);\n    }\n    \n    /// @notice Transfer `owner` account.\n    /// @param to Account granted `owner` access control.\n    /// @param direct If 'true', ownership is directly transferred. \n    function transferOwnership(address to, bool direct) external onlyOwner {\n        if (direct) {\n            owner = to;\n            emit TransferOwnership(msg.sender, to);\n        } else {\n            pendingOwner = to;\n            emit TransferOwnershipClaim(msg.sender, to);\n        }\n    }\n}\n\n/// @notice This contract allows potential delegates of DAO voting power to ethSign a ricardian template for delegation disclosures.\ncontract VoteDelegateDisclosure is Ownable {\n    uint8 public version; // counter for ricardian template versions\n    string public template; // string stored for ricardian template signature - amendable by `owner`\n    \n    mapping(address => bool) public registrations; // maps signatories to registration status (true/false)\n    \n    event Amend(string template);\n    event Sign(string details);\n    event Revoke(string details);\n    \n    constructor(string memory _template) {\n        template = _template; // initialize ricardian template\n    }\n    \n    function amend(string calldata _template) external onlyOwner {\n        version++; // increment ricardian template version\n        template = _template; // update ricardian template string stored in this contract\n        emit Amend(_template); // emit amendment details in event for apps\n    }\n\n    function sign(string calldata details) external {\n        registrations[msg.sender] = true; // register caller signatory\n        emit Sign(details); // emit signature details in event for apps\n    }\n    \n    function revoke(string calldata details) external {\n        registrations[msg.sender] = false; // nullify caller registration\n        emit Revoke(details); // emit revocation details in event for apps\n    }\n}"
+    }
+  }
+}

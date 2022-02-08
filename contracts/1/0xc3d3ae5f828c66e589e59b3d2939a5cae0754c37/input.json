@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/test1.sol": {
+      "content": "// SPDX-License-Identifier: MIT\npragma solidity >=0.6.11;\npragma experimental ABIEncoderV2;\n\ninterface AggregatorV3Interface {\n  function latestRoundData() external view\n    returns (\n      uint80 roundId,\n      int256 answer,\n      uint256 startedAt,\n      uint256 updatedAt,\n      uint80 answeredInRound\n    );\n}\n\ncontract Test {\n    \n    mapping(address => address) public oracleFor;\n    address public owner;\n\n    constructor() public {\n        oracleFor[0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2] = 0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419; // WETH\n        oracleFor[0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599] = 0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c; // WBTC\n        owner = 0x3E644B1E792E334EA518FA1115D5D62A70cbf5fE;\n    }\n\n    /**\n        @dev Fetch price for asset from ChainLink oracles.\n        @param asset The asset to fetch price.\n        @return The price of asset.\n    */\n    function getLatestPrice(address asset) public view returns (int) {\n        address oracle = oracleFor[asset];\n        (,int price,,,) = AggregatorV3Interface(oracle).latestRoundData();\n        return price;\n    }\n\n    /**\n        @dev Governor can specify a new unstake delay value.\n        @param asset The new unstake delay.\n        @param oracle The new unstake delay.\n    */\n    function setPriceOracle(address asset, address oracle) public {\n        require(msg.sender == owner);\n        oracleFor[asset] = oracle;\n    }\n\n}"
+    }
+  }
+}

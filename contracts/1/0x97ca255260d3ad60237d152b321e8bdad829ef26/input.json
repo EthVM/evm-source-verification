@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "ketherhomepage/contracts/KetherView.sol": {
+      "content": "//SPDX-License-Identifier: MIT\npragma solidity >=0.8.4;\n\ninterface IKetherHomepage {\n  function ads(uint _idx) external view returns (address,uint,uint,uint,uint,string memory,string memory,string memory,bool,bool);\n  function getAdsLength() view external returns (uint);\n}\n\ninterface IERC721 {\n  function ownerOf(uint256) external view returns (address);\n}\n\nlibrary KetherView {\n  struct AdView {\n    address owner;\n    uint x;\n    uint y;\n    uint width;\n    uint height;\n    string link;\n    string image;\n    string title;\n    bool NSFW;\n    bool forceNSFW;\n    uint idx;\n    bool wrapped;\n  }\n  /// allAds is a helper view designed to be called from frontends that want to\n  /// display all of the ads with their correct NFT owners.\n  function allAds(address _instanceAddress, address _nftAddress, uint _offset, uint _limit) external view returns (AdView[] memory) {\n    // TODO: this errors out with `Error: Transaction reverted: library was called directly` if _offset is > length.\n    // should we add a better error?\n    uint len = IKetherHomepage(_instanceAddress).getAdsLength() - _offset;\n    if (_limit < len) {\n      len = _limit;\n    }\n\n    AdView[] memory ads_ = new AdView[](len);\n\n    for (uint i=0; i < len; i++) {\n      ads_[i] = getAd(_instanceAddress, _nftAddress, _offset+i);\n    }\n    return ads_;\n  }\n\n  function getAd(address _instanceAddress, address _nftAddress, uint _idx) public view returns (AdView memory) {\n      (address owner, uint x, uint y, uint width, uint height, string memory link, string memory image, string memory title, bool NSFW, bool forceNSFW) = IKetherHomepage(_instanceAddress).ads(_idx);\n      bool wrapped = false;\n\n      // Is it an NFT already?\n      if (owner == _nftAddress) {\n        // Override owner to be the NFT owner\n        owner = IERC721(_nftAddress).ownerOf(_idx);\n        wrapped = true;\n      }\n\n      return AdView(owner, x, y, width, height, link, image, title, NSFW, forceNSFW, _idx, wrapped);\n  }\n}\n"
+    }
+  }
+}

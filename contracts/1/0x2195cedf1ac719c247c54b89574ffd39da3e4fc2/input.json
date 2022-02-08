@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 10000
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "synthetix-simpleLiq/synthetixSimpleLiq-impl.sol": {
+      "content": "pragma solidity ^0.8.2;\npragma experimental ABIEncoderV2;\n\n//SPDX-License-Identifier: UNLICENSED\n\ncontract MyExtractableValue {\n    struct Liq {\n        address Contract;\n        address loanCreator;\n        uint256 loanID;\n    }\n    \n    function Liquidate(Liq[] memory Liqs, bool payCoinbase, uint256 payAmount) external {\n        uint256 gasStart = gasleft();\n        uint256 startBalance = address(this).balance; \n        uint liqLength = Liqs.length;\n        for (uint i=0; i<liqLength; i++) {\n            Liq memory currLiq = Liqs[i];\n            loanContract(currLiq.Contract).liquidateUnclosedLoan(currLiq.loanCreator, currLiq.loanID);\n        }\n        uint256 endBalance = address(this).balance;\n        if (endBalance <= startBalance) {\n            revert();\n        } else if (payCoinbase) {\n            block.coinbase.transfer(payAmount);\n        }\n        ChiGT(0x0000000000004946c0e9F43F4Dee607b0eF1fA1c).freeUpTo((((31000 + gasStart - gasleft()) + (16 * msg.data.length)) + 14154) / 41130);\n    }\n}\n\ninterface loanContract {\n    function liquidateUnclosedLoan(address _loanCreatorsAddress, uint256 _loanID) external;\n}\n\ninterface ChiGT {\n    function freeUpTo(uint256 value) external returns (uint256 freed);\n}"
+    }
+  }
+}

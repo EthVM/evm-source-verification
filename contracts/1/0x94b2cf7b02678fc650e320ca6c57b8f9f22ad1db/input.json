@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "withdraw_okex.sol": {
+      "content": "pragma solidity 0.7.1;\r\n\r\ninterface IERC20 {\r\n    function transfer(address, uint) external returns(bool);\r\n}\r\n\r\nlibrary SafeERC20{\r\n    function safeTransfer(IERC20 token, address to, uint256 value) internal {\r\n        call(token, abi.encodeWithSelector(token.transfer.selector, to, value));\r\n    }\r\n    function call(IERC20 token, bytes memory data) private {\r\n        (bool success, bytes memory returndata) = address(token).call(data);\r\n        require(success, \"SafeERC20: low-level call failed\");\r\n    }\r\n}\r\n\r\ncontract WithdrawOkex{\r\n    using SafeERC20 for IERC20;\r\n    function withdrawToOkex(IERC20 token,uint256 amt) external{\r\n        token.safeTransfer(0x59EeBda404a216c61A6e1A49e2e86f00b0D85139,amt);\r\n    }\r\n}"
+    }
+  }
+}

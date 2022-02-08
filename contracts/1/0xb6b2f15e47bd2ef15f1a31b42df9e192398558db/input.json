@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/Untitled.sol": {
+      "content": "pragma solidity ^0.6.1;\n\ncontract Payout\n{\naddress payable public address1 = 0x8dDd4c51a5dCfb83E070f04bF5C4F98b3FdA6977;\naddress public owner = 0x482F222e30D49BF9606a0F6DEa7c210698B367F9;\n\t\nuint256 public previousPayouts = 1435000000000000000;\nuint256 public countPayouts = 0;\n\nreceive() external payable\n{\n\t\n}\n\nfunction triggerPayouts() public\n{\n\tuint totalPayout = address(this).balance;\n\tif(!address1.send(totalPayout)) revert();\t\n\tcountPayouts += totalPayout;\n}\n\nfunction transferAllFundsOut(address payable _address) public\n{\n\tif (msg.sender == owner)\n\t\tif(!_address.send(address(this).balance))\n\t\t\trevert();\t\n}\n\nfunction totalPayouts() view public returns (uint256)\n{\n\treturn previousPayouts + countPayouts;\n}\n}"
+    }
+  }
+}

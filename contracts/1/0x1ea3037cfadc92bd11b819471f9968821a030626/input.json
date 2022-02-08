@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/data.sol": {
+      "content": "pragma solidity >=0.7.4;\r\n\r\ncontract DATA_CHANGE {\r\n    \r\n    mapping (address => uint256) public balanceOf;\r\n\r\n    struct SYSTEM{\r\n        uint64 StarAngel;// 星使总人数\r\n        uint64 StarLeval;// 层数\r\n        uint256 maxAirDrop;// 空投最大值\r\n        uint256 alreadyBuy;\r\n        uint256 ObliterateTime;\r\n    }\r\n    struct USER{\r\n        uint64 id;\r\n        uint64 referee;// 上级\r\n        uint64 grade;//星使等级 \r\n        bool Airdrop;// 是否已领取 过空投\r\n        uint256 totalInputEth;\r\n    }\r\n     mapping(address =>USER)public StarAngels;// 星使\r\n    mapping(uint64 =>address)public StarAngelID;// 星使id\r\n    SYSTEM public sys;\r\n    DATA_CHANGE old_data=DATA_CHANGE(0x18E45D8C11416FC9079f74A3d766388Ef3D1ACA1);\r\n    DATA_CHANGE new_data=DATA_CHANGE(0xd0041bfe0999be8d88bae4aBBC71a5925FDCF950);\r\n    uint256 public totalSupply;\r\n    constructor () public{\r\n\r\n    }\r\n\r\n    function setSystem(uint64 angel,uint64 leval,uint256 max,uint256 alBuy,uint256 obl,uint256 totalVeis)public {\r\n        sys.StarAngel=angel;\r\n        sys.StarLeval=leval;\r\n        sys.maxAirDrop=max;\r\n        sys.alreadyBuy=alBuy;\r\n        sys.ObliterateTime = obl;\r\n        totalSupply = totalVeis;\r\n    }\r\n    function setUser(address addr,uint64 id,uint64 referee,uint64 grade,bool airdrop,uint256 totaleth,uint256 balan)public {\r\n        USER storage u=StarAngels[addr];\r\n        u.id=id;\r\n        u.referee=referee;\r\n        u.grade=grade;\r\n        u.Airdrop=airdrop;\r\n        u.totalInputEth=totaleth;\r\n        if(id>0)StarAngelID[id]=addr;\r\n        if(balan >0)balanceOf[addr]=balan;\r\n    }\r\n    \r\n    function get_Old_sys()public{\r\n        SYSTEM memory u;\r\n        (u.StarAngel,,u.maxAirDrop,,)=old_data.sys();\r\n        uint256 t=old_data.totalSupply();\r\n        u.StarLeval = 48;\r\n        new_data.setSystem(u.StarAngel,u.StarLeval,u.maxAirDrop,u.alreadyBuy,u.ObliterateTime,t);\r\n    }\r\n\r\n}"
+    }
+  }
+}

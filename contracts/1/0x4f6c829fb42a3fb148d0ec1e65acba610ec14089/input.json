@@ -1,0 +1,32 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/chainlink-usd-eth.sol": {
+      "content": "pragma solidity ^0.6.7;\n// pragma solidity ^0.4.24;\n\n//import \"chainlink/contracts/interfaces/AggregatorInterface.sol\";\n//remix import statement\n/*\n\ngoal - create e2e flow of verifiying amount of eth coming in with chainink and transferring that amount to a multi-sig gnosis wallet\n\n*/\n// import \"https://github.com/smartcontractkit/chainlink/evm/contracts/interfaces/AggregatorInterface.sol\";\nimport \"https://github.com/smartcontractkit/chainlink/blob/develop/evm-contracts/src/v0.6/interfaces/AggregatorInterface.sol\";\n\ncontract ReferenceConsumer {\n  AggregatorInterface internal priceFeed;\n\n  constructor(address _aggregator) public {\n    priceFeed = AggregatorInterface(_aggregator);\n  }\n\n  function getLatestPrice() public view returns (int256) {\n    return priceFeed.latestAnswer();\n  }\n\n  function getLatestUpdateHeight() public view returns (int256) {\n    return priceFeed.latestAnswer();\n  }\n  \n  function getPreviousPrice(uint256 _back) public view returns (int256) {\n    uint256 latest = priceFeed.latestRound();\n    require(_back <= latest, \"Not enough history\");\n    return priceFeed.getAnswer(latest - _back);\n  }\n\n  function getPreviousTimestamp(uint256 _back) public view returns (uint256) {\n    uint256 latest = priceFeed.latestRound();\n    require(_back <= latest, \"Not enough history\");\n    return priceFeed.getTimestamp(latest - _back);\n  }\n}"
+    },
+    "https://github.com/smartcontractkit/chainlink/blob/develop/evm-contracts/src/v0.6/interfaces/AggregatorInterface.sol": {
+      "content": "pragma solidity >=0.6.0;\n\ninterface AggregatorInterface {\n  function latestAnswer() external view returns (int256);\n  function latestTimestamp() external view returns (uint256);\n  function latestRound() external view returns (uint256);\n  function getAnswer(uint256 roundId) external view returns (int256);\n  function getTimestamp(uint256 roundId) external view returns (uint256);\n\n  event AnswerUpdated(int256 indexed current, uint256 indexed roundId, uint256 updatedAt);\n  event NewRound(uint256 indexed roundId, address indexed startedBy, uint256 startedAt);\n}\n"
+    }
+  }
+}

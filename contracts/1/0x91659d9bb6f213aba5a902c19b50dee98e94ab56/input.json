@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/SmokeSignal.sol": {
+      "content": "pragma solidity 0.6.4;\r\n\r\n// this doubles as a wrapper for the Maker medianizer contract\r\nabstract contract EthPriceOracle\r\n{\r\n    function read()\r\n        public \r\n        virtual\r\n        view \r\n        returns(bytes32);\r\n}\r\n\r\nstruct StoredMessageData \r\n{\r\n    address firstAuthor;\r\n    uint nativeBurned;\r\n    uint dollarsBurned;\r\n    uint nativeTipped;\r\n    uint dollarsTipped;\r\n}\r\n\r\ncontract SmokeSignal \r\n{\r\n    address public donationAddress;\r\n    EthPriceOracle public oracle;\r\n    mapping (bytes32 => StoredMessageData) public storedMessageData;\r\n\r\n    constructor(address _donationAddress, EthPriceOracle _oracle) \r\n        public \r\n    {\r\n        donationAddress = _donationAddress;\r\n        oracle = _oracle;\r\n    }\r\n\r\n    function EthPrice() \r\n        public\r\n        view\r\n        returns (uint _price)\r\n    {\r\n        return address(oracle) == address(0) ? 1 : uint(oracle.read());\r\n    }\r\n\r\n    event MessageBurn(\r\n        bytes32 indexed _hash,\r\n        address indexed _from,\r\n        uint _burnAmount,\r\n        string _message);\r\n\r\n    function burnMessage(string calldata _message, uint _donateAmount)\r\n        external\r\n        payable\r\n        returns(bytes32)\r\n    {\r\n        internalDonateIfNonzero(_donateAmount);\r\n\r\n        bytes32 hash = keccak256(abi.encode(_message));\r\n\r\n        uint burnAmount = msg.value - _donateAmount;\r\n        uint burnValue = EthPrice() * burnAmount;\r\n        internalBurnForMessageHash(hash, burnAmount, burnValue);\r\n\r\n        if (storedMessageData[hash].firstAuthor == address(0))\r\n        {\r\n            storedMessageData[hash].firstAuthor = msg.sender;\r\n        }\r\n\r\n        emit MessageBurn(\r\n            hash,\r\n            msg.sender,\r\n            burnValue,\r\n            _message);\r\n\r\n        return hash;\r\n    }\r\n\r\n    event HashBurn(\r\n        bytes32 indexed _hash,\r\n        address indexed _from,\r\n        uint _burnAmount\r\n    );\r\n\r\n    function burnHash(bytes32 _hash, uint _donateAmount)\r\n        external\r\n        payable\r\n    {        \r\n        internalDonateIfNonzero(_donateAmount);\r\n\r\n        uint burnAmount = msg.value - _donateAmount;\r\n        uint burnValue = EthPrice() * burnAmount;\r\n        internalBurnForMessageHash(_hash, burnAmount, burnValue);\r\n\r\n        emit HashBurn(\r\n            _hash,\r\n            msg.sender,\r\n            burnValue);\r\n    }\r\n\r\n    event HashTip(\r\n        bytes32 indexed _hash,\r\n        address indexed _from,\r\n        uint _tipAmount);\r\n\r\n    function tipHashOrBurnIfNoAuthor(bytes32 _hash, uint _donateAmount)\r\n        external\r\n        payable\r\n    {\r\n        uint burnAmount = msg.value - _donateAmount;\r\n        uint burnValue = EthPrice() * burnAmount;\r\n        internalDonateIfNonzero(_donateAmount);\r\n        \r\n        address author = storedMessageData[_hash].firstAuthor;\r\n        if (author == address(0))\r\n        {\r\n            internalBurnForMessageHash(_hash, burnAmount, burnValue);\r\n\r\n            emit HashBurn(\r\n                _hash,\r\n                msg.sender,\r\n                burnValue);\r\n        }\r\n        else \r\n        {\r\n            internalTipForMessageHash(_hash, author, burnAmount, burnValue);\r\n\r\n            emit HashTip(\r\n                _hash,\r\n                msg.sender,\r\n                burnValue);\r\n        }\r\n    }\r\n\r\n    function internalBurnForMessageHash(bytes32 _hash, uint _burnAmount, uint _burnValue)\r\n        internal\r\n    {\r\n        internalSend(address(0), _burnAmount);\r\n        storedMessageData[_hash].nativeBurned += _burnAmount;\r\n        storedMessageData[_hash].dollarsBurned += _burnValue;\r\n    }\r\n\r\n    function internalTipForMessageHash(bytes32 _hash, address author, uint _tipAmount, uint _tipValue)\r\n        internal\r\n    {\r\n        internalSend(author, _tipAmount);\r\n        storedMessageData[_hash].nativeTipped += _tipAmount;\r\n        storedMessageData[_hash].dollarsTipped += _tipValue;\r\n    }\r\n\r\n    function internalDonateIfNonzero(uint _donateAmount)\r\n        internal\r\n    {\r\n        if (_donateAmount > 0) \r\n        {\r\n            internalSend(donationAddress, _donateAmount);\r\n        }\r\n    }\r\n\r\n    function internalSend(address _to, uint _wei)\r\n        internal\r\n    {\r\n        _to.call{ value: _wei }(\"\");\r\n    }\r\n}\r\n\r\ncontract SmokeSignalEthereum is SmokeSignal\r\n{\r\n    constructor(address _donationAddress) SmokeSignal(_donationAddress, EthPriceOracle(0x729D19f657BD0614b4985Cf1D82531c67569197B))\r\n        public \r\n    { }\r\n}\r\n\r\ncontract SmokeSignalxDai is SmokeSignal\r\n{\r\n    constructor(address _donationAddress) SmokeSignal(_donationAddress, EthPriceOracle(address(0)))\r\n        public \r\n    { }\r\n}"
+    }
+  }
+}

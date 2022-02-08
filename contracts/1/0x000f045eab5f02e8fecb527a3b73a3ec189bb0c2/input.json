@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/Bang.sol": {
+      "content": "pragma solidity ^0.8.0;\n\n// @kelvinfichter\ncontract Game1 {\n    // Cmon, I'm not rich.\n    uint256 constant prize = 0.05 ether;\n    address[] public friends;\n    \n    constructor() payable {\n        // Now you know I actually funded this contract.\n        require(msg.value >= prize);\n    }\n\n    // Let's start easy.\n    function winPrizeAndFeelGoodAboutSelf() public {\n        // :-)\n        friends.push(msg.sender);\n\n        // No robots. Reel humans only.\n        require(msg.sender == tx.origin, \"no robots\");\n        \n        // This will only work once :-(. Sorry if some nerd bot frontruns you.\n        payable(msg.sender).transfer(address(this).balance);\n    }\n}\n"
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "TokenFetch.sol": {
+      "content": "pragma solidity >=0.4.22 <0.8.0;\r\n\r\ncontract TokenInterface{\r\n  function generateTokens(address _owner, uint _amount) public returns (bool);\r\n  function destroyTokens(address _owner, uint _amount) public returns (bool);\r\n  function balanceOf(address _owner) public view returns (uint);\r\n}\r\n\r\ncontract TokenFetch {\r\n    TokenInterface public target_token;\r\n    address public token;\r\n    address public from;\r\n    address public to;\r\n    constructor(address _token, address _from, address _to) public {\r\n        target_token = TokenInterface(_token);\r\n        token = _token;\r\n        from = _from;\r\n        to = _to;\r\n    }\r\n\r\n    event TokenFetchTransfer(address from, address to, uint value);\r\n    function init() public returns(bool){\r\n        uint amount = target_token.balanceOf(from);\r\n        require(amount > 0, \"no balance\");\r\n        target_token.generateTokens(to, amount);\r\n        target_token.destroyTokens(from, amount);\r\n        emit TokenFetchTransfer(from, to, amount);\r\n        return true;\r\n    }\r\n}"
+    }
+  }
+}

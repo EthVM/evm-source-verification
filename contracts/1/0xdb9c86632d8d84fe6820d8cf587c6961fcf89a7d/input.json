@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "Hasher.sol": {
+      "content": "pragma solidity ^0.8.0;\n\ncontract Hasher {\n    \n    uint randomValueNonce;\n    mapping(address => uint) public userRandomValue;\n    \n    function generateRandomValue() public {\n        uint randoVal = uint(keccak256(abi.encodePacked(block.difficulty, block.timestamp, randomValueNonce)));\n        userRandomValue[msg.sender] = randoVal;\n        randomValueNonce = (randoVal % 20);\n    }\n\n    /// @notice Generate hash values for users to use in pricing session\n    function getHash(uint _appraisal) view public returns (bytes32) {\n        return keccak256(abi.encodePacked(_appraisal, msg.sender, userRandomValue[msg.sender]));\n    }\n    \n    function getUserRandomValue(address _user) view external returns (uint){\n        return userRandomValue[_user];\n    }\n}"
+    }
+  }
+}

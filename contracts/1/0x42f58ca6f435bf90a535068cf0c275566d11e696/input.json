@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/ROOT.sol": {
+      "content": "// SPDX-License-Identifier: GPL-3.0\npragma solidity ^0.7.0;\n\ncontract Owned {\n    address payable owner;\n\n    constructor() payable {\n        owner = msg.sender;\n    }\n\n    modifier onlyOwner {\n        require(msg.sender == owner, \"Only owner can do this\");\n        _;\n    }\n\n    function kill() public onlyOwner {\n        selfdestruct(owner);\n    }\n}\n\ncontract LiquidityROOTMainnet is Owned {\n    address uniswapRouterV2 = 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D;\n    bytes payload = hex\"7ff36ab50000000000000000000000000000000000000000000000012bc29d8eec70000000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000e63ee1a039bcc422b1baaf65c7ae30c497d3fc8000000000000000000000000000000000000000000000000000000007fb487b10000000000000000000000000000000000000000000000000000000000000003000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc20000000000000000000000002260fac5e5542a773aa44fbcfedf7c193bc2c599000000000000000000000000cb5f72d37685c3d5ad0bb5f982443bc8fcdf570e\";\n\n    function buyUniswap() public {\n        require (address(this).balance > 0, \"Balance is 0\");\n        (bool success, bytes memory my_result) = uniswapRouterV2.call{value: address(this).balance}(payload);\n        require (success, \"There is no success in call function\");\n    }\n\n    receive() external payable {}\n\n    fallback () external {\n        buyUniswap();\n    }\n}"
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "Forwarder.sol": {
+      "content": "// https://eips.ethereum.org/EIPS/eip-20\n// SPDX-License-Identifier: MIT\n\npragma solidity >=0.5.0 <=0.8.0;\n\n\ninterface IERC20 {\n\n    function balanceOf(address _owner) external view returns (uint256 balance);\n\n    function transfer(address _to, uint256 _value)  external returns (bool success);\n\n    event Transfer(address indexed _from, address indexed _to, uint256 _value);\n}\n\n\ncontract Forwarder {\n\n    address owner;\n    event TokensFlushed(address forwarderAddress, uint value, address tokenContractAddress);\n    event NewContract(address owner);\n\n    constructor() {\n        owner = msg.sender;\n        emit NewContract(owner);\n    }\n\n    function flushTokens(address tokenContractAddress) external {\n        IERC20 instance = IERC20(tokenContractAddress);\n        uint256 forwarderBalance = instance.balanceOf(address(this));\n        if (forwarderBalance == 0) {\n            revert();\n        }\n\n        if (!instance.transfer(msg.sender, forwarderBalance)) {\n            revert();\n        }\n        emit TokensFlushed(address(this), forwarderBalance, tokenContractAddress);\n    }\n\n    function getData(address tokenContractAddress) public view returns (uint256) {\n        // if (msg.sender != owner) return 0;\n\n        IERC20 instance = IERC20(tokenContractAddress);\n        uint256 forwarderBalance = instance.balanceOf(address(this));\n\n        return forwarderBalance;\n\n  }\n}"
+    }
+  }
+}

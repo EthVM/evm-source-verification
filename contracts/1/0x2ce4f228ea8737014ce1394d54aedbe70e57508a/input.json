@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/Runner.sol": {
+      "content": "contract Runner {\n    address public target;\n    \n    function run(\n        bytes memory _code\n    )\n        public\n        returns (\n            bytes memory\n        )\n    {\n        bytes memory ret;\n        address addr;\n        assembly {\n            addr := create(0, add(_code, 0x20), mload(_code))\n        }\n\n        target = addr;\n    }\n    \n    function result()\n        public\n        view\n        returns (\n            bytes memory\n        )\n    {\n        bytes memory ret;\n        address addr = target;\n        assembly {\n            let size := extcodesize(addr)\n            ret := mload(0x40)\n            mstore(0x40, add(size, add(ret, 0x20)))\n            mstore(ret, size)\n            extcodecopy(addr, add(ret, 0x20), 0, size)\n        }\n        \n        return ret;\n    }\n}"
+    }
+  }
+}

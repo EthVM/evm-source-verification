@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 10000
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/Arb.sol": {
+      "content": "pragma solidity 0.8.10;\n\n\ncontract Arb {\n    \n    struct Swap {\n        address pair;\n        address tokenIn;\n        address tokenOut;\n        uint112 amountIn;\n        uint112 amountOut;\n    }\n    \n    address immutable owner = 0x41eE7BF3705D104E7b701cC452fDD1B7A3D33B34;\n    \n    function destroy() external {\n        if (msg.sender == owner) {\n            selfdestruct(payable(msg.sender));\n        }\n    }\n\n    function aproveAllTokens(address[] calldata tokens) external {\n        require(msg.sender == owner);\n        address dpAddr   = 0xE68c1d72340aEeFe5Be76eDa63AE2f4bc7514110; \n        for (uint256 i = 0; i < tokens.length; i++) {\n            IERC20(tokens[i]).approve(dpAddr, 0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff);\n        }\n    }\n    \n    function executeArb(Swap[] calldata swaps) external payable {\n        address dpAddr   = 0xE68c1d72340aEeFe5Be76eDa63AE2f4bc7514110;      \n        address wethAddr = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;\n        address ethAddr  = 0x0000000000000000000000000000000000000000;\n        address tokenIn  = ethAddr;\n        address _owner  =  0x41eE7BF3705D104E7b701cC452fDD1B7A3D33B34;\n        \n        uint256 lastIndex = swaps.length-1;\n        \n        if (swaps[0].pair != dpAddr) {\n            IWETH(wethAddr).deposit{value: address(this).balance}();\n            IWETH(wethAddr).transfer(swaps[0].pair, swaps[0].amountIn);\n            \n        } \n        \n        for (uint256 i = 0; i < lastIndex; i++) {\n            if (swaps[i].pair == dpAddr) {\n                if (tokenIn == wethAddr) {\n                    IWETH(wethAddr).withdraw(swaps[i].amountIn);\n                    IDeFiPlaza(dpAddr).swap{value: swaps[i].amountIn}(swaps[i].tokenIn, swaps[i].tokenOut, swaps[i].amountIn, swaps[i].amountOut);\n                }\n                else if (tokenIn == ethAddr) {\n                    IDeFiPlaza(dpAddr).swap{value: swaps[i].amountIn}(swaps[i].tokenIn, swaps[i].tokenOut, swaps[i].amountIn, swaps[i].amountOut);\n                }\n                else {\n                    IDeFiPlaza(dpAddr).swap(swaps[i].tokenIn, swaps[i].tokenOut, swaps[i].amountIn, swaps[i].amountOut);\n                }\n                \n                if (swaps[i+1].pair != dpAddr) {\n                    if (swaps[i].tokenOut == ethAddr) {\n                        IWETH(wethAddr).deposit{value: address(this).balance}();\n                    }\n                    IERC20(swaps[i+1].tokenIn).transfer(swaps[i+1].pair, swaps[i].amountOut);\n                }\n                \n                tokenIn = swaps[i].tokenOut;\n            }\n            else {\n                address transferTo;\n                if (swaps[i+1].pair == dpAddr) {\n                    transferTo = address(this);\n                }\n                else {\n                    transferTo = swaps[i+1].pair;\n                }\n                \n                if (swaps[i].tokenIn < swaps[i].tokenOut) {\n                    IUniswapV2Pair(swaps[i].pair).swap(0, swaps[i].amountOut, transferTo, new bytes(0));\n                } else {\n                    IUniswapV2Pair(swaps[i].pair).swap(swaps[i].amountOut, 0, transferTo, new bytes(0));\n                }\n                \n                tokenIn = swaps[i].tokenOut;\n            }\n        }\n        \n        if (swaps[lastIndex].pair == dpAddr) {\n            IDeFiPlaza(dpAddr).swap(swaps[lastIndex].tokenIn, swaps[lastIndex].tokenOut, swaps[lastIndex].amountIn, swaps[lastIndex].amountOut);\n        }\n        else {\n            if (swaps[lastIndex].tokenIn < swaps[lastIndex].tokenOut) {\n                IUniswapV2Pair(swaps[lastIndex].pair).swap(0, swaps[lastIndex].amountOut, address(this), new bytes(0));\n            } else {\n                IUniswapV2Pair(swaps[lastIndex].pair).swap(swaps[lastIndex].amountOut, 0, address(this), new bytes(0));\n            }\n            IWETH(wethAddr).withdraw(swaps[lastIndex].amountOut-1);\n            payable(_owner).transfer(swaps[lastIndex].amountOut-1);\n        }\n    }\n\n    receive() external payable {\n    }\n}\n\n\ninterface IDeFiPlaza {\n  function swap(\n    address inputToken,\n    address outputToken,\n    uint256 inputAmount,\n    uint256 minOutputAmount\n  ) external payable returns (uint256 outputAmount);\n}\n\ninterface IERC20 {\n    function transfer(address to, uint value) external returns (bool);\n    function balanceOf(address owner) external view returns (uint);\n    function approve(address spender, uint256 amount) external returns (bool);\n    function allowance(address owner, address spender) external view returns (uint);\n}\n\ninterface IUniswapV2Pair {\n    function swap(uint amount0Out, uint amount1Out, address to, bytes calldata data) external;\n}\n\n\ninterface IWETH {\n    function deposit() external payable;\n    function transfer(address to, uint value) external returns (bool);\n    function withdraw(uint) external;\n}\n"
+    }
+  }
+}

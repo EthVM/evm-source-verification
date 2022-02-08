@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/fsdafsdnotary.sol": {
+      "content": "pragma solidity ^0.7.0;\n\n// \"SPDX-License-Identifier: UNLICENSED\"\n\ncontract Hashes {\n    event HashAdded(address indexed sender, bytes32 hash, uint256 blockNumber);\n\n    mapping (bytes32 => uint256) private hashes;\n    \n    function addHash (bytes32 _hash) public {\n        require(hashes[_hash] == 0, \"The hash was already added\");\n        \n        hashes[_hash] = block.number;\n        \n        emit HashAdded(msg.sender, _hash, block.number);\n    }\n    \n    function findHash (bytes32 _hash) public view returns(uint) {\n        return hashes[_hash];\n    }\n}"
+    }
+  }
+}

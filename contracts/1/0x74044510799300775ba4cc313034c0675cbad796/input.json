@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/TokenOracle.sol": {
+      "content": "pragma solidity ^0.7.0;\npragma experimental ABIEncoderV2;\n\ninterface IERC20 {\n    function balanceOf(address _whom) external view returns (uint);\n    function name() external view returns (string memory);\n    function symbol() external view returns (string memory);\n    function decimals() external view returns (uint8);\n    function totalSupply() external view returns (uint256);\n}\n\n\ncontract TokenOracle {\n    function fetch(address[] memory tokens) view public returns(string[] memory symbols, string[] memory names, uint8[] memory decimals, uint256[] memory supplies) {\n        \n        symbols = new string[](tokens.length);\n        names = new string[](tokens.length);\n        decimals = new uint8[](tokens.length);\n        supplies = new uint256[](tokens.length);\n        \n        for(uint256 i = 0; i < tokens.length; i++) {\n            IERC20 token = IERC20(tokens[i]);\n            names[i] = token.name();\n            decimals[i] = token.decimals();\n            symbols[i] = token.symbol();\n            supplies[i] = token.totalSupply();\n        }\n    }\n}"
+    }
+  }
+}

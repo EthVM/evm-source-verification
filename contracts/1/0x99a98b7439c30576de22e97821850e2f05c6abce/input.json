@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "PairChecker.sol": {
+      "content": "//SPDX-License-Identifier: UNLICENSED\"\r\npragma solidity ^0.8.1;\r\n\r\nstruct PairInfo {\r\n    address pairAddress;\r\n    address token0;\r\n    address token1;\r\n    uint112 reserve0;\r\n    uint112 reserve1;\r\n    uint112 decimals0;\r\n    uint112 decimals1;\r\n}\r\n\r\ninterface IUniswapV2ERC20 {\r\n    function decimals() external pure returns (uint8);\r\n}\r\n\r\ninterface IUniswapV2Pair {\r\n    function token0() external view returns (address);\r\n\r\n    function token1() external view returns (address);\r\n\r\n    function getReserves()\r\n        external\r\n        view\r\n        returns (uint112 reserve0, uint112 reserve1);\r\n\r\n    function totalSupply() external view returns (uint256);\r\n}\r\n\r\ncontract PairChecker {\r\n    receive() external payable {\r\n        revert(\"PairChecker does not accept payments\");\r\n    }\r\n\r\n    function getPair(address pair) public view returns (PairInfo memory info) {\r\n        uint256 pairCode;\r\n        assembly {\r\n            pairCode := extcodesize(pair)\r\n        }\r\n        if (pairCode > 0) {\r\n            uint256 totalSupply = IUniswapV2Pair(pair).totalSupply();\r\n            if (totalSupply > 0) {\r\n                (uint112 reserve0, uint112 reserve1) =\r\n                    IUniswapV2Pair(pair).getReserves();\r\n                return\r\n                    PairInfo({\r\n                        pairAddress: pair,\r\n                        token0: IUniswapV2Pair(pair).token0(),\r\n                        token1: IUniswapV2Pair(pair).token1(),\r\n                        reserve0: reserve0,\r\n                        reserve1: reserve1,\r\n                        decimals0: IUniswapV2ERC20(\r\n                            IUniswapV2Pair(pair).token0()\r\n                        )\r\n                            .decimals(),\r\n                        decimals1: IUniswapV2ERC20(\r\n                            IUniswapV2Pair(pair).token1()\r\n                        )\r\n                            .decimals()\r\n                    });\r\n            }\r\n        }\r\n    }\r\n\r\n    function getPairs(address[] memory pairs)\r\n        external\r\n        view\r\n        returns (PairInfo[] memory)\r\n    {\r\n        PairInfo[] memory pairsInfo = new PairInfo[](pairs.length);\r\n\r\n        for (uint256 i = 0; i < pairs.length - 1; i++) {\r\n            pairsInfo[i] = getPair(pairs[i]);\r\n        }\r\n\r\n        return pairsInfo;\r\n    }\r\n}\r\n"
+    }
+  }
+}

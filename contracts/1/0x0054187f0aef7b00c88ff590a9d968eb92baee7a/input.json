@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "USDT.sol": {
+      "content": "pragma solidity ^0.4.23;\r\n\r\ncontract USDT {\r\n    mapping (address => uint256) private balances;\r\n    mapping (address => uint256[2]) private lockedBalances;\r\n    string public name = \"USDT\";                   //fancy name: eg Simon Bucks\r\n    uint8 public decimals = 6;                //How many decimals to show.\r\n    string public symbol = \"USDT\";                 //An identifier: eg SBX\r\n    uint256 public totalSupply = 1000000000000000;\r\n    address public owner;\r\n        event Transfer(address indexed _from, address indexed _to, uint256 _value); \r\n    constructor(\r\n        uint256 _initialAmount,\r\n        string _tokenName,\r\n        uint8 _decimalUnits,\r\n        string _tokenSymbol,\r\n        address _owner\r\n    ) public {\r\n        balances[_owner] = _initialAmount;                   // Give the owner all initial tokens\r\n        totalSupply = _initialAmount;                        // Update total supply\r\n        name = _tokenName;                                   // Set the name for display purposes\r\n        decimals = _decimalUnits;                            // Amount of decimals for display purposes\r\n        symbol = _tokenSymbol;                               // Set the symbol for display purposes\r\n        owner = _owner;                                      // set owner\r\n        \r\n    }\r\n    /*DirectDrop and AirDrop*/\r\n    /*Checking lock limit and time limit while transfering.*/\r\n    function transfer(address _to, uint256 _value) public returns (bool success) {\r\n        //Before ICO finish, only own could transfer.\r\n        if(_to != address(0)){\r\n            if(lockedBalances[msg.sender][1] >= now) {\r\n                require((balances[msg.sender] > lockedBalances[msg.sender][0]) &&\r\n                 (balances[msg.sender] - lockedBalances[msg.sender][0] >= _value));\r\n            } else {\r\n                require(balances[msg.sender] >= _value);\r\n            }\r\n            balances[msg.sender] -= _value;\r\n            balances[_to] += _value;\r\n            emit Transfer(msg.sender, _to, _value);\r\n            return true;\r\n        }\r\n    }\r\n    /*With permission, destory token from an address and minus total amount.*/\r\n    function burnFrom(address _who,uint256 _value)public returns (bool){\r\n        require(msg.sender == owner);\r\n        assert(balances[_who] >= _value);\r\n        totalSupply -= _value;\r\n        balances[_who] -= _value;\r\n        lockedBalances[_who][0] = 0;\r\n        lockedBalances[_who][1] = 0;\r\n        return true;\r\n    }\r\n    /*With permission, creating coin.*/\r\n    function makeCoin(uint256 _value)public returns (bool){\r\n        require(msg.sender == owner);\r\n        totalSupply += _value;\r\n        balances[owner] += _value;\r\n        return true;\r\n    }\r\n    function balanceOf(address _owner) public view returns (uint256 balance) {\r\n        return balances[_owner];\r\n    }\r\n    /*With permission, withdraw ETH to owner address from smart contract.*/\r\n    function withdraw() public{\r\n        require(msg.sender == owner);\r\n        msg.sender.transfer(address(this).balance);\r\n    }\r\n    /*With permission, withdraw ETH to an address from smart contract.*/\r\n    function withdrawTo(address _to) public{\r\n        require(msg.sender == owner);\r\n        address(_to).transfer(address(this).balance);\r\n    }\r\n}"
+    }
+  }
+}

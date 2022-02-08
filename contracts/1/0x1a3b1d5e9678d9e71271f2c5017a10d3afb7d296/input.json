@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "TLWHITELIST.sol": {
+      "content": "// SPDX-License-Identifier: UNLICENSED\npragma solidity ^0.8.3;\n\ncontract tlWhitelist {\n    // // Access\n    // Minified Ownable\n    address public owner;\n    constructor() { owner = msg.sender; }\n    modifier onlyOwner { require(msg.sender == owner, \"You are not the owner!\"); _; }\n    function setNewOwner(address address_) external onlyOwner { owner = address_; }\n\n    bytes32 internal merkleRoot;\n    function setMerkleRoot(bytes32 merkleRoot_) external onlyOwner {\n        merkleRoot = merkleRoot_;\n    }\n\n    function isWhitelisted(address address_, bytes32[] memory proof_) public view returns (bool) {\n        bytes32 _leaf = keccak256(abi.encodePacked(address_));\n\n        for (uint i = 0; i < proof_.length; i++) {\n            _leaf = _leaf < proof_[i] ? keccak256(abi.encodePacked(_leaf, proof_[i])) : keccak256(abi.encodePacked(proof_[i], _leaf));\n        }\n        return _leaf == merkleRoot;\n    }\n}"
+    }
+  }
+}

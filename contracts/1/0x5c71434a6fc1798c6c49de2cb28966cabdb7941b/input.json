@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "PLSRewardsWallet.sol": {
+      "content": "// SPDX-License-Identifier: UNLICENSED\r\npragma solidity ^0.6.0;\r\n\r\n// ----------------------------------------------------------------------------\r\n// ERC Token Standard #20 Interface\r\n// https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20-token-standard.md\r\n// ----------------------------------------------------------------------------\r\n/**\r\n * @dev Interface of the ERC20 standard as defined in the EIP.\r\n */\r\ninterface IERC20 {\r\n\r\n    /**\r\n     * @dev Moves `amount` tokens from the caller's account to `recipient`.\r\n     *\r\n     * Returns a boolean value indicating whether the operation succeeded.\r\n     *\r\n     * Emits a {Transfer} event.\r\n     */\r\n    function transfer(address recipient, uint256 amount) external returns (bool);\r\n}\r\n\r\n// ----------------------------------------------------------------------------\r\n// Owned contract\r\n// ----------------------------------------------------------------------------\r\ncontract Owned {\r\n    address payable public owner;\r\n\r\n    event OwnershipTransferred(address indexed _from, address indexed _to);\r\n\r\n    constructor() public {\r\n        owner = msg.sender;\r\n    }\r\n\r\n    modifier onlyOwner {\r\n        require(msg.sender == owner, \"Only allowed by owner\");\r\n        _;\r\n    }\r\n\r\n    function transferOwnership(address payable _newOwner) external onlyOwner {\r\n        require(_newOwner != address(0),\"Invalid address passed\");\r\n        owner = _newOwner;\r\n        emit OwnershipTransferred(msg.sender, _newOwner);\r\n    }\r\n}\r\n\r\ncontract PLSRewardsWallet is Owned{\r\n    \r\n    mapping(address => bool) public allowedStakingPools;\r\n    \r\n    IERC20 public PLS;\r\n    \r\n    constructor() public{\r\n        owner = 0x225e09C5702Ba1E1957D089CB0eb98cFaE721181;\r\n    }\r\n    \r\n    function setTokenAddress(address _tokenAddress) public onlyOwner {\r\n        PLS = IERC20(_tokenAddress);\r\n    }\r\n    \r\n    function addPool(address _poolAddress) external onlyOwner{\r\n        allowedStakingPools[_poolAddress] = true;\r\n    }\r\n    \r\n    function removePool(address _poolAddress) external onlyOwner{\r\n        allowedStakingPools[_poolAddress] = false;\r\n    }\r\n    \r\n    function sendRewards(address to, uint256 tokens) public{\r\n        require(allowedStakingPools[msg.sender], \"UnAuthorized\");\r\n        \r\n        // transfer rewards tokens\r\n        require(PLS.transfer(to, tokens));\r\n    }\r\n}"
+    }
+  }
+}

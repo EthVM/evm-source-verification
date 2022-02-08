@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "starstake.sol": {
+      "content": "//SPDX-License-Identifier: UNLICENSED\r\n\r\npragma solidity 0.8.1;\r\n\r\ninterface IERC20 {\r\n    function totalSupply() external view returns (uint256);\r\n    function balanceOf(address account) external view returns (uint256);\r\n    function transfer(address recipient, uint256 amount) external returns (bool);\r\n    function allowance(address owner, address spender) external view returns (uint256);\r\n    function approve(address spender, uint256 amount) external returns (bool);\r\n    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);\r\n    //event Transfer(address indexed from, address indexed to, uint256 value);\r\n    event Approval(address indexed owner, address indexed spender, uint256 value);\r\n}\r\n\r\ncontract StarHolder\r\n{\r\n    struct TokenLock\r\n    {\r\n        address owner;\r\n        uint256 amount;\r\n        uint256 unlockDate;\r\n    }\r\n    \r\n    IERC20 STARLightToken;\r\n    \r\n    constructor()\r\n    {\r\n        STARLightToken = IERC20(0x2bBF4f7B8Ab300Db01d45662769821Da6E400ef4);\r\n    }\r\n    \r\n    mapping(address => TokenLock[]) public userToTokenLocks;\r\n    \r\n    /////////////////\r\n    // Lock functions\r\n    \r\n    function lockToken(uint256 _amount) external\r\n    {\r\n       \r\n        \r\n        STARLightToken.transferFrom(msg.sender, address(this), _amount);\r\n        \r\n        uint256 unlockDate;\r\n        \r\n        unlockDate = block.timestamp + 31540000000; // 1 year lock\r\n        \r\n        userToTokenLocks[msg.sender].push(TokenLock(\r\n            msg.sender,\r\n            _amount,\r\n            unlockDate\r\n        ));\r\n    }\r\n    \r\n    /////////////////////\r\n    // Withdraw functions\r\n    \r\n    function withdrawLockedToken(uint256 _index) external\r\n    {\r\n        TokenLock memory lock = userToTokenLocks[msg.sender][_index];\r\n        \r\n        require(block.timestamp >= lock.unlockDate, \"You are almost there, please HODL a little longer!! \");\r\n\r\n        STARLightToken.transfer(msg.sender, lock.amount);\r\n        \r\n        delete userToTokenLocks[msg.sender][_index];\r\n    }\r\n}"
+    }
+  }
+}

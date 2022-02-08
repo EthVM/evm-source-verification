@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "RDNE.sol": {
+      "content": "pragma solidity 0.5.3;\r\n\r\nlibrary SafeMath {\r\n    function add(uint a, uint b) internal pure returns(uint) {\r\n        uint c = a + b;\r\n        require(c >= a);\r\n        return c;\r\n    }\r\n    function sub(uint a, uint b) internal pure returns(uint) {\r\n        require(b <= a);\r\n        uint c = a - b;\r\n        return c;\r\n    }\r\n    function mul(uint a, uint b) internal pure returns(uint) {\r\n        if(a == 0) {\r\n            return 0;\r\n        }\r\n        uint c = a * b;\r\n        require(c / a == b);\r\n        return c;\r\n    }\r\n    function div(uint a, uint b) internal pure returns(uint) {\r\n        uint c = a / b;\r\n        return c;\r\n    }\r\n}\r\ncontract Ownable {\r\n    address payable public owner;\r\n    \r\n    event OwnershipTransferred(address newOwner);\r\n\r\n    constructor() public {\r\n        owner = msg.sender;\r\n    }\r\n\r\n    modifier onlyOwner() {\r\n        require(msg.sender == owner);\r\n        _;\r\n    }\r\n\r\n    function transferOwnership(address payable newOwner) onlyOwner public  {\r\n        require(newOwner != address(0));\r\n\r\n        owner = newOwner;\r\n        emit OwnershipTransferred(owner);\r\n    }\r\n}\r\ncontract ERC20 {\r\n    function totalSupply() public view returns (uint);\r\n    function balanceOf(address tokenOwner) public view returns (uint balance);\r\n    function allowance(address tokenOwner, address spender) public view returns (uint remaining);\r\n    function transfer(address to, uint tokens) public returns (bool success);\r\n    function approve(address spender, uint tokens) public returns (bool success);\r\n    function transferFrom(address from, address to, uint tokens) public returns (bool success);\r\n\r\n    event Transfer(address indexed from, address indexed to, uint tokens);\r\n    event Approval(address indexed tokenOwner, address indexed spender, uint tokens);\r\n}\r\ncontract RDNEToken is ERC20 {\r\n    using SafeMath for uint;\r\n\r\n    uint internal _totalSupply;\r\n\r\n    mapping (address => uint) internal _balances;\r\n    mapping (address => mapping (address => uint)) internal _allowed;\r\n\r\n    function totalSupply() public view returns (uint) {\r\n        return _totalSupply;\r\n    }\r\n\r\n    function balanceOf(address tokenOwner) view public returns (uint balance) {\r\n        return _balances[tokenOwner];\r\n    }\r\n\r\n    function transfer(address to, uint tokens) public returns (bool) {\r\n        require(_balances[msg.sender] >= tokens);\r\n        require(to != address(0));\r\n\r\n        _balances[msg.sender] = _balances[msg.sender].sub(tokens);\r\n        _balances[to] = _balances[to].add(tokens);\r\n\r\n        emit Transfer(msg.sender, to, tokens);\r\n\r\n        return true;\r\n    }\r\n\r\n    function approve(address spender, uint tokens) public returns (bool) {\r\n        // https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20.md#approve (see NOTE)\r\n        require (tokens == 0 && _allowed[msg.sender][spender] == 0);\r\n\r\n        _allowed[msg.sender][spender] = tokens;\r\n\r\n        emit Approval(msg.sender, spender, tokens);\r\n\r\n        return true;\r\n    }\r\n\r\n    function allowance(address tokenOwner, address spender) view public returns (uint remaining) {\r\n        return _allowed[tokenOwner][spender];\r\n    }\r\n\r\n    function transferFrom(address from, address to, uint tokens) public returns (bool) {\r\n        require(_allowed[from][msg.sender] >= tokens);\r\n        require(_balances[from] >= tokens);\r\n        require(to != address(0));\r\n\r\n        uint _allowance = _allowed[from][msg.sender];\r\n\r\n        _balances[from] = _balances[from].sub(tokens);\r\n        _balances[to] = _balances[to].add(tokens);\r\n        _allowed[from][msg.sender] = _allowance.sub(tokens);\r\n\r\n        emit Transfer(from, to, tokens);\r\n\r\n        return true;\r\n    }\r\n}\r\ncontract MintableToken is Ownable, RDNEToken {\r\n    event Mint(address indexed to, uint tokens); \r\n\r\n    function mint(address to, uint tokens) onlyOwner public {\r\n        _balances[to] = _balances[to].add(tokens);\r\n        _totalSupply = _totalSupply.add(tokens);\r\n\r\n        emit Mint(to, tokens);\r\n    }\r\n}\r\ncontract RDNE is MintableToken {\r\n    string public constant name = \"RDNE\";\r\n    string public constant symbol = \"RDNE\";\r\n    uint8 public constant decimals = 18;\r\n}"
+    }
+  }
+}

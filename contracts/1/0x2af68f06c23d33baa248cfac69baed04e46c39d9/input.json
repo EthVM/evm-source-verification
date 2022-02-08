@@ -1,0 +1,32 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "localhost/EANotification.sol": {
+      "content": "pragma solidity ^0.6.4;\npragma experimental ABIEncoderV2;\n\nimport \"./Ownable.sol\";\n\ncontract EANotification is Ownable {\n\n  struct Message {\n    uint time;\n    string content;\n  }\n\n  Message[] private _messages;\n\n  function insert(string calldata _m) external onlyOwner {\n    _messages.push(Message(block.timestamp, _m));\n  }\n\n  function length() external view returns (uint) {\n    return _messages.length;\n  }\n\n  function message(uint index) external view returns(Message memory) {\n    return _messages[index];\n  }\n\n  function messages() external view returns(Message[] memory) {\n    return _messages;\n  }\n}\n"
+    },
+    "localhost/Ownable.sol": {
+      "content": "pragma solidity ^0.6.4;\n\n/**\n * @title Ownable\n * @dev The Ownable contract has an owner address, and provides basic authorization control\n * functions, this simplifies the implementation of \"user permissions\".\n */\ncontract Ownable {\n  address public owner;\n\n  event OwnershipRenounced(address indexed previousOwner);\n  event OwnershipTransferred(\n    address indexed previousOwner,\n    address indexed newOwner\n  );\n\n\n  /**\n   * @dev The Ownable constructor sets the original `owner` of the contract to the sender\n   * account.\n   */\n  constructor() public {\n    owner = msg.sender;\n  }\n\n  /**\n   * @dev Throws if called by any account other than the owner.\n   */\n  modifier onlyOwner() {\n    require(msg.sender == owner, \"Ownable: [onlyOwner]\");\n    _;\n  }\n\n  /**\n   * @dev Allows the current owner to relinquish control of the contract.\n   * @notice Renouncing to ownership will leave the contract without an owner.\n   * It will not be possible to call the functions with the `onlyOwner`\n   * modifier anymore.\n   */\n  function renounceOwnership() public onlyOwner {\n    emit OwnershipRenounced(owner);\n    owner = address(0);\n  }\n\n  /**\n   * @dev Allows the current owner to transfer control of the contract to a newOwner.\n   * @param _newOwner The address to transfer ownership to.\n   */\n  function transferOwnership(address _newOwner) public onlyOwner {\n    _transferOwnership(_newOwner);\n  }\n\n  /**\n   * @dev Transfers control of the contract to a newOwner.\n   * @param _newOwner The address to transfer ownership to.\n   */\n  function _transferOwnership(address _newOwner) internal {\n    require(_newOwner != address(0), \"Ownable: [_transferOwnership] _newOwner illegal\");\n    emit OwnershipTransferred(owner, _newOwner);\n    owner = _newOwner;\n  }\n}\n"
+    }
+  }
+}

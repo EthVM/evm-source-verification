@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "AuthGemJoin5.sol": {
+      "content": "// hevm: flattened sources of src/join-5-auth.sol\r\npragma solidity >=0.5.12 >=0.6.7 <0.7.0;\r\n\r\n////// lib/dss/src/lib.sol\r\n// SPDX-License-Identifier: AGPL-3.0-or-later\r\n\r\n// This program is free software: you can redistribute it and/or modify\r\n// it under the terms of the GNU General Public License as published by\r\n// the Free Software Foundation, either version 3 of the License, or\r\n// (at your option) any later version.\r\n\r\n// This program is distributed in the hope that it will be useful,\r\n// but WITHOUT ANY WARRANTY; without even the implied warranty of\r\n// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\r\n// GNU General Public License for more details.\r\n\r\n// You should have received a copy of the GNU General Public License\r\n// along with this program.  If not, see <http://www.gnu.org/licenses/>.\r\n\r\n/* pragma solidity >=0.5.12; */\r\n\r\ncontract LibNote {\r\n    event LogNote(\r\n        bytes4   indexed  sig,\r\n        address  indexed  usr,\r\n        bytes32  indexed  arg1,\r\n        bytes32  indexed  arg2,\r\n        bytes             data\r\n    ) anonymous;\r\n\r\n    modifier note {\r\n        _;\r\n        assembly {\r\n            // log an 'anonymous' event with a constant 6 words of calldata\r\n            // and four indexed topics: selector, caller, arg1 and arg2\r\n            let mark := msize()                       // end of memory ensures zero\r\n            mstore(0x40, add(mark, 288))              // update free memory pointer\r\n            mstore(mark, 0x20)                        // bytes type data offset\r\n            mstore(add(mark, 0x20), 224)              // bytes size (padded)\r\n            calldatacopy(add(mark, 0x40), 0, 224)     // bytes payload\r\n            log4(mark, 288,                           // calldata\r\n                 shl(224, shr(224, calldataload(0))), // msg.sig\r\n                 caller(),                            // msg.sender\r\n                 calldataload(4),                     // arg1\r\n                 calldataload(36)                     // arg2\r\n                )\r\n        }\r\n    }\r\n}\r\n\r\n////// src/join-5-auth.sol\r\n// SPDX-License-Identifier: AGPL-3.0-or-later\r\n\r\n/// join-5-auth.sol -- Non-standard token adapters\r\n\r\n// Copyright (C) 2018 Rain <rainbreak@riseup.net>\r\n// Copyright (C) 2018-2020 Maker Ecosystem Growth Holdings, INC.\r\n//\r\n// This program is free software: you can redistribute it and/or modify\r\n// it under the terms of the GNU Affero General Public License as published by\r\n// the Free Software Foundation, either version 3 of the License, or\r\n// (at your option) any later version.\r\n//\r\n// This program is distributed in the hope that it will be useful,\r\n// but WITHOUT ANY WARRANTY; without even the implied warranty of\r\n// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\r\n// GNU Affero General Public License for more details.\r\n//\r\n// You should have received a copy of the GNU Affero General Public License\r\n// along with this program.  If not, see <https://www.gnu.org/licenses/>.\r\n\r\n/* pragma solidity ^0.6.7; */\r\n\r\n/* import \"dss/lib.sol\"; */\r\n\r\ninterface VatLike_4 {\r\n    function slip(bytes32, address, int256) external;\r\n}\r\n\r\ninterface GemLike_2 {\r\n    function decimals() external view returns (uint8);\r\n    function transfer(address, uint256) external returns (bool);\r\n    function transferFrom(address, address, uint256) external returns (bool);\r\n}\r\n\r\n// Authed GemJoin for a token that has a lower precision than 18 and it has decimals (like USDC)\r\n\r\ncontract AuthGemJoin5 is LibNote {\r\n    // --- Auth ---\r\n    mapping (address => uint256) public wards;\r\n    function rely(address usr) external note auth { wards[usr] = 1; }\r\n    function deny(address usr) external note auth { wards[usr] = 0; }\r\n    modifier auth { require(wards[msg.sender] == 1); _; }\r\n\r\n    VatLike_4 public vat;\r\n    bytes32 public ilk;\r\n    GemLike_2 public gem;\r\n    uint256 public dec;\r\n    uint256 public live;  // Access Flag\r\n\r\n    constructor(address vat_, bytes32 ilk_, address gem_) public {\r\n        gem = GemLike_2(gem_);\r\n        dec = gem.decimals();\r\n        require(dec < 18, \"GemJoin5/decimals-18-or-higher\");\r\n        wards[msg.sender] = 1;\r\n        live = 1;\r\n        vat = VatLike_4(vat_);\r\n        ilk = ilk_;\r\n    }\r\n\r\n    function cage() external note auth {\r\n        live = 0;\r\n    }\r\n\r\n    function mul(uint256 x, uint256 y) internal pure returns (uint256 z) {\r\n        require(y == 0 || (z = x * y) / y == x, \"GemJoin5/overflow\");\r\n    }\r\n\r\n    function join(address urn, uint256 wad, address _msgSender) external note auth {\r\n        require(live == 1, \"GemJoin5/not-live\");\r\n        uint256 wad18 = mul(wad, 10 ** (18 - dec));\r\n        require(int256(wad18) >= 0, \"GemJoin5/overflow\");\r\n        vat.slip(ilk, urn, int256(wad18));\r\n        require(gem.transferFrom(_msgSender, address(this), wad), \"GemJoin5/failed-transfer\");\r\n    }\r\n\r\n    function exit(address guy, uint256 wad) external note {\r\n        uint256 wad18 = mul(wad, 10 ** (18 - dec));\r\n        require(int256(wad18) >= 0, \"GemJoin5/overflow\");\r\n        vat.slip(ilk, msg.sender, -int256(wad18));\r\n        require(gem.transfer(guy, wad), \"GemJoin5/failed-transfer\");\r\n    }\r\n}"
+    }
+  }
+}

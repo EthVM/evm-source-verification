@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/bridgeStore_flatten.sol": {
+      "content": "// Sources flattened with hardhat v2.0.7 https://hardhat.org\n\n// File contracts/Container.sol\n\n// SPDX-License-Identifier: MIT\npragma solidity ^0.7.0;\n\ncontract Container {\n\n    struct Item{\n        uint256 itemType;\n        uint256 status;\n        address[] addresses;\n    }\n\n    uint256 MaxItemAdressNum = 255;\n    mapping (bytes32 => Item) private container;\n    // bool private _nativePaused = false;\n\n\n    function itemAddressExists(bytes32 _id, address _oneAddress) internal view returns(bool){\n        for(uint256 i = 0; i < container[_id].addresses.length; i++){\n            if(container[_id].addresses[i] == _oneAddress)\n                return true;\n        }\n        return false;\n    }\n    function getItemAddresses(bytes32 _id) internal view returns(address[] memory){\n        return container[_id].addresses;\n    }\n\n    function getItemInfo(bytes32 _id) internal view returns(uint256, uint256, uint256){\n        return (container[_id].itemType, container[_id].status, container[_id].addresses.length);\n    }\n\n    function getItemAddressCount(bytes32 _id) internal view returns(uint256){\n        return container[_id].addresses.length;\n    }\n\n    function setItemInfo(bytes32 _id, uint256 _itemType, uint256 _status) internal{\n        container[_id].itemType = _itemType;\n        container[_id].status = _status;\n    }\n\n    function addItemAddress(bytes32 _id, address _oneAddress) internal{\n        require(!itemAddressExists(_id, _oneAddress), \"dup address added\");\n        require(container[_id].addresses.length < MaxItemAdressNum, \"too many addresses\");\n        container[_id].addresses.push(_oneAddress);\n    }\n    function removeItemAddresses(bytes32 _id) internal {\n        delete container[_id].addresses;\n    }\n\n    function removeOneItemAddress(bytes32 _id, address _oneAddress) internal {\n        for(uint256 i = 0; i < container[_id].addresses.length; i++){\n            if(container[_id].addresses[i] == _oneAddress){\n                container[_id].addresses[i] = container[_id].addresses[container[_id].addresses.length - 1];\n                container[_id].addresses.pop();\n                return;\n            }\n        }\n    }\n\n    function removeItem(bytes32 _id) internal{\n        delete container[_id];\n    }\n\n    function replaceItemAddress(bytes32 _id, address _oneAddress, address _anotherAddress) internal {\n        for(uint256 i = 0; i < container[_id].addresses.length; i++){\n            if(container[_id].addresses[i] == _oneAddress){\n                container[_id].addresses[i] = _anotherAddress;\n                return;\n            }\n        }\n    }\n}\n\n\n// File contracts/BridgeStorage.sol\n\n\npragma solidity ^0.7.0;\n\ncontract BridgeStorage is Container {\n    string public constant name = \"BridgeStorage\";\n\n    address private caller;\n\n    constructor(address aCaller) {\n        caller = aCaller;\n    }\n\n    modifier onlyCaller() {\n        require(msg.sender == caller, \"only use main contract to call\");\n        _;\n    }\n\n    function supporterExists(bytes32 taskHash, address user) public view returns(bool) {\n        return itemAddressExists(taskHash, user);\n    }\n\n    function setTaskInfo(bytes32 taskHash, uint256 taskType, uint256 status) external onlyCaller {\n        setItemInfo(taskHash, taskType, status);\n    }\n\n    function getTaskInfo(bytes32 taskHash) public view returns(uint256, uint256, uint256){\n        return getItemInfo(taskHash);\n    }\n\n    function addSupporter(bytes32 taskHash, address oneAddress) external onlyCaller{\n        addItemAddress(taskHash, oneAddress);\n    }\n\n    function removeAllSupporter(bytes32 taskHash) external onlyCaller {\n        removeItemAddresses(taskHash);\n    }\n    function removeTask(bytes32 taskHash)external onlyCaller{\n        removeItem(taskHash);\n    }\n}\n"
+    }
+  }
+}

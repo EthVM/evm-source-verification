@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "WethConverter.sol": {
+      "content": "// SPDX-License-Identifier: GPL-3.0-or-later\r\n// Copyright (C) 2015, 2016, 2017 Dapphub\r\n// Adapted by Ethereum Community 2021\r\npragma solidity 0.7.6;\r\n\r\ninterface WETH9Like {\r\n    function withdraw(uint) external;\r\n    function deposit() external payable;\r\n    function transfer(address, uint) external returns (bool);\r\n    function transferFrom(address, address, uint) external returns (bool);\r\n}\r\n\r\ninterface WETH10Like {\r\n    function depositTo(address) external payable;\r\n    function withdrawFrom(address, address, uint256) external;\r\n}\r\n\r\ncontract WethConverter {\r\n    WETH9Like constant private weth9 = WETH9Like(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2); // ETH wrapper contract v9\r\n    WETH10Like constant private weth10 = WETH10Like(0xf4BB2e28688e89fCcE3c0580D37d36A7672E8A9F); // ETH wrapper contract v10\r\n    \r\n    receive() external payable {}\r\n\r\n    function weth9ToWeth10(address account, uint256 value) external payable {\r\n        weth9.transferFrom(account, address(this), value);\r\n        weth9.withdraw(value);\r\n        weth10.depositTo{value: value + msg.value}(account);\r\n    }\r\n\r\n    function weth10ToWeth9(address account, uint256 value) external payable {\r\n        weth10.withdrawFrom(account, address(this), value);\r\n        uint256 combined = value + msg.value;\r\n        weth9.deposit{value: combined}();\r\n        weth9.transfer(account, combined);\r\n    }\r\n}"
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/NToken.sol": {
+      "content": "pragma solidity ^0.6.0;\n\ncontract NToken {\n\n    address private owner;\n    string private _name;\n    string private _symbol;\n    uint8 private _decimals = 2;\n    uint256 private _totalSupply;\n    mapping (address => uint256) private _balanceOf;\n    mapping (address => mapping (address => uint256)) private _allowance;\n\n    event Transfer(address indexed from, address indexed to, uint256 value);\n    event Burn(address indexed from, uint256 value);\n    event OwnerSet(address indexed oldOwner, address indexed newOwner);\n \n    modifier isOwner() {\n        require(msg.sender == owner, \"Caller is not owner\");\n        _;\n    }\n    \n    constructor(\n        uint256 initialSupply,\n        string memory tokenName,\n        string memory tokenSymbol\n    ) public {\n        _totalSupply = initialSupply  * (10 ** 2);\n        _balanceOf[msg.sender] = _totalSupply;\n        _name = tokenName;\n        _symbol = tokenSymbol;\n        owner = msg.sender; \n    }\n    \n    \n    function changeOwner(address newOwner) public isOwner {\n        emit OwnerSet(owner, newOwner);\n        owner = newOwner;\n    }\n\n    function changeName(string memory newName) public isOwner {\n        _name = newName;\n    }\n\n    function changeSymbol(string memory newSymbol) public isOwner {\n        _symbol = newSymbol;\n    }    \n\n    function getOwner() external view returns (address) {\n        return owner;\n    }\n    \n    function invent(uint256 _value) public isOwner returns (bool success) {\n        _balanceOf[msg.sender] += _value * (10 ** 2);            // Subtract from the sender\n        _totalSupply += _value;                      // Updates totalSupply\n        return true;\n    }\n    \n    function _transfer(address _from, address _to, uint _value) internal {\n        // Prevent transfer to 0x0 address. Use burn() instead\n        require(address(_to) != address(0x0));\n        // Check if the sender has enough\n        require(_balanceOf[_from] >= _value);\n        // Check for overflows\n        require(_balanceOf[_to] + _value > _balanceOf[_to]);\n        // Save this for an assertion in the future\n        uint previousBalances = _balanceOf[_from] + _balanceOf[_to];\n        // Subtract from the sender\n        _balanceOf[_from] -= _value;\n        // Add the same to the recipient\n        _balanceOf[_to] += _value;\n        Transfer(_from, _to, _value);\n        // Asserts are used to use static analysis to find bugs in your code. They should never fail\n        assert(_balanceOf[_from] + _balanceOf[_to] == previousBalances);\n    }\n\n\n    function transfer(address _to, uint256 _value) public payable{\n        _transfer(msg.sender, _to, _value);\n    }\n\n\n    function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) {\n        require(_value <= _allowance[_from][msg.sender]);     // Check allowance\n        _allowance[_from][msg.sender] -= _value;\n        _transfer(_from, _to, _value);\n        return true;\n    }\n\n   \n    function approve(address _spender, uint256 _value) public\n        returns (bool success) {\n        _allowance[msg.sender][_spender] = _value;\n        return true;\n    }\n\n\n    \n    function burn(uint256 _value) public returns (bool success) {\n        require(_balanceOf[msg.sender] >= _value);   // Check if the sender has enough\n        _balanceOf[msg.sender] -= _value;            // Subtract from the sender\n        _totalSupply -= _value;                      // Updates totalSupply\n        Burn(msg.sender, _value);\n        return true;\n    }\n\n   \n    function burnFrom(address _from, uint256 _value) public returns (bool success) {\n        require(_balanceOf[_from] >= _value);                // Check if the targeted balance is enough\n        require(_value <= _allowance[_from][msg.sender]);    // Check allowance\n        _balanceOf[_from] -= _value;                         // Subtract from the targeted balance\n        _allowance[_from][msg.sender] -= _value;             // Subtract from the sender's allowance\n        _totalSupply -= _value;                              // Update totalSupply\n        Burn(_from, _value);\n        return true;\n    }\n    \n    function name() public view returns (string memory) {\n        return _name;\n    }\n    function symbol() public view returns (string memory) {\n        return _symbol;\n    }\n      function decimals() public view returns (uint8) {\n        return _decimals;\n    }\n    function totalSupply() public view  returns (uint256) {\n        return _totalSupply;\n    }\n    function balanceOf(address account) public view  returns (uint256) {\n        return _balanceOf[account];\n    }\n    function allowance(address own, address spender) public view returns (uint256) {\n        return _allowance[own][spender];\n    }\n}"
+    }
+  }
+}

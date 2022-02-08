@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "FullMath.sol": {
+      "content": "// SPDX-License-Identifier: CC-BY-4.0\npragma solidity >=0.4.0;\n\n// taken from https://medium.com/coinmonks/math-in-solidity-part-3-percents-and-proportions-4db014e080b1\n// license is CC-BY-4.0\nlibrary FullMath {\n    function fullMul(uint256 x, uint256 y) internal pure returns (uint256 l, uint256 h) {\n        uint256 mm = mulmod(x, y, uint256(-1));\n        l = x * y;\n        h = mm - l;\n        if (mm < l) h -= 1;\n    }\n\n    function fullDiv(\n        uint256 l,\n        uint256 h,\n        uint256 d\n    ) private pure returns (uint256) {\n        uint256 pow2 = d & -d;\n        d /= pow2;\n        l /= pow2;\n        l += h * ((-pow2) / pow2 + 1);\n        uint256 r = 1;\n        r *= 2 - d * r;\n        r *= 2 - d * r;\n        r *= 2 - d * r;\n        r *= 2 - d * r;\n        r *= 2 - d * r;\n        r *= 2 - d * r;\n        r *= 2 - d * r;\n        r *= 2 - d * r;\n        return l * r;\n    }\n\n    function mulDiv(\n        uint256 x,\n        uint256 y,\n        uint256 d\n    ) internal pure returns (uint256) {\n        (uint256 l, uint256 h) = fullMul(x, y);\n\n        uint256 mm = mulmod(x, y, d);\n        if (mm > l) h -= 1;\n        l -= mm;\n\n        if (h == 0) return l / d;\n\n        require(h < d, 'FullMath: FULLDIV_OVERFLOW');\n        return fullDiv(l, h, d);\n    }\n}"
+    }
+  }
+}

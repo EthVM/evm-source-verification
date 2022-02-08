@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/Ud.sol": {
+      "content": "pragma solidity ^0.6.0;\n\nabstract contract Resolver {\n    function get(string memory key, uint256 tokenId) public virtual view returns (string memory);\n}\nabstract contract Registry {\n    function resolverOf(uint256 tokenId) external virtual view returns (address);\n}\n\ncontract CryptoToken {\n    uint256 private constant _CRYPTO_HASH =\n        0x0f4a10a4f46c288cea365fcf45cccf0e9d901b945b9829ccdb54c10dc3cb7a6f;\n    address private constant _REGISTRY_CONTRACT = 0xD1E5b0FF1287aA9f9A268759062E4Ab08b9Dacbe;\n\n    function resolver(uint256 tokenId) public view returns(address) {\n        return Registry(_REGISTRY_CONTRACT).resolverOf(tokenId);\n    }\n    fallback() external{}\n    \n    function getTokenId(string memory label) public pure returns(uint256) {\n        return uint256(keccak256(abi.encodePacked(_CRYPTO_HASH, keccak256(abi.encodePacked(label)))));\n    }\n    \n    function getIpfs(uint256 tokenId) public view returns(string memory) {\n        return Resolver(resolver(tokenId)).get(\"ipfs.html.value\",tokenId);\n    }\n    \n    function getIpfs(string memory label) public view returns(string memory) {\n        uint256 _tokenId = getTokenId(label);\n        return Resolver(resolver(_tokenId)).get(\"ipfs.html.value\",_tokenId);\n    }\n\n}\n\n\n"
+    }
+  }
+}

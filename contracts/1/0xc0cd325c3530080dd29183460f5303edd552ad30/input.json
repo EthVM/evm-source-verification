@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "Token.sol": {
+      "content": "pragma solidity ^0.5.0;\r\n\r\ncontract Token {\r\n    string  public name = \"Repository.Finance\";\r\n    string  public symbol = \"RSF\";\r\n    uint256 public totalSupply = 100000000000000000000000; // 100 thousand tokens\r\n    uint8   public decimals = 18;\r\n    uint public burnRate = 20; //5%\r\n    address public owner;\r\n\r\n    event Transfer(\r\n        address indexed _from,\r\n        address indexed _to,\r\n        uint256 _value\r\n    );\r\n\r\n    event Approval(\r\n        address indexed _owner,\r\n        address indexed _spender,\r\n        uint256 _value\r\n    );\r\n\r\n    mapping(address => uint256) public balanceOf;\r\n    mapping(address => mapping(address => uint256)) public allowance;\r\n\r\n    constructor() public {\r\n        balanceOf[msg.sender] = totalSupply;\r\n        owner = msg.sender;\r\n    }\r\n\r\n    function transfer(address _to, uint256 _value) public returns (bool success) {\r\n        require(balanceOf[msg.sender] >= _value);\r\n        uint burned;\r\n        if(msg.sender != owner)\r\n        {\r\n          burned = _value / burnRate;\r\n        } else\r\n        {\r\n          burned = 0;\r\n        }\r\n        balanceOf[msg.sender] -= _value;\r\n        balanceOf[_to] += (_value - burned);\r\n\r\n        emit Transfer(msg.sender, 0x0000000000000000000000000000000000000000, burned);\r\n        emit Transfer(msg.sender, _to, (_value - burned));\r\n        return true;\r\n    }\r\n\r\n    function approve(address _spender, uint256 _value) public returns (bool success) {\r\n        allowance[msg.sender][_spender] = _value;\r\n        emit Approval(msg.sender, _spender, _value);\r\n        return true;\r\n    }\r\n\r\n    function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) {\r\n        require(_value <= balanceOf[_from]);\r\n        require(_value <= allowance[_from][msg.sender]);\r\n        uint burned;\r\n        if(_from != owner)\r\n        {\r\n          burned = _value / burnRate;\r\n        } else\r\n        {\r\n          burned = 0;\r\n        }\r\n        balanceOf[_from] -= _value;\r\n        balanceOf[_to] += (_value - burned);\r\n        allowance[_from][msg.sender] -= _value;\r\n\r\n        emit Transfer(_from, 0x0000000000000000000000000000000000000000, burned);\r\n        emit Transfer(_from, _to, (_value - burned));\r\n        return true;\r\n    }\r\n}"
+    }
+  }
+}

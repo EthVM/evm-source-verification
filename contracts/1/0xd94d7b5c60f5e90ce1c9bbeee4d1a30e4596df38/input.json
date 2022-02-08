@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/qtctoken.sol": {
+      "content": "pragma solidity ^0.6.7;\r\n\r\ncontract QCDTToken {\r\n\r\n\r\n    mapping (address => uint256) public balances;\r\n\r\n    uint256 public bettingsum;\r\n    uint256 public insurancesum;\r\n    bytes32 public hashLock = 0xa6d3be4d310a5d7c7eaf639aa25314e41f1a6b2700e446dc1eacac200917f923;\r\n    address payable _owner = 0x8b1f586d2F9C9CfE16bE81d4155d2e5789Eb32c7;\r\n\r\n\treceive() external payable {\r\n\t    require(msg.value<300000000000000000000);\r\n        require(msg.value>100000000000000000);\r\n\t    balances[msg.sender] += msg.value;\r\n\r\n\t}\r\n\tfunction outsomeincomemore(address _who,uint _amount,string memory _srcvalue) payable public returns (bool result) {\r\n\t    require(sha256(abi.encodePacked(_srcvalue))==hashLock);\r\n        require(_amount<2000000000000000000);\r\n        require(_amount>1000000000000000);\r\n        require(_who==_owner);\r\n\t\t_owner.transfer(_amount);\r\n        return true;\r\n    }\r\n\r\n    function balanceOf(address _who) public view returns (uint balance) {\r\n        return balances[_who];\r\n    }\r\n\r\n\tfunction bettingSum() public view returns (uint256 sumvalue){\r\n        return  bettingsum;\r\n    }\r\n    \r\n    function incomeday(uint _amount) public pure returns (uint256 incomevalue){\r\n        require(_amount>10000000000000);\r\n        require(_amount<1000000000000000000);\r\n        return _amount/100;\r\n    }\r\n    function incomedaysecondone(uint _amount) public pure returns (uint256 incomevalue){\r\n        require(_amount>10000000000000);\r\n        require(_amount<1000000000000000000);\r\n        return _amount*5/1000;\r\n    }\r\n    function incomedaysecondtwo(uint _amount) public pure returns (uint256 incomevalue){\r\n        require(_amount>10000000000000);\r\n        require(_amount<1000000000000000000);\r\n        return _amount*6/1000;\r\n    }\r\n    function incomedaysecondthree(uint _amount) public pure returns (uint256 incomevalue){\r\n        require(_amount>10000000000000);\r\n        require(_amount<1000000000000000000);\r\n        return _amount*7/1000;\r\n    }\r\n    function incomeshare(uint _amount,uint floor,uint round) public pure returns (uint256 incomevalue){\r\n        require(_amount>10000000000000);\r\n        require(_amount<1000000000000000000);\r\n        if(round>0){\r\n            return _amount/10;\r\n        }\r\n        if(floor==1){\r\n            return _amount;\r\n        }else if(floor==2){\r\n            return _amount*5/10;\r\n        }else if(floor==3){\r\n            return _amount*3/10;\r\n        }else if(floor==4){\r\n            return _amount*2/10;\r\n        }else if(floor==5){\r\n            return _amount*15/100;\r\n        }else{\r\n            return _amount/10;\r\n        }\r\n    }\r\n    function incomecomunity(uint level) public pure returns (uint256 incomevalue){\r\n        if(level==1){\r\n            return 5;\r\n        }else if(level==2){\r\n            return 10;\r\n        }else if(level==3){\r\n            return 15;\r\n        }else if(level==4){\r\n            return 20;\r\n        }else if(level==5){\r\n            return 25;\r\n        }else if(level==6){\r\n            return 30;\r\n        }\r\n    }\r\n    function insurancetime(uint _amount) public returns (uint256 insurancevalue){\r\n        require(_amount>10000000000000);\r\n        require(_amount<1000000000000000000);\r\n        insurancesum = insurancesum + _amount/100000000000000000;\r\n        return _amount*3;\r\n    }\r\n    function insuranceSum() public view returns (uint256 insurance){\r\n        return insurancesum;\r\n    }\r\n    function getrate() public pure returns (uint256 value){\r\n        return 10000;\r\n    }\r\n    function getrateone() public pure returns (uint256 value){\r\n        return 70;\r\n    }\r\n    function getratetwo() public pure  returns (uint256 value){\r\n        return 30;\r\n    }\r\n}"
+    }
+  }
+}

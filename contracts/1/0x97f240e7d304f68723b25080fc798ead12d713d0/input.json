@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "whitelistOracle.sol": {
+      "content": "// SPDX-License-Identifier: UNLICENSED\n\npragma solidity <=0.7.4;\n\ninterface IWhiteListOracle {\n\n    function whitelist(address _user) external returns(bool);\n\n    function blacklist(address _user) external returns(bool);\n\n    function transferGovernor(address _newGovernor) external returns(bool);\n\n    function whitelisted(address _user) external view returns(bool);\n\n}\n\ncontract WhiteListOracle is IWhiteListOracle {\n\n    address public governor;\n\n    modifier onlyGovernor() {\n        require(msg.sender == governor, \"Caller Not Governor\");\n        _;\n    }\n\n    mapping(address => bool) private Whitelisted;\n\n    constructor(address _governor){\n        governor = _governor;\n    }\n\n    event ChangeGovernor(address indexed from, address indexed to);\n    event Whitelist(address indexed);\n    event Blacklist(address indexed);\n\n    function transferGovernor(address _newGovernor) public virtual override onlyGovernor returns(bool){\n        require(_newGovernor != address(0),\"Cannot be a zero address\");\n        address oldGovernor = governor;\n        governor = _newGovernor;\n        emit ChangeGovernor(oldGovernor, _newGovernor);\n        return true;\n    }\n\n    function whitelist(address _user) public virtual override onlyGovernor returns(bool){\n        require(_user != address(0),\"Can't be a zero address\");\n        Whitelisted[_user] = true;\n        emit Whitelist(_user);\n        return true;\n    }\n\n    function blacklist(address _user) public virtual override onlyGovernor returns(bool){\n        require(_user != address(0),\"Can't be a zero address\");\n        Whitelisted[_user] = false;\n        emit Blacklist(_user);\n        return true;\n    }\n\n    function whitelisted(address _user) public view override returns(bool){\n        return(Whitelisted[_user]);\n    }\n\n}"
+    }
+  }
+}

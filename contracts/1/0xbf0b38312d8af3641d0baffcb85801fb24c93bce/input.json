@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "../App/contract/ERC20/Cham.sol": {
+      "content": "pragma solidity 0.6.0;\n\nabstract contract IERC20 {\n    function totalSupply() public view virtual returns (uint256);\n\n    function balanceOf(address tokenOwner)\n        public\n        view\n        virtual\n        returns (uint256);\n\n    function allowance(address tokenOwner, address spender)\n        public\n        view\n        virtual\n        returns (uint256);\n\n    function transfer(address to, uint256 tokens) public virtual returns (bool);\n\n    function approve(address spender, uint256 tokens)\n        public\n        virtual\n        returns (bool);\n\n    function transferFrom(\n        address from,\n        address to,\n        uint256 tokens\n    ) public virtual returns (bool);\n\n    event Transfer(address indexed from, address indexed to, uint256 tokens);\n    event Approval(\n        address indexed tokenOwner,\n        address indexed spender,\n        uint256 tokens\n    );\n}\n\ncontract SafeMath {\n    function safeAdd(uint256 a, uint256 b) internal pure returns (uint256) {\n        uint256 c = a + b;\n        require(c >= a, \"SafeMath: addition overflow\");\n        return c;\n    }\n\n    function safeSub(uint256 a, uint256 b) internal pure returns (uint256) {\n        require(b <= a, \"SafeMath: subtraction overflow\");\n        uint256 c = a - b;\n        return c;\n    }\n}\n\ncontract Cham is IERC20, SafeMath {\n    string public name;\n    string public symbol;\n    uint8 public decimals;\n\n    uint256 public _totalSupply;\n    address public owner = 0xd9dd65fE5828b450BEaE956849A5F7AD566F14ee;\n\n    mapping(address => uint256) balances;\n    mapping(address => mapping(address => uint256)) allowed;\n\n    constructor() public payable {\n        name = \"Chain mall token\";\n        symbol = \"Cham\";\n        decimals = 18;\n        _totalSupply = 20000000000 * 10**uint256(decimals);\n        balances[owner] = _totalSupply;\n        emit Transfer(address(0), owner, _totalSupply);\n    }\n\n    function allowance(address tokenOwner, address spender)\n        public\n        view\n        virtual\n        override\n        returns (uint256 remaining)\n    {\n        return allowed[tokenOwner][spender];\n    }\n\n    function approve(address spender, uint256 tokens)\n        public\n        virtual\n        override\n        returns (bool success)\n    {\n        require(tokens >= 0, \"Invalid value\");\n        allowed[msg.sender][spender] = tokens;\n        emit Approval(msg.sender, spender, tokens);\n        return true;\n    }\n\n    function transfer(address to, uint256 tokens)\n        public\n        virtual\n        override\n        returns (bool success)\n    {\n        require(to != address(0), \"Null address\");\n        require(tokens > 0, \"Invalid Value\");\n        balances[msg.sender] = safeSub(balances[msg.sender], tokens);\n        balances[to] = safeAdd(balances[to], tokens);\n        emit Transfer(msg.sender, to, tokens);\n        return true;\n    }\n\n    function transferFrom(\n        address from,\n        address to,\n        uint256 tokens\n    ) public virtual override returns (bool success) {\n        require(to != address(0), \"Null address\");\n        require(from != address(0), \"Null address\");\n        require(tokens > 0, \"Invalid value\");\n        require(tokens <= balances[from], \"Insufficient balance\");\n        require(tokens <= allowed[from][msg.sender], \"Insufficient allowance\");\n        balances[from] = safeSub(balances[from], tokens);\n        allowed[from][msg.sender] = safeSub(allowed[from][msg.sender], tokens);\n        balances[to] = safeAdd(balances[to], tokens);\n        emit Transfer(from, to, tokens);\n        return true;\n    }\n\n    function totalSupply() public view virtual override returns (uint256) {\n        return _totalSupply;\n    }\n\n    function balanceOf(address tokenOwner)\n        public\n        view\n        virtual\n        override\n        returns (uint256 balance)\n    {\n        return balances[tokenOwner];\n    }\n\n    function burn(uint256 _amount) public returns (bool) {\n        require(_amount >= 0, \"Invalid amount\");\n        require(owner == msg.sender, \"UnAuthorized\");\n        require(_amount <= balances[msg.sender], \"Insufficient Balance\");\n        _totalSupply = safeSub(_totalSupply, _amount);\n        balances[owner] = safeSub(balances[owner], _amount);\n        emit Transfer(owner, address(0), _amount);\n        return true;\n    }\n}\n"
+    }
+  }
+}

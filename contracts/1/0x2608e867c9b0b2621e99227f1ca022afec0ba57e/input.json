@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/BrandContest.sol": {
+      "content": "pragma solidity ^0.6.0;\r\n\r\ncontract BrandContest {\r\n\r\n    //The allowed Votes that can be transfered\r\n    mapping(uint256 => uint256) private _allowedVotingAmounts;\r\n\r\n    //Keeps track of the current ERC721 Token addresses allowed for this votation (ARTE/ETRA)\r\n    mapping(address => bool) private _allowedTokenAddresses;\r\n\r\n    //Takes notes of how many votes received for any token id, for both Tokens (ARTE/ETRA)\r\n    mapping(address => mapping(uint256 => uint256)) private _votes;\r\n\r\n    //Takes notes of how many ethers received for any token id, for both Tokens (ARTE/ETRA)\r\n    mapping(address => mapping(uint256 => uint256)) private _ethers;\r\n\r\n    //Il blocco di fine della votazione\r\n    uint256 private _surveyEndBlock;\r\n\r\n    //Event raised only the first time this NFT receives a vote\r\n    event FirstVote(address indexed tokenAddress, uint256 indexed tokenId);\r\n\r\n    //Event raised when someone votes for a specific NFT\r\n    event Vote(address indexed voter, address indexed tokenAddress, uint256 indexed tokenId, address creator, uint256 votes, uint256 amount);\r\n\r\n    //To let this Smart Contract work, you need to pass the ERC721 token addresses supported by this survey (ARTE/ETRA).\r\n    constructor(address[] memory allowedTokenAddresses, uint256 surveyEndBlock) public {\r\n        for(uint256 i = 0; i < allowedTokenAddresses.length; i++) {\r\n            _allowedTokenAddresses[allowedTokenAddresses[i]] = true;\r\n        }\r\n        _surveyEndBlock = surveyEndBlock;\r\n        _allowedVotingAmounts[4000000000000000] = 1;\r\n        _allowedVotingAmounts[30000000000000000] = 5;\r\n        _allowedVotingAmounts[100000000000000000] = 10;\r\n        _allowedVotingAmounts[300000000000000000] = 20;\r\n    }\r\n\r\n    //The concrete vote operation:\r\n    //You vote sending some ether to this call, specifing the ERC721 location and id you want to vote.\r\n    //The amount of ethers received will be registered as a vote for the chosen NFT and transfered to its creator\r\n    //The vote is to be considered valid if and only if the creator's address is the one who sent the original NFT to the wallet with address: 0x74Ef70357ef21BaD2b45795679F2727C48d501ED\r\n    function vote(address tokenAddress, uint256 tokenId, address payable creator) public payable {\r\n\r\n        //Are you still able to vote?\r\n        require(block.number < _surveyEndBlock, \"Survey ended!\");\r\n\r\n        //To vote you must provide some ethers, with a maximum of 3 eth\r\n        require(_allowedVotingAmounts[msg.value] > 0, \"Vote must be 0.004, 0.03, 0.1 or 0.3 ethers\");\r\n\r\n        //You can just vote one of the allowed NFTs (ARTE/ETRA)\r\n        require(_allowedTokenAddresses[tokenAddress], \"Unallowed Token Address!\");\r\n\r\n        //Check if tokenId and its owner are valid\r\n        require(IERC721(tokenAddress).ownerOf(tokenId) != address(0), \"Owner is nobody, maybe wrong tokenId?\");\r\n\r\n        //If this is the first time this NFT receives a vote, the FirstVote event will be raised\r\n        if(_votes[tokenAddress][tokenId] == 0) {\r\n            emit FirstVote(tokenAddress, tokenId);\r\n        }\r\n\r\n        //Update the votes and ethers amount for this NFT\r\n        _votes[tokenAddress][tokenId] = _votes[tokenAddress][tokenId] + _allowedVotingAmounts[msg.value];\r\n        _ethers[tokenAddress][tokenId] = _ethers[tokenAddress][tokenId] + msg.value;\r\n\r\n        //Transfer the received ethers to the NFT's creator\r\n        creator.transfer(msg.value);\r\n\r\n        //Raise an event containing voting info, to let everyone grab this info off-chain\r\n        emit Vote(msg.sender, tokenAddress, tokenId, creator, _allowedVotingAmounts[msg.value], msg.value);\r\n    }\r\n\r\n    //Utility function to let everyone know (both offchain and onchain) the current votes amount for every allowed NFT (ARTE/ETRA)\r\n    function votesOf(address tokenAddress, uint256 tokenId) public view returns(uint256, uint256) {\r\n        return (_votes[tokenAddress][tokenId], _ethers[tokenAddress][tokenId]);\r\n    }\r\n\r\n    function getSurveyEndBlock() public view returns(uint256) {\r\n        return _surveyEndBlock;\r\n    }\r\n}\r\n\r\ninterface IERC721 {\r\n    function ownerOf(uint256 _tokenId) external view returns (address);\r\n}"
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/artifacts/SimpleCoin.sol": {
+      "content": "pragma solidity >=0.8.1;\n\ncontract Coin {\n    address public minter;\n    mapping (address => uint) public balances;\n    \n    event Sent (address from, address to, uint amount);\n    \n    constructor() {\n        minter = msg.sender;\n    }\n    \n    function mint(address reciever, uint amount) public {\n        require (msg.sender == minter);\n        require(amount < 1e60);\n        balances[reciever] += amount;\n    }\n    \n    function send(address reciever, uint amount) public {\n        require(amount <= balances [msg.sender]);\n        balances[msg.sender] -= amount;\n        balances[reciever] += amount;\n        emit Sent(msg.sender, reciever, amount); \n    }\n}"
+    }
+  }
+}

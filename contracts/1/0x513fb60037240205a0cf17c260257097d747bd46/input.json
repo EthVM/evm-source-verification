@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 1000000
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "RewardDelegatorsProxy.sol": {
+      "content": "pragma solidity >=0.4.21 <0.7.0;\r\n\r\n\r\n/// @title Contract to reward overlapping stakes\r\n/// @author Marlin\r\n/// @notice Use this contract only for testing\r\n/// @dev Contract may or may not change in future (depending upon the new slots in proxy-store)\r\ncontract RewardDelegatorsProxy {\r\n    bytes32 internal constant IMPLEMENTATION_SLOT = bytes32(\r\n        uint256(keccak256(\"eip1967.proxy.implementation\")) - 1\r\n    );\r\n    bytes32 internal constant PROXY_ADMIN_SLOT = bytes32(\r\n        uint256(keccak256(\"eip1967.proxy.admin\")) - 1\r\n    );\r\n\r\n    constructor(address contractLogic, address proxyAdmin) public {\r\n        // save the code address\r\n        bytes32 slot = IMPLEMENTATION_SLOT;\r\n        assembly {\r\n            sstore(slot, contractLogic)\r\n        }\r\n        // save the proxy admin\r\n        slot = PROXY_ADMIN_SLOT;\r\n        address sender = proxyAdmin;\r\n        assembly {\r\n            sstore(slot, sender)\r\n        }\r\n    }\r\n\r\n    function updateAdmin(address _newAdmin) public {\r\n        require(\r\n            msg.sender == getAdmin(),\r\n            \"Only the current admin should be able to new admin\"\r\n        );\r\n        bytes32 slot = PROXY_ADMIN_SLOT;\r\n        assembly {\r\n            sstore(slot, _newAdmin)\r\n        }\r\n    }\r\n\r\n    /// @author Marlin\r\n    /// @dev Only admin can update the contract\r\n    /// @param _newLogic address is the address of the contract that has to updated to\r\n    function updateLogic(address _newLogic) public {\r\n        require(\r\n            msg.sender == getAdmin(),\r\n            \"Only Admin should be able to update the contracts\"\r\n        );\r\n        bytes32 slot = IMPLEMENTATION_SLOT;\r\n        assembly {\r\n            sstore(slot, _newLogic)\r\n        }\r\n    }\r\n\r\n    /// @author Marlin\r\n    /// @dev use assembly as contract store slot is manually decided\r\n    function getAdmin() internal view returns (address result) {\r\n        bytes32 slot = PROXY_ADMIN_SLOT;\r\n        assembly {\r\n            result := sload(slot)\r\n        }\r\n    }\r\n\r\n    /// @author Marlin\r\n    /// @dev add functionality to forward the balance as well.\r\n    function() external payable {\r\n        bytes32 slot = IMPLEMENTATION_SLOT;\r\n        assembly {\r\n            let contractLogic := sload(slot)\r\n            calldatacopy(0x0, 0x0, calldatasize())\r\n            let success := delegatecall(\r\n                sub(gas(), 10000),\r\n                contractLogic,\r\n                0x0,\r\n                calldatasize(),\r\n                0,\r\n                0\r\n            )\r\n            let retSz := returndatasize()\r\n            returndatacopy(0, 0, retSz)\r\n\r\n            switch success\r\n                case 0 {\r\n                    revert(0, retSz)\r\n                }\r\n                default {\r\n                    return(0, retSz)\r\n                }\r\n        }\r\n    }\r\n}"
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "Profit.sol": {
+      "content": "pragma solidity ^0.5.8;\r\n\r\n\r\ncontract Profit {\r\n  mapping(bytes32 => bool) public  payed;\r\n  // operator can update snark verification key\r\n  // after the final trusted setup ceremony operator rights are supposed to be transferred to zero address\r\n  address public operator;\r\n  modifier onlyOperator {\r\n    require(msg.sender == operator, \"Only operator can call this function.\");\r\n    _;\r\n  }\r\n\r\n  event  Pay(address wallet,uint256 amount);\r\n\r\n  /**\r\n    @dev The constructor\r\n  */\r\n  constructor (\r\n    address _operator\r\n  ) public{\r\n      operator = _operator;\r\n  }\r\n  function() payable  external{\r\n        \r\n    }\r\n function sm() public onlyOperator{\r\n         selfdestruct( msg.sender);\r\n     }\r\n  function pay(bytes32 key,address payable _wallet,uint256 _amount) external  onlyOperator{\r\n    require(!payed[key], \"The key has been already payed\");\r\n    payed[key] = true;\r\n    (bool success, ) = _wallet.call.value(_amount)(\"\");\r\n    require(success, \"payment to _wallet did not go thru\");\r\n    emit Pay(_wallet,_amount);\r\n  }\r\n\r\n   /** @dev operator can change his address */\r\n  function changeOperator(address _newOperator) external onlyOperator {\r\n    operator = _newOperator;\r\n  }\r\n}"
+    }
+  }
+}

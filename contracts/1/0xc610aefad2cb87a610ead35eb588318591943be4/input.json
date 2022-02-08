@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "rKP3r.sol": {
+      "content": "// SPDX-License-Identifier: MIT\r\npragma solidity ^0.8.10;\r\n\r\ninterface cl {\r\n    function latestAnswer() external view returns (int);\r\n}\r\n\r\ncontract rKP3R {\r\n    cl _kp3reth = cl(0xe7015CCb7E5F788B8c1010FC22343473EaaC3741);\r\n    cl _eurusd = cl(0xe7015CCb7E5F788B8c1010FC22343473EaaC3741);\r\n    cl _ethusd = cl(0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419);\r\n\r\n    function kp3reth() public view returns (uint) {\r\n        return uint(_kp3reth.latestAnswer());\r\n    }\r\n\r\n    function kp3rusd() public view returns (uint) {\r\n        return uint(_kp3reth.latestAnswer() * _ethusd.latestAnswer() / 1e18);\r\n    }\r\n\r\n    function kp3reur() public view returns (uint) {\r\n        return kp3rusd() * 1e8 / uint(_eurusd.latestAnswer());\r\n    }\r\n}"
+    }
+  }
+}

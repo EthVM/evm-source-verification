@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/fee_account.sol": {
+      "content": "/**\n *Submitted for verification at Etherscan.io on 2020-07-21\n*/\n\npragma solidity ^0.6.0;\n\ninterface DMEX {\n    function availableBalanceOf(address token, address user) external view returns (uint256);\n    function withdraw(address token, uint256 amount) external returns (bool success);\n}\n\ninterface UniswapV2ExchangeInterface {\n    function WETH() external pure returns (address);\n\n    function swapExactTokensForTokens(uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline) external returns (uint[] memory amounts);\n    function swapExactETHForTokens(uint amountOutMin, address[] calldata path, address to, uint deadline) external payable returns (uint[] memory amounts);\n    function swapExactTokensForETH(uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline) external returns (uint[] memory amounts);\n}\n\n/* Interface for ERC20 Tokens */\ninterface DMEXTokenInterface {\n    function burn(uint256 _value) external returns (bool success);\n}\n\n// The DMEX Fee Contract\ncontract DMEX_Fee_Contract {    \n\n    address DMEX_CONTRACT = address(0x2101e480e22C953b37b9D0FE6551C1354Fe705E6);\n    address DMEX_TOKEN = address(0x6263e260fF6597180c9538c69aF8284EDeaCEC80);\n\n    address TOKEN_ETH = address(0x0000000000000000000000000000000000000000);\n    address TOKEN_DAI = address(0x6B175474E89094C44Da98b954EedeAC495271d0F);\n    address TOKEN_BTC = address(0x5228a22e72ccC52d415EcFd199F99D0665E7733b);\n\n    address uniswapRouter = address(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);\n\n    address payable FEE_ACCOUNT;\n    address owner;\n\n    uint256 fee_account_share = 618e15;\n    uint256 uniswap_share = 382e15;\n    \n    event Log(uint8 indexed errorId, uint value);\n\n    function extractFees() public {\n        uint256 fee_share; \n        uint256 us_share;\n\n        // extract eth\n        uint256 eth_balance = DMEX(DMEX_CONTRACT).availableBalanceOf(TOKEN_ETH, address(this));\n        \n        emit Log(1, eth_balance);\n        \n        DMEX(DMEX_CONTRACT).withdraw(TOKEN_ETH, eth_balance);\n\n        fee_share = safeMul(eth_balance, fee_account_share) / 1e18;\n        us_share = eth_balance - fee_share;\n        \n        \n        emit Log(2, fee_share);\n        emit Log(3, us_share);\n\n        // require(FEE_ACCOUNT.send(fee_share), \"Error: eth send failed\");\n\n        // // swap eth for DMEX Token\n        // address[] memory path = new address[](2);\n        // path[0] = UniswapV2ExchangeInterface(uniswapRouter).WETH();\n        // path[1] = DMEX_TOKEN;\n\n        // uint[] memory amounts = UniswapV2ExchangeInterface(uniswapRouter).swapExactETHForTokens.value(us_share)(1, path, address(this), 2**256 - 1);\n    \n        // uint token_bought = amounts[1];\n        // DMEXTokenInterface(DMEX_TOKEN).burn(token_bought);\n\n    }\n\n    constructor(\n        address payable  initialFeeAccount\n    ) public {\n        owner = msg.sender;\n        FEE_ACCOUNT = initialFeeAccount;\n    }\n\n\n    /** Safe Math **/\n\n    // Safe Multiply Function - prevents integer overflow \n    function safeMul(uint a, uint b) internal pure returns (uint) {\n        uint c = a * b;\n        assert(a == 0 || c / a == b);\n        return c;\n    }\n\n    // Safe Subtraction Function - prevents integer overflow \n    function safeSub(uint a, uint b) internal pure returns (uint) {\n        assert(b <= a);\n        return a - b;\n    }\n\n    // Safe Addition Function - prevents integer overflow \n    function safeAdd(uint a, uint b) internal pure returns (uint) {\n        uint c = a + b;\n        assert(c>=a && c>=b);\n        return c;\n    }\n}"
+    }
+  }
+}

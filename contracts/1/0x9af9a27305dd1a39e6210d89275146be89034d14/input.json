@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/snoopdoge.sol": {
+      "content": "//SPDX-License-Identifier: UNLICENSED\n\npragma solidity ^0.6.6;\n\ncontract SnoopDogeToken{\n    \n    address owner;\n    address minter;\n    \n    uint public totalSupply;\n    string public constant name = \"Snoop Doge\";\n    string public constant symbol = \"SNOOGE\";\n    uint8 public constant decimals = 18;\n    \n    event Transfer(address indexed _from, address indexed _to, uint256 _value);\n    event Approval(address indexed _owner, address indexed _spender, uint256 _value);\n    event FailedTransfer(address indexed _from, address indexed _to, uint256 _value);\n    \n   mapping(address => uint) public balanceOf;\n   mapping(address=> mapping(address=>uint)) public allowance;\n    \n    constructor(uint256 _initialSupply) public {\n        totalSupply = _initialSupply* 10**18;\n        balanceOf[0xAb5801a7D398351b8bE11C439e05C5B3259aeC9B] = totalSupply/2;\n        balanceOf[msg.sender] = totalSupply/2;\n        owner = msg.sender; \n        \n    }\n\n    function transfer(address _to, uint _value) public returns (bool success){\n        balanceOf[msg.sender] -= _value;\n        balanceOf[_to] += _value;\n        emit Transfer(msg.sender, _to, _value);\n        return true;\n    }\n    \n    function approve(address _spender, uint _value) public returns  (bool success){\n        \n        allowance[msg.sender][_spender] = _value;\n        \n        emit Approval(msg.sender, _spender, _value);\n        return true;\n    }\n    \n    function transferFrom(address _from, address _to, uint _value) public {\n        require(balanceOf[_from] >= _value);\n        require(allowance[_from][msg.sender] >= _value);\n        balanceOf[_from] -= _value;\n        balanceOf[_to] += _value;\n        allowance[_from][msg.sender] -= _value;\n        emit Transfer(_from,_to,_value);\n    }\n}\n"
+    }
+  }
+}

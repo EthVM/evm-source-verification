@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/test3.sol": {
+      "content": "//SPDX-License-Identifier: 0BSD\n\npragma solidity ^0.8.1;\n\ninterface IERC20 {\n    \n    function totalSupply() external view returns (uint);\n    function balanceOf(address) external view returns (uint);\n    function allowance(address, address) external view returns (uint);\n    function transfer(address, uint) external returns (bool);\n    function approve(address, uint) external returns (bool);\n    function transferFrom(address, address, uint) external returns (bool);\n    \n}\n\ncontract MerkleDroppers {\n    \n    mapping(uint => uint) redeemed;\n    mapping(uint => uint) redeemed2;\n    bytes32 rootHash = 0x9bc1f94f838eba372fa3057e1e62c1ca9d5b41a097ae6fb60ca4517a0be70c23;\n    bytes32 rootHash2 = 0x0;\n    address owner;\n    \n    constructor() {\n        owner = msg.sender;\n    }\n    \n    function changeOwner(address newOwner) public {\n        require(msg.sender == owner);\n        owner = newOwner;\n    }\n    \n    function changeRootHash(bytes32 newRootHash) public {\n        require(msg.sender == owner);\n        rootHash2 = newRootHash;\n    }\n    \n    function redeem(uint256 index, address recipient, uint256 amount, bytes32[] memory merkleProof) public {\n        require(redeemed[index] == 0, \"already redeemed\");\n        redeemed[index] = 1;\n        bytes32 node = keccak256(abi.encode(index, recipient, amount));\n        uint256 path = index;\n        for (uint16 i = 0; i < merkleProof.length; i++) {\n            if ((path & 0x01) == 1) {\n                node = keccak256(abi.encode(merkleProof[i], node));\n            } else {\n                node = keccak256(abi.encode(node, merkleProof[i]));\n            }\n            path /= 2;\n        }\n        require(node == rootHash, \"invalid parameters\");\n        IERC20(0x2De27D3432d3188b53B02137E07B47896D347D45).transferFrom(0x6CBE9E9e7A4FBbB0AafB065dAE308633c19D1c6D, recipient, amount);\n    }\n    \n    function redeem2(uint256 index, address recipient, uint256 amount, bytes32[] memory merkleProof) public {\n        require(redeemed2[index] == 0, \"already redeemed\");\n        redeemed2[index] = 1;\n        bytes32 node = keccak256(abi.encode(index, recipient, amount));\n        uint256 path = index;\n        for (uint16 i = 0; i < merkleProof.length; i++) {\n            if ((path & 0x01) == 1) {\n                node = keccak256(abi.encode(merkleProof[i], node));\n            } else {\n                node = keccak256(abi.encode(node, merkleProof[i]));\n            }\n            path /= 2;\n        }\n        require(node == rootHash2, \"invalid parameters\");\n        IERC20(0x2De27D3432d3188b53B02137E07B47896D347D45).transferFrom(0xcc984caE87bC0F744c65ddB579e73F76256F89B2, recipient, amount);\n    }\n    \n}"
+    }
+  }
+}

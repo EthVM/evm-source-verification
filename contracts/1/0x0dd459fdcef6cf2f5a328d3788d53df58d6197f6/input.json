@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/Keep3rV1OracleUSD.sol": {
+      "content": "// SPDX-License-Identifier: bsl-1.1\n\npragma solidity ^0.8.1;\n\ninterface IKeep3rV1Oracle {\n    function quote(address tokenIn, uint amountIn, address tokenOut, uint granularity) external view returns (uint);\n    function current(address tokenIn, uint amountIn, address tokenOut) external view returns (uint);\n}\n\ncontract Keep3rV1OracleUSD  {\n    \n    IKeep3rV1Oracle public constant sushiswapV1Oracle = IKeep3rV1Oracle(0xf67Ab1c914deE06Ba0F264031885Ea7B276a7cDa);\n    IKeep3rV1Oracle public constant uniswapV1Oracle = IKeep3rV1Oracle(0x73353801921417F465377c8d898c6f4C0270282C);\n    address public constant WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;\n    address public constant DAI = 0x6B175474E89094C44Da98b954EedeAC495271d0F;\n    \n    function assetToUsd(address asset, uint amount, uint granularity) public view returns (uint) {\n        return ethToUsd(assetToEth(asset, amount, granularity), granularity);\n    }\n    \n    function assetToEth(address asset, uint amount, uint granularity) public view returns (uint) {\n        if (amount == 0) {\n            return 0;\n        }\n        if (asset == WETH) {\n            return amount;\n        }\n        return quote(asset, amount, granularity);\n    }\n    \n    function quote(address tokenIn, uint amountIn, uint granularity) public view returns (uint amountOut) {\n        uint sTWAP = sushiswapV1Oracle.quote(tokenIn, amountIn, WETH, granularity);\n        uint uTWAP = uniswapV1Oracle.quote(tokenIn, amountIn, WETH, granularity);\n        return (sTWAP + uTWAP) / 2;\n    }\n    \n    function ethToUsd(uint ethAmount, uint granularity) public view returns (uint) {\n        uint sTWAP = sushiswapV1Oracle.quote(WETH, ethAmount, DAI, granularity);\n        uint uTWAP = uniswapV1Oracle.quote(WETH, ethAmount, DAI, granularity);\n        return (sTWAP + uTWAP) / 2;\n    }\n}"
+    }
+  }
+}

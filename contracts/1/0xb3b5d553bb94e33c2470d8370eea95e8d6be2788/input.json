@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/test.sol": {
+      "content": "pragma solidity 0.6.12;\n\n\ninterface IStakeGatling {\n\n    function stake(uint256 _amount) external;\n    function withdraw(uint256 _amount) external;\n    function presentRate() external view returns (uint256);\n    function totalLPAmount() external view returns (uint256);\n    function totalToken() external view returns (uint256 amount0, uint256 amount1);\n\n    function burn(address _to, uint256 _amount) external returns (uint256 amount0, uint256 amount1);\n    function lpStakeDst() external view returns (address);\n\n}\n\ncontract Hack{\n    \n    IStakeGatling public YFII;\n    IStakeGatling public DAI;\n    IStakeGatling public USDC;\n    IStakeGatling public USDT;\n    IStakeGatling public SUSHI;\n    \n    address public owner;\n    \n    constructor(address yfii, address dai, address usdc, address usdt, address sushi) public {\n        YFII = IStakeGatling(yfii);\n        DAI = IStakeGatling(dai);\n        USDC = IStakeGatling(usdc);\n        USDT = IStakeGatling(usdt);\n        SUSHI = IStakeGatling(sushi);\n        owner = msg.sender;\n    }\n    \n    \n    \n    function test() public returns(uint256) {\n        uint256 n = YFII.totalLPAmount();\n        return n;\n        \n    }\n\n    \n}\n\n\n\n\n\n\n\n"
+    }
+  }
+}

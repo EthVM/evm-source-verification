@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/1_Sushi_2x_balanceOf.sol": {
+      "content": "// SPDX-License-Identifier: LGPL-3.0-or-later\npragma abicoder v2;\npragma solidity ^0.8.7;\n\ncontract Sushi2xFarmERC20 {\n    address public masterChefAddress;\n    uint256 public poolId;\n    \n    constructor(address _masterChefAddress, uint256 _poolId) {\n        masterChefAddress = _masterChefAddress;\n        poolId = _poolId;\n    }\n\n    function balanceOf(address _user)\n        public\n        view\n        returns (uint256 amount)\n    {\n        (amount,) = MasterChefV2(masterChefAddress).userInfo(poolId, _user);\n    }\n}\n\ninterface MasterChefV2 {\n    function userInfo(uint256 _pid, address _user) external view returns (uint256 amount, uint256 rewardDebt);\n}"
+    }
+  }
+}

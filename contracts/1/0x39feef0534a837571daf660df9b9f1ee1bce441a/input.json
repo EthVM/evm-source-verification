@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "ChainlinkSourcesRegistry.sol": {
+      "content": "// SPDX-License-Identifier: agpl-3.0\r\npragma solidity 0.6.12;\r\n\r\n\r\n/**\r\n * @title VersionedInitializable\r\n *\r\n * @dev Helper contract to support initializer functions. To use it, replace\r\n * the constructor with a function that has the `initializer` modifier.\r\n * WARNING: Unlike constructors, initializer functions must be manually\r\n * invoked. This applies both to deploying an Initializable contract, as well\r\n * as extending an Initializable contract via inheritance.\r\n * WARNING: When used with inheritance, manual care must be taken to not invoke\r\n * a parent initializer twice, or ensure that all initializers are idempotent,\r\n * because this is not dealt with automatically as with constructors.\r\n *\r\n * @author Aave, inspired by the OpenZeppelin Initializable contract\r\n */\r\nabstract contract VersionedInitializable {\r\n    /**\r\n   * @dev Indicates that the contract has been initialized.\r\n   */\r\n    uint256 internal lastInitializedRevision = 0;\r\n\r\n   /**\r\n   * @dev Modifier to use in the initializer function of a contract.\r\n   */\r\n    modifier initializer() {\r\n        uint256 revision = getRevision();\r\n        require(revision > lastInitializedRevision, \"Contract instance has already been initialized\");\r\n\r\n        lastInitializedRevision = revision;\r\n\r\n        _;\r\n\r\n    }\r\n\r\n    /// @dev returns the revision number of the contract.\r\n    /// Needs to be defined in the inherited class as a constant.\r\n    function getRevision() internal pure virtual returns(uint256);\r\n\r\n\r\n    // Reserved storage space to allow for layout changes in the future.\r\n    uint256[50] private ______gap;\r\n}\r\n\r\n\r\ncontract ChainlinkSourcesRegistry is VersionedInitializable {\r\n    /// @dev Mapping of current stored asset => underlying Chainlink aggregator\r\n    mapping (address => address) public aggregatorsOfAssets;\r\n    \r\n    event AggregatorUpdated(address token, address aggregator);\r\n    \r\n    uint256 public constant REVISION = 1;\r\n    \r\n    /**\r\n    * @dev returns the revision of the implementation contract\r\n    */\r\n    function getRevision() internal pure override returns (uint256) {\r\n        return REVISION;\r\n    }\r\n    \r\n    function initialize() external initializer {}\r\n    \r\n    function updateAggregators(address[] memory assets, address[] memory aggregators) external {\r\n        require(isManager(msg.sender), \"INVALID_MANAGER\");\r\n        \r\n        for(uint256 i = 0; i < assets.length; i++) {\r\n            aggregatorsOfAssets[assets[i]] = aggregators[i];\r\n            emit AggregatorUpdated(assets[i], aggregators[i]);\r\n        }\r\n    }\r\n    \r\n    function isManager(address caller) public pure returns(bool) {\r\n        return caller == address(0x49598E2F08D11980E06C5507070F6dd97CE8f0bb);\r\n    }\r\n}"
+    }
+  }
+}

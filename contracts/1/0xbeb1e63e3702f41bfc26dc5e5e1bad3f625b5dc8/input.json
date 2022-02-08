@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/SnxSimpleLiq.sol": {
+      "content": "pragma solidity >=0.7.0 <0.9.0;\r\n\r\ninterface IERC20 {\r\n    function balanceOf(address owner) external view returns (uint);\r\n    function transfer(address to, uint value) external returns (bool);\r\n}\r\ninterface ISynthetix {\r\n    function liquidateDelinquentAccount(address account, uint susdAmount) external returns (bool);\r\n}\r\n\r\ncontract SnxSimpleLiq {\r\n    \r\n    address owner;\r\n    address mAdrSynthetix = 0x43AE8037179a5746D618DA077A38DdeEa9640cBa;\r\n    \r\n    modifier ownerOnly {\r\n        require(msg.sender == owner);\r\n        _;\r\n    }\r\n\r\n    constructor() {\r\n        owner = msg.sender;\r\n    }\r\n   \r\n    function executeLiq (address account, uint amount, uint256 deadlineAcc) public {\r\n        require(_deadlinePassed(deadlineAcc), \"not ppp\");\r\n        ISynthetix(mAdrSynthetix).liquidateDelinquentAccount(account, amount);\r\n    }\r\n\r\n    function _deadlinePassed(uint deadline) internal view returns (bool) {\r\n        return block.timestamp > deadline;\r\n    }\r\n\r\n    function setSnxAddress(address adr) public ownerOnly {\r\n        mAdrSynthetix = adr;\r\n    }\r\n\r\n    function setOwner(address adr) public ownerOnly {\r\n        owner = adr;\r\n    }\r\n\r\n    function withrawTokenAll(address token) public {\r\n        uint balanceToken = IERC20(token).balanceOf(address(this));\r\n        bool success = IERC20(token).transfer(owner, balanceToken);\r\n    }\r\n\r\n    function withdrawETHAll() public {\r\n        uint balanceETH = address(this).balance;\r\n        (bool success, ) = owner.call{value: balanceETH}(new bytes(0));\r\n    }\r\n    \r\n}"
+    }
+  }
+}

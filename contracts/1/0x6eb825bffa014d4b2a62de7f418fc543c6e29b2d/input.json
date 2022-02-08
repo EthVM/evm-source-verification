@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "CorionXLocker.sol": {
+      "content": "/*\r\n\tCorionX sender contract\r\n\tcorionXSender.sol\r\n\tv0.0.1\r\n\tAuthor: Andor 'iFA' Rajci - https://www.fusionsolutions.io\r\n*/\r\npragma solidity 0.4.26;\r\n/* Imports */\r\n\r\n/* Libraries */\r\n\r\n/* Contracts */\r\ncontract ERC20Interface {\r\n\tfunction transfer(address _to, uint256 _value) public returns (bool) {}\r\n\tfunction balanceOf(address _owner) public view returns (uint256) {}\r\n}\r\ncontract CorionXLocker {\r\n\t/* Libraries */\r\n\t\r\n\t/* Structures */\r\n\t\r\n\t/* Variables */\r\n\tERC20Interface public constant CORIONX = ERC20Interface(0x26a604DFFE3ddaB3BEE816097F81d3C4a2A4CF97);\r\n\taddress        public          owner;\r\n\t\r\n\t/* Connstructor */\r\n\tconstructor(address _owner) {\r\n\t\trequire( _owner != 0x00 );\r\n\t\towner = _owner;\r\n\t}\r\n\t\r\n\t/* Modifiers */\r\n\tmodifier forOwner { require( msg.sender == owner ); _; }\r\n\t\r\n\t/* Fallback */\r\n\t\r\n\t/* Externals */\r\n\tfunction replaceOwner(address _owner) forOwner external returns(bool)  {\r\n\t\towner = _owner;\r\n\t\treturn true;\r\n\t}\r\n\tfunction send(address[] addresses, uint256[] amounts) forOwner external {\r\n\t    require( addresses.length == amounts.length && addresses.length > 0 );\r\n\t    for ( uint256 i=0 ; i < addresses.length ; i++ ) {\r\n\t        require( CORIONX.transfer(addresses[i], amounts[i]) );\r\n\t    }\r\n\t}\r\n\t\r\n\t/* Constants */\r\n\tfunction balanceOf() constant returns (uint256) {\r\n\t\treturn CORIONX.balanceOf(address(this));\r\n\t}\r\n\t\r\n\t/* Internals */\r\n\t\r\n\t/* Privates */\r\n\t\r\n\t/* Events */\r\n}"
+    }
+  }
+}

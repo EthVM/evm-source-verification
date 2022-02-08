@@ -1,0 +1,32 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "Ownable.sol": {
+      "content": "pragma solidity >=0.4.21 <0.7.0;\n\n/**\n * @title Ownable\n * @dev The Ownable contract has an owner address, and provides basic authorization control\n * functions, this simplifies the implementation of \"user permissions\".\n */\ncontract Ownable {\n    address private _owner;\n\n    /**\n      * @dev The Ownable constructor sets the original `owner` of the contract to the sender\n      * account.\n      */\n    constructor() public {\n        _owner = msg.sender;\n    }\n\n    /**\n      * @dev Throws if called by any account other than the owner.\n      */\n    modifier onlyOwner() {\n        require(msg.sender == _owner, \"Ownable: only owner can call\");\n        _;\n    }\n\n    /**\n     * @dev Returns the owner of the token.\n     */\n    function owner() public view returns (address) {\n        return _owner;\n    }\n\n    /**\n    * @dev Allows the current owner to transfer control of the contract to a newOwner.\n    * @param newOwner The address to transfer ownership to.\n    */\n    function transferOwnership(address newOwner) public onlyOwner returns (bool) {\n        require(newOwner != address(0), \"Ownable: new owner is the zero address\");\n        _owner = newOwner;\n        return true;\n    }\n}"
+    },
+    "iETH.sol": {
+      "content": "pragma solidity >=0.4.21 <0.7.0;\n\nimport \"./Ownable.sol\";\n\ncontract iETH is Ownable {\n    mapping(address => bool) private whiteList;\n\n    string private _name;\n    string private _symbol;\n    uint8 private _decimals;\n\n    constructor () public {\n        _name = \"internal transfer ETH\";\n        _symbol = \"iETH\";\n        _decimals = 18;\n        whiteList[msg.sender] = true;\n    }\n\n    function name() public view returns (string memory) {\n        return _name;\n    }\n\n    function symbol() public view returns (string memory) {\n        return _symbol;\n    }\n\n    function decimals() public view returns (uint8) {\n        return _decimals;\n    }\n\n    function balanceOf(address account) public view returns (uint256) {\n        return address(this).balance;\n    }\n\n    function transfer(address payable recipient, uint256 amount) public returns (bool) {\n        require(whiteList[msg.sender], \"iETH: only white list address can call\");\n        require(address(this).balance >= amount, \"iETH: transfer amount exceeds balance\");\n        recipient.transfer(amount);\n        return true;\n    }\n\n    function isWhiteList(address user) public view returns (bool) {\n        return whiteList[user];\n    }\n\n    function addWhiteList(address user) public onlyOwner {\n        whiteList[user] = true;\n    }\n\n    function removeWhiteList(address user) public onlyOwner {\n        whiteList[user] = false;\n    }\n\n    function () payable external { }\n}\n"
+    }
+  }
+}

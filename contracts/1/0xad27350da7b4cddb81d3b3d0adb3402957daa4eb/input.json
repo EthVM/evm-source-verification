@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "scripts/sale.sol": {
+      "content": "/**\n// Token sale TheBestSwap.Org\n// Contract Best: 0xf42219aa121140128a4c04bf0f7555c8d3feac94\n// Price 5000 BEST = 1 ETH\n// List Price: 1 ETH = 2700 BEST (Guaranteed by Shenghai fund)\n// List exchange time: 1 hour after the end of Presale,\n// Pre-sale start: from 4:00 PM (GMT+8) March 30, to (3 hours)\n// Send ETH to the contract address of the contract Presale: \n// Gas Limit 200,000\n//Gas Price (GWEI): 140\n// Min Buy: 0.1 ether\n// Max Buy: 5 ether\n// Token is automatically distributed, we recommend using a personal wallet, or wallets with private keys, not sending ETH from Exchange or wallets from exchanges!\n// Website - https://thebesswap.org\n//Trade - https://thebestswap.org/#/swap\n// Dextools - https://www.dextools.io/app/uniswap/pair-explorer/0xf42219aa121140128A4C04Bf0F7555C8D3feaC94\n// Telegram - https://t.me/TheBestSwap\n// Github - https://github.com/TheBestSwap\n*/\n\npragma solidity >=0.6.0 <0.8.0;\n\n\ninterface IERC20 {\n\n    function totalSupply() external view returns (uint256);\n    function balanceOf(address account) external view returns (uint256);\n    function transfer(address recipient, uint256 amount) external returns (bool);\n    function allowance(address owner, address spender) external view returns (uint256);\n    function approve(address spender, uint256 amount) external returns (bool);\n    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);\n    event Transfer(address indexed from, address indexed to, uint256 value);\n    event Approval(address indexed owner, address indexed spender, uint256 value);\n}\n\npragma solidity ^0.7.5;\n\nlibrary SafeMath {\n  function mul(uint256 a, uint256 b) internal pure returns (uint256) {\n    uint256 c = a * b;\n    assert(a == 0 || c / a == b);\n    return c;\n  }\n  function add(uint256 a, uint256 b) internal pure returns (uint256) {\n    uint256 c = a + b;\n    assert(c >= a);\n    return c;\n  }\n}\n\ncontract Ownable {\n  address public owner;\n  address payable public ownerPayable;\n  constructor()  {\n    owner = address(msg.sender);\n    ownerPayable = address(uint160(owner));\n  }\n  modifier onlyOwner() {\n    require(msg.sender == owner);\n    _;\n  }\n  function transferOwnership(address newOwner) public onlyOwner {\n    require(newOwner != address(0));\n    owner = newOwner; \n    ownerPayable = address(uint160(owner));\n\n  }\n}\n\ncontract BestTokenSale is Ownable {\n  \nusing SafeMath for uint256;\n  IERC20 token;\n  string public constant Info = \"thebestswap.org\";\n  uint256 public constant RATE = 5000; //number of tokens per ETH\n  uint256 public constant CAP = 1000;  //Number of ETH accepted until the sale ends\n  bool private initialized = false; //We dont start until you call startSale()\n  uint256 public raisedAmount = 0; //allow users to read the amount of funds raised\n  modifier whenSaleIsActive() {\n    // Check if sale is active\n    assert(isActive());\n    _;\n  }\n  constructor() {}\n  \n  function startSale(address _tokenAddr) public onlyOwner { \n      require(initialized == false); //Call when you are ready to start the sale\n      token = IERC20(_tokenAddr);\n      token.approve(address(this), 115792089237316195423570985008687907853269984665640564039457584007913129639935);\n      initialized = true;\n  }\n  function isActive() public view returns (bool) {\n    return (\n        initialized == true //Lets the public know if we're live\n    );\n  }\n  function goalReached() public view returns (bool) {\n    return (raisedAmount >= CAP * 1 ether);\n  }\n  fallback() external payable {\n    buyTokens();\n  } //Fallbacks so if someone sends ether directly to the contract it will function as a purchase\n  receive() external payable {\n    buyTokens();\n  }\n  function buyTokens() public payable whenSaleIsActive {\n    require(msg.value >= 0.1 ether);\n    require(msg.value <= 15 ether);\n    uint256 weiAmount = msg.value;\n    uint256 tokens = weiAmount.mul(RATE);\n    raisedAmount = raisedAmount.add(msg.value);\n    ownerPayable.transfer(msg.value);\n    token.transferFrom(address(this), msg.sender, tokens);\n  }\n  function tokensAvailable() public view returns (uint256) {\n    return token.balanceOf(address(this));\n  }\n  function endSale() onlyOwner public {\n    uint256 tokenBalance = token.balanceOf(address(this));\n    token.transferFrom(address(this), owner, tokenBalance); //Tokens returned to owner wallet\n    selfdestruct(ownerPayable);\n  }\n}"
+    }
+  }
+}

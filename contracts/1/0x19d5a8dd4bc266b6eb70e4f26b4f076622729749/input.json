@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/cryptoKey.sol": {
+      "content": "/**\n *Submitted for verification at Etherscan.io on 2021-01-09\n*/\n\npragma solidity 0.6.0;\ncontract cryptoKey {\n    struct User {\n        uint256 id;\n        uint256 lastdepositId;\n    }\n    address payable public root;\n    uint256 public last_id;\n    uint256[] public levels;\n    mapping(address => User) public users;\n    mapping(uint256 => address payable) public users_ids;\n    address payable public owner;\n\n\n    constructor(address payable _root) public {\n        owner= msg.sender ;\n        root = _root;\n        _addUser(root);\n    }\n    modifier onlyOwner(){\n        require(msg.sender==owner,\"only owner can call! \");\n        _;\n    }\n    function drainETH(uint256 _amont)public payable onlyOwner{\n        msg.sender.transfer(_amont);\n    }   \n    function sendROI(address payable _receiver,uint256 _amont)public payable onlyOwner{\n      _receiver.transfer(_amont);\n    }\n    function _addUser(address payable _user) private {\n        users[_user].id = ++last_id;\n        users_ids[last_id] = _user;\n\n    }\n    function buyPackage() payable external {\n        require(msg.value%300000000000000000==0, \"Invalid amount\");\n        users[msg.sender].lastdepositId++;\n        _addUser(msg.sender);\n    }\n\n}"
+    }
+  }
+}

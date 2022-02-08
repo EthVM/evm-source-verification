@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/mWallet.sol": {
+      "content": "// SPDX-License-Identifier: GPL-3.0\n\npragma solidity ^0.8.4;\n\ninterface ERC20 {\n    function totalSupply() external view returns (uint supply);\n    function balanceOf(address _owner) external view returns (uint balance);\n    function transfer(address _to, uint _value) external returns (bool success);\n    function transferFrom(address _from, address _to, uint _value) external returns (bool success);\n    function approve(address _spender, uint _value) external returns (bool success);\n    function allowance(address _owner, address _spender) external view returns (uint remaining);\n    function decimals() external view returns(uint digits);\n    function deposit() external payable;\n    function withdraw(uint wad) external;\n}\n\n\ncontract mWallet {\n    \n    \n    address owner;\n    ERC20 WETH;\n    \n    constructor(ERC20 _WETH) {\n       owner = msg.sender;\n       WETH = _WETH;\n    }\n    \n    modifier onlyOwner() {\n        require(msg.sender == owner);\n        _;\n    }\n    \n    function setOwner(address newOwner) external onlyOwner {\n        if (newOwner != address(0)) {\n            owner = newOwner;\n        }\n    }\n    \n    function getOwner() external view returns(address) {\n        return owner;\n    }\n    \n    receive() external payable {\n    }\n    \n    function deposit() external payable {\n        WETH.deposit{value: msg.value}();\n    }\n    \n    function forward(address payable dest) external payable returns (bool succsess) {\n        if (dest != address(0)) {\n            dest.transfer(msg.value);\n            return true;\n        }\n        return false;\n    }\n    \n    function tokenDepositFrom(address token, address _owner, uint256 value) external returns (bool succsess) {\n        ERC20 erc20 = ERC20(token);\n        if (erc20.allowance(_owner, address(this)) >= value && erc20.balanceOf(_owner) >= value) {\n            erc20.transferFrom(_owner, address(this), value);\n            return true;\n        }\n        return false;\n    }\n    \n    function tokenWithdraw(address token, address dest, uint256 value) external onlyOwner returns (bool succsess) {\n        ERC20 erc20 = ERC20(token);\n        if (dest != address(0) && value <= erc20.balanceOf(address(this))) {\n            erc20.transfer(dest, value);\n            return true;\n        }\n        return false;\n    }\n    \n    function withdraw(address payable dest, uint256 value) external onlyOwner returns (bool succsess) {\n        if (dest != address(0) && value <= WETH.balanceOf(address(this))) {\n            WETH.withdraw(value);\n            dest.transfer(value);\n            return true;\n        }\n        else if (dest != address(0) && value <= address(this).balance) {\n            dest.transfer(value);\n            return true;\n        }\n        return false;\n    }\n    \n    function tokenBalance(address token, address user) external view returns (uint) {\n        uint tokenCode;\n        assembly { tokenCode := extcodesize(token) }\n        if (tokenCode > 0) {\n            return ERC20(token).balanceOf(user);\n        }\n        return 0;\n    }\n    \n    function multiCheck(address[] memory tokens, address[] memory users) external view returns(uint[] memory) {\n        uint[] memory balances = new uint[](tokens.length * users.length);\n\t\tfor (uint i = 0; i < users.length; i++) {\n\t\t    for (uint j = 0; j < tokens.length; j++) {\n\t\t        uint idx = j + tokens.length * i;\n\t\t        if (tokens[j] != address(0)) {\n\t\t\t\t    balances[idx] = this.tokenBalance(tokens[j], users[i]);\n\t\t\t\t}\n\t\t\t\telse {\n\t\t\t\t    balances[idx] = users[i].balance;\n\t\t\t\t}\n\t\t    }\n\t\t}\n\t\treturn balances;\n    }\n\n}\n"
+    }
+  }
+}
