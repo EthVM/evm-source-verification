@@ -9,4 +9,5 @@ export interface ValidateGitDiffsCliArgs {
   verify: boolean;
   verbose: boolean;
   saveAdditions: boolean;
+  requireContracts: boolean;
 }

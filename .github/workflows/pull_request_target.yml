@@ -39,7 +39,7 @@ jobs:
       - name: set NPM version
         run: npm i -g npm@6.14.16
 
-      - name: create .env file
+      - name: "base: create .env file"
         run: |
           cp .env.example .env
           sed -i'' "s/^GITHUB_TOKEN=/GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}/" .env
@@ -53,7 +53,7 @@ jobs:
 
       # https://github.community/t/how-do-you-figure-out-if-a-pr-is-from-a-work-in-pull-request-target-workflows/170001
       # https://docs.github.com/en/rest/reference/repos#get-a-repository
-      - name: "base: validate head changes"
+      - name: "base: validate additions"
         run: |
           node dist/bin.js \
             validate-git-diffs \
@@ -62,6 +62,7 @@ jobs:
             --owner="${{ github.event.pull_request.base.repo.owner.login }}" \
             --head="${{ github.event.pull_request.head.label }}" \
             --base="${{ github.event.pull_request.base.ref }}" \
+            --require-contracts \
             --verbose \
             --strict
 
@@ -74,18 +75,18 @@ jobs:
           # branch
           ref: ${{ github.event.pull_request.head.ref }}
 
-      - name: create .env file
+      - name: "head: create .env file"
         run: |
           cp .env.example .env
           sed -i'' "s/^GITHUB_TOKEN=/GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}/" .env
 
-      - name: "base: install, build, test"
+      - name: "head: install, build, test"
         run: |
           npm ci
           npm run test
           npm run build
 
-      - name: "base: verify"
+      - name: "head: re-validate additions"
         run: |
           node dist/bin.js \
             validate-git-diffs \
@@ -94,18 +95,40 @@ jobs:
             --owner="${{ github.event.pull_request.base.repo.owner.login }}" \
             --head="${{ github.event.pull_request.head.label }}" \
             --base="${{ github.event.pull_request.base.ref }}" \
-            --save-additions \
+            --require-contracts \
             --strict \
             --verbose \
-            --verify
+            --verify \
+            --save-additions
 
-      - name: "todo"
-        run: cat /tmp/contract-files-added
+      - id: "contracts"
+      - name: "head: cat output files"
+        run: |
+          echo "files added:"
+          cat /tmp/contract-files-added
 
-      # create metadata
+          echo "contracts added:"
+          cat /tmp/contracts-added
 
-      # - name: Create Pull Request
-      #   uses: peter-evans/create-pull-request@v3
+          # https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions
+          contracts_added=$(cat /tmp/contracts-added | paste -s -d, -)
+          echo "contracts added (cs):"
+          echo "$(contracts_added)"
+          echo "::set-output name=CONTRACTS_ADDED::$contracts_added"
 
+      - name: "head: save metadata"
+        run: |
+          node dist/bin.js \
+            verify \
+            --file=/tmp/contract-files-added \
+            --save \
+            --failFast
 
-      # create PR
+      # https://github.com/marketplace/actions/create-pull-request
+      - name: "head: create Pull Request"
+        uses: peter-evans/create-pull-request@v3
+        with:
+          author: "EthVM Bot"
+          branch: "verified/${{ steps.contracts.outputs.CONTRACTS_ADDED }}"
+          commit-message: "added contracts: ${{ steps.contracts.outputs.CONTRACTS_ADDED }}"
+
