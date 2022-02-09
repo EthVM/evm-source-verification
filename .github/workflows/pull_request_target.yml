@@ -29,12 +29,16 @@ jobs:
           echo "----------------------------------"
           echo "GITHUB_WORKSPACE: $GITHUB_WORKSPACE"
           echo "----------------------------------"
+          echo "repo: ${{ github.event.pull_request.base.label }}"
+          echo "ref: ${{ github.base_ref }}"
 
       # checkout repo/branch being pushed to
       # https://github.com/actions/checkout
       - name: "base: checkout"
         uses: actions/checkout@v2
         with:
+          # ref: ${{ github.base_ref }}
+          repo: ${{ github.event.pull_request.base.label }}
           ref: ${{ github.base_ref }}
 
       - name: "base: git whoami"
@@ -84,6 +88,9 @@ jobs:
       # checkout the head now that we've verified it's safe
       - name: "head: checkout"
         uses: actions/checkout@v2
+        with:
+          repo: ${{ github.event.pull_request.head.label }}
+          ref: ${{ github.head_ref }}
 
       - name: "head: git whoami"
         run: |
