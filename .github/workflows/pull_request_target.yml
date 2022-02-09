@@ -6,6 +6,7 @@ on:
       - opened
       - synchronize
       - reopened
+      - edited
     branches:
       - devop/gha
 
@@ -35,8 +36,8 @@ jobs:
           echo "head_ref: ${{ github.head_ref }}"
           echo "owner: ${{ github.event.pull_request.repository.owner  }}"
           echo "repo: ${{ github.event.pull_request.repository.repo }}"
-          echo "head: ${{ github.event.pull_request.head }}"
-          echo "base: ${{ github.event.pull_request.base }}""
+          echo "head: ${{ github.event.pull_request.head.ref }}"
+          echo "base: ${{ github.event.pull_request.base.ref }}""
 
       # checkout repo/branch being pushed to
       # https://github.com/actions/checkout
@@ -61,8 +62,8 @@ jobs:
             --token=${{ secrets.GITHUB_TOKEN }} \
             --owner=${{ github.event.pull_request.repository.owner  }} \
             --repo=${{ github.event.pull_request.repository.repo }} \
-            --head=${{ github.event.pull_request.head }} \
-            --base=${{ github.event.pull_request.base }}
+            --head=${{ github.event.pull_request.head.ref }} \
+            --base=${{ github.event.pull_request.base.ref }}
 
       # checkout the head now that we've verified it's safe
       - name: "base: checkout"
