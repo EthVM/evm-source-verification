@@ -51,7 +51,7 @@ export async function handleValidateGitDiffsCommand(
     repo
   });
 
-  console.info('✔️: loose mode');
+  if (!strict) console.info('loose mode');
 
   if (strict) {
     // assert: only changes were additions
@@ -113,7 +113,6 @@ export async function handleValidateGitDiffsCommand(
   }
 
   // looks good
-  console.info('✔️ success: diff only contains valid additions');
 
   if (!verify) {
     console.info('skipping verification');
