@@ -1,6 +1,7 @@
+import fs from 'node:fs';
 import path from 'node:path';
 import { Mutex } from 'async-mutex';
-import { arrObjPush, arrPush, fabs, readJsonFile, writeJsonFile } from '../libs/utils';
+import { arrObjPush, arrPush, fabs, readJSONFile, readUTF8File, writeJSONFile } from '../libs/utils';
 import { Address, ContractIdentity, HasChainId, HashList } from "../types";
 import { DirCache } from '../libs/dir-cache';
 
@@ -46,6 +47,7 @@ export interface IStateService {
     hash: string,
   ): Promise<boolean>;
 
+
   /**
    * Store the metaless hash of the contract
    *
@@ -58,6 +60,7 @@ export interface IStateService {
     hash: string,
   ): Promise<boolean>;
 
+
   /**
    * Register the contract as "verified"
    *
@@ -67,6 +70,21 @@ export interface IStateService {
   addVerifiedContract(
     identity: ContractIdentity,
   ): Promise<boolean>;
+
+
+  /**
+   * Register the contract as "verified"
+   *
+   * @param identity  info specifying the chain
+   * @param type      type of log
+   * @param message   messgae to log
+   * @returns
+   */
+  addLog(
+    identity: HasChainId,
+    type: string,
+    message: string,
+  ): Promise<void>;
 }
 
 
@@ -74,44 +92,51 @@ export interface StateServiceOptions {
   /**
    * directory with each chain's state info
    *
-   * eg. "state"
+   * @example "state"
    */
   dirname?: string,
 
   /**
    * basename part of the used-compilres filename
    *
-   * eg. "compilers.json"
+   * @example "compilers.json"
    */
   usedCompilersBasename?: string,
 
   /**
    * basename part of the verified-lists filename
    *
-   * eg. "hash.verified.json"
+   * @example "hash.verified.json"
    */
   verifiedBasename?: string,
 
   /**
    * basename part of the metaless-hashes filename
    *
-   * eg. "hash.metaless.json"
+   * @example "hash.metaless.json"
    */
   metalessBasename?: string,
 
   /**
    * basename part of the opcode-hashes filename
    *
-   * eg. "hash.opcode.json"
+   * @example "hash.opcode.json"
    */
   opcodesBasename?: string,
 
   /**
    * basename part of the runtime-hashes filename
    *
-   * eg. "hash.runtime.json"
+   * @example "hash.runtime.json"
    */
   runtimeBasename?: string,
+
+  /**
+   * prefix of a log filename
+   *
+   * @example "log."
+   */
+  logFilenameSuffix?: string,
 }
 
 
@@ -126,6 +151,7 @@ export class StateService implements IStateService {
     METALESS_BASENAME: 'hash.metaless.json',
     OPCODES_BASENAME: 'hash.opcode.json',
     RUNTIME_BASENAME: 'hash.runtime.json',
+    LOG_FILENAME_SUFFIX: '.log',
   }
 
 
@@ -167,6 +193,12 @@ export class StateService implements IStateService {
   public readonly runtimeBasename: string;
 
 
+  /**
+   * @see StateServiceOptions.logFilenameSuffix
+   */
+  public readonly logFilenameSuffix: string;
+
+
   // TODO: per-chain locking
 
 
@@ -201,6 +233,12 @@ export class StateService implements IStateService {
 
 
   /**
+   * Locks the log files while editing
+   */
+  private readonly logMutex = new Mutex();
+
+
+  /**
    * @param options   configuration of the StateService
    * @param dircache  directory cache of the StateService
    *                  helps in concurrent execution
@@ -226,6 +264,9 @@ export class StateService implements IStateService {
 
     this.runtimeBasename = options?.runtimeBasename
       ?? StateService.DEFAULTS.RUNTIME_BASENAME;
+
+    this.logFilenameSuffix = options?.logFilenameSuffix
+      ?? StateService.DEFAULTS.LOG_FILENAME_SUFFIX;
   }
 
   /** {@link IStateService.addUsedCompiler} */
@@ -235,10 +276,10 @@ export class StateService implements IStateService {
   ): Promise<boolean> {
     return this.compilerMutex.runExclusive(async () => {
       const filename = this.usedCompilersFilename(identity);
-      const compilers = (await readJsonFile<string[]>(filename)) ?? [];
+      const compilers = (await readJSONFile<string[]>(filename)) ?? [];
       if (!arrPush(compilers, compilerName)) return false;
       await this.dircache.ensureOf(filename);
-      await writeJsonFile(filename, compilers.sort(), { pretty: true });
+      await writeJSONFile(filename, compilers.sort());
       return true;
     });
   }
@@ -252,9 +293,9 @@ export class StateService implements IStateService {
     return this.runtimeMutex.runExclusive(async () => {
       const filename = this.runtimeHashesFilename(identity);
       await this.dircache.ensureOf(filename);
-      const hashes = (await readJsonFile<HashList>(filename)) ?? {};
+      const hashes = (await readJSONFile<HashList>(filename)) ?? {};
       if (!arrObjPush(hashes, hash, identity.address)) return false;
-      await writeJsonFile(filename, hashes, { pretty: true, });
+      await writeJSONFile(filename, hashes);
       return true;
     });
   }
@@ -268,9 +309,10 @@ export class StateService implements IStateService {
     return this.opcodeMutex.runExclusive(async () => {
       const filename = this.opcodeHashesFilename(identity);
       await this.dircache.ensureOf(filename);
-      const hashes = (await readJsonFile<HashList>(filename)) ?? {};
+      const hashes = (await readJSONFile<HashList>(filename)) ?? {};
       if (!arrObjPush(hashes, hash, identity.address)) return false;
-      await writeJsonFile(filename, hashes, { pretty: true, });
+      // TODO: sort
+      await writeJSONFile(filename, hashes);
       return true;
     });
   }
@@ -284,9 +326,9 @@ export class StateService implements IStateService {
     return this.metalessMutex.runExclusive(async () => {
       const filename = this.metalessHashesFilename(identity);
       await this.dircache.ensureOf(filename);
-      const hashes = (await readJsonFile<HashList>(filename)) ?? {};
+      const hashes = (await readJSONFile<HashList>(filename)) ?? {};
       if (!arrObjPush(hashes, hash, identity.address)) return false;
-      await writeJsonFile(filename, hashes, { pretty: true, });
+      await writeJSONFile(filename, hashes);
       return true;
     });
   }
@@ -299,10 +341,28 @@ export class StateService implements IStateService {
     return this.verifiedMutex.runExclusive(async () => {
       const filename = this.verifiedListFilename(identity);
       await this.dircache.ensureOf(filename);
-      const addresses = (await readJsonFile<Address[]>(filename)) ?? [];
+      const addresses = (await readJSONFile<Address[]>(filename)) ?? [];
       if (!arrPush(addresses, identity.address)) return false;
-      await writeJsonFile(filename, addresses, { pretty: true, });
+      await writeJSONFile(filename, addresses);
       return true;
+    });
+  }
+
+
+  /** {@link IStateService.addLog} */
+  async addLog(
+    identity: HasChainId,
+    type: string,
+    message: string,
+  ): Promise<void> {
+    return this.logMutex.runExclusive(async () => {
+      const filename = this.logFilename(identity, type);
+      await this.dircache.ensureOf(filename);
+      let logs = await readUTF8File(filename);
+      if (logs) { logs += '\n' }
+      else logs = '';
+      logs += message;
+      await fs.promises.writeFile(filename, logs, 'utf-8');
     });
   }
 
@@ -378,6 +438,21 @@ export class StateService implements IStateService {
       this.dirname,
       opts.chainId.toString(),
       this.runtimeBasename,
+    )
+  }
+
+
+  /**
+   * Get the filename for a log
+   * 
+   * @param opts  chain identifier
+   * @returns     log filename
+   */
+  logFilename(opts: HasChainId, type: string): string {
+    return path.join(
+      this.dirname,
+      opts.chainId.toString(),
+      `${type}${this.logFilenameSuffix}`,
     )
   }
 }

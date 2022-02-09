@@ -5,4 +5,11 @@ export interface VerifyCliArgs {
   save: boolean;
   skip: boolean;
   failFast: boolean;
+  git?: {
+    token?: string;
+    repo?: string;
+    owner?: string;
+    base?: string;
+    head?: string;
+  };
 }

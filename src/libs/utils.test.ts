@@ -1,6 +1,6 @@
 // eslint-disable-next-line import/no-extraneous-dependencies
 import fs from 'fs';
-import { arrObjPush, arrPush, tmpFile, hasOwn, randomAddress, readJsonFile, writeJsonFile, isSafeFilename } from './utils';
+import { arrObjPush, arrPush, tmpFile, hasOwn, randomAddress, readJSONFile, writeJSONFile, isSafeFilename } from './utils';
 
 describe('utils', () => {
   describe('hasOwn', () => {
@@ -26,7 +26,7 @@ describe('utils', () => {
       try {
         const data = { hello: 'world' };
         await fs.promises.writeFile(filename, JSON.stringify(data), 'utf-8');
-        const out = await readJsonFile<typeof data>(filename);
+        const out = await readJSONFile<typeof data>(filename);
         expect(out).toEqual(data);
       } finally {
         await fs.promises.rm(filename, { recursive: true });
@@ -37,7 +37,7 @@ describe('utils', () => {
       const [filename] = await tmpFile({ discardDescriptor: true });
       try {
         await fs.promises.writeFile(filename, 'not a json file', 'utf-8');
-        await expect(() => readJsonFile(filename)).rejects.toThrow();
+        await expect(() => readJSONFile(filename)).rejects.toThrow();
       } finally {
         await fs.promises.rm(filename, { recursive: true });
       }
@@ -47,7 +47,7 @@ describe('utils', () => {
       const [filename] = await tmpFile({ discardDescriptor: true });
       try {
         await fs.promises.rm(filename);
-        const out = await readJsonFile(filename);
+        const out = await readJSONFile(filename);
         expect(out).toBeUndefined();
       } finally {
         //
@@ -60,7 +60,7 @@ describe('utils', () => {
       const [filename] = await tmpFile({ discardDescriptor: true });
       try {
         const data = { hello: 'world' };
-        await writeJsonFile(filename, data);
+        await writeJSONFile(filename, data);
         const out = await fs.promises.readFile(filename, 'utf-8');
         expect(out).toEqual(JSON.stringify(data));
       } finally {
@@ -72,7 +72,7 @@ describe('utils', () => {
       const [filename] = await tmpFile({ discardDescriptor: true });
       try {
         const data = { hello: 'world' };
-        await writeJsonFile(filename, data, { pretty: true });
+        await writeJSONFile(filename, data, { pretty: true });
         const out = await fs.promises.readFile(filename, 'utf-8');
         expect(out).toEqual(JSON.stringify(data, null, 2));
       } finally {

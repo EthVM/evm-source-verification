@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { Result } from "@nkp/result";
 import { bootstrap, IServices } from "../../bootstrap";
-import { fabs, readJsonFile, toBN } from "../../libs/utils";
+import { fabs, readJSONFile, toBN } from "../../libs/utils";
 import { ChainId, CompiledOutput, ContractConfig, ContractIdentity, ContractInput } from "../../types";
 import { CompileCliArgs } from "./metadata.types";
 import { getMetadata } from '../../libs/metadata';
@@ -133,8 +133,8 @@ async function compileFromConfigAndInput(
   const services = await bootstrap();
 
   const [jconfig, jinput] = await Promise.all([
-    readJsonFile<ContractConfig>(fabs(configFilename)),
-    readJsonFile<ContractInput>(fabs(inputFilename)),
+    readJSONFile<ContractConfig>(fabs(configFilename)),
+    readJSONFile<ContractInput>(fabs(inputFilename)),
   ]);
 
   if (!jinput) return Result.fail(Error(`input file "${inputFilename}" not found`));
@@ -174,8 +174,8 @@ async function compileFromDirectory(
   const inputFilename = path.join(dir, inputBasename);
 
   const [jconfig, jinput] = await Promise.all([
-    readJsonFile<ContractConfig>(configFilename),
-    readJsonFile<ContractInput>(inputFilename),
+    readJSONFile<ContractConfig>(configFilename),
+    readJSONFile<ContractInput>(inputFilename),
   ]);
 
   if (!jconfig) return Result.fail(Error(`config file ${configBasename} not found in "${dir}"`));

@@ -169,21 +169,6 @@ export interface ContractIdentity extends HasChainId, HasAddress {}
  */
 
 /**
- * Contract info extractable from a filename
- */
-export interface ContractFileMatch {
-  /**
-   * Everything in the path after the address
-   * contracts/:chainid/:address/:subpath
-   */
-  subpath: string;
-  original: string;
-  chainId: number;
-  address: string;
-  dir: string;
-}
-
-/**
  * Contact compiler
  */
 export interface ICompiler {

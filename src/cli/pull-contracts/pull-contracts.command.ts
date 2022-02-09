@@ -1,15 +1,15 @@
-import { handleValidateGitDiffsCommand } from './validate-git-diffs.handler';
+import { pullContractsCommand } from './pull-contracts.handler';
 import { Command } from '../../types';
-import { ValidateGitDiffsCliArgs } from './validate-git-diffs.types';
+import { PullContractsCliArgs } from './pull-contracts.types';
 
 /**
  * Register the `validate` command
  *
  * @param argv
  */
-export const registerValidateGitDiffsCommand: Command = (argv) => {
-  argv.command<ValidateGitDiffsCliArgs>(
-    "validate-git-diffs",
+export const registerPullContractsCommand: Command = (argv) => {
+  argv.command<PullContractsCliArgs>(
+    "pull-contracts",
     "description <todo>",
     args => args
       .positional('--token', {
@@ -45,44 +45,21 @@ export const registerValidateGitDiffsCommand: Command = (argv) => {
         desc: 'Destination being compared to (eg destination of a Pull Request)',
       },)
 
-      .positional('--strict', {
-        type: 'boolean',
-        default: false,
-        desc: 'Throw if anything other than contracts have been mutated (added'
-          + ', modified, deleted',
-      },)
-
-      .positional('--verify', {
-        type: 'boolean',
-        default: false,
-        desc: 'Throw if anything other than contracts have been mutated (added'
-          + ', modified, deleted',
-      },)
-
-      .positional('--verbose', {
-        type: 'boolean',
-        default: false,
-        desc: 'Verbose logging',
-      },)
-
-      .demandOption('--save-additions')
-      .positional('--save-additions', {
-        type: 'boolean',
-        default: false,
-        desc: 'If verification passes, save added files to this file location',
-      },)
-
-      .demandOption('--require-contracts')
       .positional('--require-contracts', {
         type: 'boolean',
         default: false,
         desc: 'Error if no contracts are added',
       },)
+
+      .positional('--output-verified-addresses', {
+        type: 'string',
+        desc: 'File to place a comma separated list of verified contract addresses',
+      },)
     ,
     async (args) => {
       const token = args.token ?? process.env.GITHUB_TOKEN;
       if (!token) throw new TypeError('--token or env.GITHUB_TOKEN is required');
-      await handleValidateGitDiffsCommand({ ...args, token });
+      await pullContractsCommand({ ...args, token });
     },
   )
 }
