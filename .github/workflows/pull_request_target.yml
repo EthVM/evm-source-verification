@@ -125,6 +125,21 @@ jobs:
             --save \
             --failFast
 
+      - name: "check git changes"
+        run: |
+          echo "git status:"
+          git log | tac
+          git status
+
+      - uses: EndBug/add-and-commit@v8
+
+      - name: "re-check git changes"
+      - run: |
+          echo "git status:"
+          git log | tac
+          git status
+
+
       # https://github.com/marketplace/actions/create-pull-request
       - name: "head: create Pull Request"
         uses: peter-evans/create-pull-request@v3
@@ -133,4 +148,5 @@ jobs:
           # branch: "verified/${{ steps.contracts.outputs.CONTRACTS_ADDED }}"
           # commit-message: "added contracts: ${{ steps.contracts.outputs.CONTRACTS_ADDED }}"
           token: "${{ secrets.GITHUB_TOKEN }}"
+          base: "${{ github.event.pull_request.base.ref }}"
 
