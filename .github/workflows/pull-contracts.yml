@@ -41,10 +41,10 @@ jobs:
       - name: set NPM version
         run: npm i -g npm@6.14.16
 
-      - name: "create .env file"
-        run: |
-          cp .env.example .env
-          sed -i'' "s/^GITHUB_TOKEN=/GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}/" .env
+      # - name: "create .env file"
+      #   run: |
+      #     cp .env.example .env
+      #     sed -i'' "s/^GITHUB_TOKEN=/GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}/" .env
 
       #  ensure only valid changes have been made
       - name: "install, build, test"
@@ -52,6 +52,8 @@ jobs:
           npm ci
           npm run test
           npm run build
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # https://github.community/t/how-do-you-figure-out-if-a-pr-is-from-a-work-in-pull-request-target-workflows/170001
       # https://docs.github.com/en/rest/reference/repos#get-a-repository
