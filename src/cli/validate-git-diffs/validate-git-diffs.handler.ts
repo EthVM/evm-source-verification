@@ -38,6 +38,8 @@ export async function handleValidateGitDiffsCommand(
 
   const client = getOctokit(token);
 
+  console.info(`repo: ${repo}`);
+  console.info(`owner: ${owner}`);
   console.info(`base: ${base}`);
   console.info(`head: ${head}`);
 
