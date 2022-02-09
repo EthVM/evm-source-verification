@@ -53,7 +53,7 @@ jobs:
 
       # https://github.community/t/how-do-you-figure-out-if-a-pr-is-from-a-work-in-pull-request-target-workflows/170001
       # https://docs.github.com/en/rest/reference/repos#get-a-repository
-      - name: "base: validate additions"
+      - name: "validate contract additions"
         run: |
           node dist/bin.js \
             pull-contracts \
@@ -63,6 +63,16 @@ jobs:
             --head="${{ github.event.pull_request.head.label }}" \
             --base="${{ github.event.pull_request.base.ref }}" \
             --require-contracts
+
+      - name: Create PR
+        uses: peter-evans/create-pull-request@v3
+        with:
+          # token: ${{ secrets.MEW_BOT_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: 'chore: 👷 verify contracts & generate metadata'
+          branch: chore/generate-metadata
+          # base: develop
+          title: 'chore: 👷 verify contracts & generate metadata'
 
       # - id: "contracts"
       #   name: "base: record new contracts"
