@@ -71,6 +71,11 @@ jobs:
         with:
           ref: ${{ github.head_ref }}
 
+      - name: ".env file"
+        run: |
+          cp .env.example .env
+          sed -i'' 's/^GITHUB_TOKEN=/GITHUB_TOKEN${{ secrets.GITHUB_TOKEN }}/' .env
+
       - name: "base: install, build, test"
         run: |
           npm ci
