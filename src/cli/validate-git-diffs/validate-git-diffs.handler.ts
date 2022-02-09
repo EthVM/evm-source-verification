@@ -27,6 +27,7 @@ export async function handleValidateGitDiffsCommand(
     verify,
     verbose,
     saveAdditions,
+    requireContracts,
   } = args;
 
   console.info(`repo: ${strict}`);
@@ -119,44 +120,56 @@ export async function handleValidateGitDiffsCommand(
     console.info(`✔️ strict: all new contracts have config and input`);
   }
 
+  // validate all
+  let contractCount = 0;
+  chains.forEach(chain => { contractCount += chain.contracts.size });
+  if (requireContracts && !contractCount) {
+    throw new Error('No contracts added');
+  }
+
   if (!verify) {
     console.info('skipping verification');
   } else {
-    // validate all
-    let contractCount = 0;
-    chains.forEach(chain => { contractCount += chain.contracts.size });
-    if (!contractCount) {
-      console.info('no contracts to verify');
-    } else {
-      // do verify
-      const contractDirnames = Array
-        .from(chains.values())
-        .flatMap(chain => Array
-          .from(chain.contracts.values())
-          .flatMap(contract => contract.dirname));
+    // do verify
+    const contractDirnames = Array
+      .from(chains.values())
+      .flatMap(chain => Array
+        .from(chain.contracts.values())
+        .flatMap(contract => contract.dirname));
 
-      console.info(`verifying ${contractCount} contracts:`
-        + `\n  ${contractDirnames
-          .map((contractDirname, idx) => `${idx + 1}. ${contractDirname}`)
-          .join('\n  ')}`);
+    console.info(`verifying ${contractCount} contracts:`
+      + `\n  ${contractDirnames
+        .map((contractDirname, idx) => `${idx + 1}. ${contractDirname}`)
+        .join('\n  ')}`);
 
-      await processContracts(
-        chains,
-        services,
-        { failFast: true, save: false, skip: false },
-      );
-    }
+    await processContracts(
+      chains,
+      services,
+      { failFast: true, save: false, skip: false },
+    );
   }
 
   console.info('✔️ success: all contracts validated');
 
   if (saveAdditions) {
-    const filename = '/tmp/contract-files-added';
-    const content = additions.join('\n');
-    console.info('saving additions');
-    console.info(`filename: ${filename}`);
-    console.info(`content: ${content}`);
-    await fs.promises.writeFile(filename, content);
+    const additionsFilename = '/tmp/contract-files-added';
+    const additionsContent = additions.join('\n');
+    console.info('saving additions:');
+    console.info(`filename: ${additionsFilename}`);
+    console.info(`content: ${additionsContent}`);
+    await fs.promises.writeFile(additionsFilename, additionsContent);
+
+    const contractsFilename = '/tmp/contracts-added';
+    const contractsContent = Array
+      .from(chains.values())
+      .flatMap(chain => Array
+        .from(chain.contracts.values()))
+        .flatMap(contract => contract.address)
+        .join('\n');
+    console.info('saving contract addresss additions:');
+    console.info(`filename: ${contractsFilename}`);
+    console.info(`content: ${contractsContent}`);
+    await fs.promises.writeFile(contractsFilename, contractsContent);
   }
 }
 

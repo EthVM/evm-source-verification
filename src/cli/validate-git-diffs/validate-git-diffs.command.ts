@@ -71,6 +71,13 @@ export const registerValidateGitDiffsCommand: Command = (argv) => {
         default: false,
         desc: 'If verification passes, save added files to this file location',
       },)
+
+      .demandOption('--require-contracts')
+      .positional('--require-contracts', {
+        type: 'boolean',
+        default: false,
+        desc: 'Error if no contracts are added',
+      },)
     ,
     async (args) => {
       const token = args.token ?? process.env.GITHUB_TOKEN;
