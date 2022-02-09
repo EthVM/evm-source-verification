@@ -5,6 +5,7 @@ import { registerValidateGitDiffsCommand } from './cli/validate-git-diffs/valida
 import { registerVerifyCommand } from './cli/verify/verify.command';
 import { registerCompileCommand } from './cli/compile/compile.command';
 import { registerMetadataCommand } from './cli/metadata/metadata.command';
+import { registerPullContractsCommand } from './cli/pull-contracts/pull-contracts.command';
 
 const argv = yargs(hideBin(process.argv)).usage('Usage $0 <cmd> [args]');
 
@@ -16,6 +17,7 @@ registerValidateGitDiffsCommand(argv);
 registerVerifyCommand(argv);
 registerCompileCommand(argv);
 registerMetadataCommand(argv);
+registerPullContractsCommand(argv);
 
 argv.demandCommand(1);
 
