@@ -19,9 +19,9 @@ jobs:
     steps:
       - name: echo
         run: |
-          echo "repo_name: ${{ github.event.pull_request.base.repo.name  }}" \
-          echo "repo_owner: ${{ github.event.pull_request.base.repo.owner.login }}" \
-          echo "head_label: ${{ github.event.pull_request.head.label }}" \
+          echo "repo_name: ${{ github.event.pull_request.base.repo.name  }}"
+          echo "repo_owner: ${{ github.event.pull_request.base.repo.owner.login }}"
+          echo "head_label: ${{ github.event.pull_request.head.label }}"
           echo "base_ref: ${{ github.event.pull_request.base.ref }}"
 
       # checkout repo/branch being pushed to
@@ -45,8 +45,10 @@ jobs:
 
       - name: create .env file
         run: |
-          cp .env.example .env
-          sed -i'' "s/^GITHUB_TOKEN=/GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}/" .env
+          echo "GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}" > .env
+          # cp .env.example .env
+          # sed -i'' "s/^GITHUB_TOKEN=/GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}/" .env
+
 
       #  ensure only valid changes have been made
       - name: "base: install, build, test"
