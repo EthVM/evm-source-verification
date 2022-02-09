@@ -30,7 +30,7 @@ describe('VerificationService', () => {
   const count = 1;
 
   it(`should verify ${count} test cases successfully`, async () => {
-    for (const testCase of testCases) {
+    for (const testCase of testCases.slice(0, count)) {
       const [config, input, expected] = await Promise.all([
         testCase.getConfig(),
         testCase.getInput(),
