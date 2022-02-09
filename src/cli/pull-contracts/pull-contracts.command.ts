@@ -45,7 +45,6 @@ export const registerPullContractsCommand: Command = (argv) => {
         desc: 'Destination being compared to (eg destination of a Pull Request)',
       },)
 
-      .demandOption('--require-contracts')
       .positional('--require-contracts', {
         type: 'boolean',
         default: false,

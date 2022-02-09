@@ -1,12 +1,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import https from 'node:https';
 import { getOctokit } from "@actions/github";
 import { PullContractsCliArgs } from "./pull-contracts.types";
 import { processContracts } from "../../libs/contracts.process";
 import { getDiffs2 } from "../../libs/diffs";
 import { bootstrap } from "../../bootstrap";
 import { MatchedChains, MatchedContract } from "../../services/contract.service";
+import { downloadFile } from '../../libs/utils';
 
 /**
  * Execution the `validate` command
@@ -43,10 +43,8 @@ export async function pullContractsCommand(
   }
 
   const client = getOctokit(token!);
-  const res = await client.rest.repos.compareCommits({ base, head, owner, repo});
-  const diffs = getDiffs2(res.data.files || []);
-
-  console.info('diffs:', diffs);
+  const gres = await client.rest.repos.compareCommits({ base, head, owner, repo});
+  const diffs = getDiffs2(gres.data.files || []);
 
   // assert: only changes were additions
   const nonAdditionFilenames = pullContractsCommand
@@ -63,7 +61,7 @@ export async function pullContractsCommand(
 
   // eslint-disable-next-line prefer-destructuring
   const addedFiles = diffs.added;
-  const additionsFilenames = Object.keys(diffs.added);
+  const additionsFilenames = Array.from(diffs.added.keys());
 
   const chains = services
     .contractService
@@ -87,7 +85,7 @@ export async function pullContractsCommand(
     .getUnknownContractLikeFilenames(addedFiles, chains);
   if (unknownContractLikeFilenames.size) {
     const msg = 'diffs can only contain valid contract-like files,'  +
-      ` found contracts:\n  ${Array
+      ` found unknown contract files:\n  ${Array
         .from(unknownContractLikeFilenames.keys())
         .join('\n  ')}`;
     throw new Error(msg);
@@ -117,16 +115,13 @@ export async function pullContractsCommand(
   // do verify
   // download new contracts into the correct directories
   for (const [addedFilename, addedFile] of addedFiles.entries()) {
-    console.log(`downloading: ${addedFilename}`);
-    await fs.promises.mkdir(path.basename(addedFilename), { recursive: true });
+    await fs.promises.mkdir(path.dirname(addedFilename), { recursive: true });
     const url = addedFile.raw_url;
-    console.debug(`downloading git file "${url}" -> ${addedFilename}`);
-    await new Promise<void>((pres, rej) => https.get(url, (hres) => {
-      const cws = fs.createWriteStream(addedFilename);
-      hres.pipe(cws);
-      cws.on('finish', pres);
-      cws.on('error', rej);
-    }));
+    console.debug('downloading contract file:' +
+      `\n  from: "${url}"` +
+      `\n  to: ${addedFilename}`);
+    await downloadFile(url, addedFilename);
+    console.log(`finished downloading: "${addedFilename}"`);
   }
 
   const contractDirnames = Array
@@ -146,7 +141,7 @@ export async function pullContractsCommand(
     { failFast: true, save: true, skip: false },
   );
 
-  console.info('✔️ success: all contracts validated');
+  console.info(`✔️ success: ${contractCount} contracts validated`);
 }
 
 
@@ -211,7 +206,7 @@ pullContractsCommand.getUnknownContractLikeFilenames = (
 
   const unknownContractLikeFiles = new Map(Array
     .from(diffs.entries())
-    .filter(([filename]) => !unknownFilenames.has(filename)));
+    .filter(([filename]) => unknownFilenames.has(filename)));
 
   return unknownContractLikeFiles;
 }
