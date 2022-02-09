@@ -1,4 +1,4 @@
-name: test
+name: Validate Contracts
 
 on:
   pull_request_target:
@@ -6,70 +6,95 @@ on:
       - opened
       - synchronize
       - reopened
+      - edited
     branches:
-      - test/gha
+      - devop/gha
 
+# ! danger !:
+# https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions#understanding-the-risk-of-script-injections
 jobs:
-  prt:
+  Validate:
     # TODO: if: name PR starts with ...
     runs-on: ubuntu-18.04
     steps:
-      - run: echo "TODO"
+      # checkout repo/branch being pushed to
+      # https://github.com/actions/checkout
+      - name: "base: checkout"
+        uses: actions/checkout@v2
+        with:
+          # owner / repo
+          repository: ${{ github.event.pull_request.base.repo.full_name }}
+          # branch
+          ref: ${{ github.event.pull_request.base.ref }}
 
-      # # UNSAFE
-      # # TODO: verify only desired files have changed
-      # # checkout code on the branch
-      # - uses: actions/checkout@v2
+      - name: install NodeJS
+        uses: actions/setup-node@v2
+        with:
+          # cache npm dependencies
+          # https://github.com/actions/setup-node#caching-packages-dependencies
+          cache: 'npm'
+          node-version: 16.13.2
+          registry-url: "https://registry.npmjs.org/"
 
-      # # https://github.com/actions/setup-node
-      # - name: change something
-      #   run: base64 /dev/urandom | head -c 10 | tr -d '\n' >> random.txt
+      - name: set NPM version
+        run: npm i -g npm@6.14.16
 
-      # # new PR
-      # # https://github.com/marketplace/actions/create-pull-request
-      # # this *shouldn't* work because we're on the pull_request event
-      # # > Note: If you want pull requests created by this action to trigger an
-      # # on: push or on: pull_request workflow then you cannot use the default
-      # # GITHUB_TOKEN. See the documentation here for workarounds.
-      # # https://github.com/peter-evans/create-pull-request/blob/main/docs/concepts-guidelines.md#triggering-further-workflow-runs
-      # - name: Create Pull Request
-      #   uses: peter-evans/create-pull-request@v3
-      #   # with:
-      #   #     base: ${{ github.base_ref }}
+      - name: "base: create .env file"
+        run: |
+          cp .env.example .env
+          sed -i'' "s/^GITHUB_TOKEN=/GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}/" .env
 
+      #  ensure only valid changes have been made
+      - name: "base: install, build, test"
+        run: |
+          npm ci
+          npm run test
+          npm run build
 
-      # # get added files
-      # - name: get git changes
-      #   uses: lots0logs/gh-action-get-changed-files@2.1.4
-      #   with:
-      #     token: ${{ secrets.GITHUB_TOKEN }}
+      # https://github.community/t/how-do-you-figure-out-if-a-pr-is-from-a-work-in-pull-request-target-workflows/170001
+      # https://docs.github.com/en/rest/reference/repos#get-a-repository
+      - name: "validate contract additions"
+        run: |
+          node dist/bin.js \
+            pull-contracts \
+            --token="${{ secrets.GITHUB_TOKEN }}" \
+            --repo="${{ github.event.pull_request.base.repo.name  }}" \
+            --owner="${{ github.event.pull_request.base.repo.owner.login }}" \
+            --head="${{ github.event.pull_request.head.label }}" \
+            --base="${{ github.event.pull_request.base.ref }}" \
+            --require-contracts \
+            --output-verified-addresses=/tmp/added-contracts
 
-      # # print changes
-      # - name: 'view changes'
-      #   run: |
-      #       echo "=== files: ==="
-      #       cat ~/files.json
+      - id: contracts
+        name: record new contracts
+        run: |
+          echo "::set-output name=contracts-added::$(cat /tmp/added-contracts)"
 
-      #       echo "=== added: ==="
-      #       cat ~/files_added.json
+      # https://github.com/marketplace/actions/create-pull-request
+      - id: create-pr
+        name: create pr
+        uses: peter-evans/create-pull-request@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          author: 'EthVMBot <EthVMBot@users.noreply.github.com>'
+          commit-message: 'verified contracts: ${{ steps.contracts.outputs.contracts-added }}'
+          branch: 'contracts-${{ steps.contracts.outputs.contracts-added }}'
+          title: 'verified contracts: ${{ steps.contracts.outputs.contracts-added }}'
+          body: |
+            **Verified Contracts**:
 
-      #       echo "=== modified: ==="
-      #       cat ~/files_modified.json
+            ${{ steps.contracts.outputs.contracts-added }}
 
-      #       echo "=== removed: ==="
-      #       cat ~/files_removed.json
+            Generated from [Pull Request](${{ github.event.pull_request._links.html.href }})
 
-      # - name: files2
-      #   id: files
-      #   uses: jitterbit/get-changed-files@v1
+      # https://github.com/marketplace/actions/close-pull-request
+      - name: close pr
+        uses: superbrothers/close-pull-request@v3
+        with:
+          # Optional. Post a issue comment just before closing a pull request.
+          comment: |
+            **Congratulations!**
 
-      # # print changes
-      # - name: view changes 2
-      #   run: |
-      #       for changed_file in ${{ steps.files.outputs.all }}; do
-      #         echo "file: ${changed_file}."
-      #       done
+            Your contract has been verified and will soon be pulled into the main branch
 
-      # fetch origin target
-      # fetch 
-
+            See [Pull Request ${{ steps.create-pr.outputs.pull-request-number }}](${{ steps.create-pr.outputs.pull-request-url }})

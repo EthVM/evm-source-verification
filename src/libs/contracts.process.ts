@@ -1,11 +1,11 @@
+import { performance } from 'perf_hooks';
 import { Result } from "@nkp/result";
 import { toPercentage } from '@nkp/percentage';
 import Web3 from "web3";
-import { compileContract } from "./contracts.compile";
-import { MatchedChains, MatchedContracts } from "./contracts.match";
 import { saveContract } from "./contracts.save";
 import { ChainId, ContractIdentity } from "../types";
 import { IServices } from "../bootstrap";
+import { MatchedChains, MatchedContracts } from "../services/contract.service";
 
 export interface ProcessContractsOptions {
   save: boolean;
@@ -102,18 +102,35 @@ export async function processChainContracts(
       `  ${j}/${contracts.size}` +
       `  ${toPercentage(j / contracts.size)}`);
 
+    const start = performance.now();
+
     // eslint-disable-next-line no-await-in-loop
     const [config, input] = await Promise.all([
       await contractService.getConfig(identity),
       await contractService.getInput(identity),
     ]);
 
-    const rOut = await compileContract(
-      identity,
-      config,
-      input,
-      compilerService,
-    );
+    const vInput = services
+      .contractService
+      .validateInput(identity, input);
+
+    if (Result.isFail(vInput)) {
+      console.warn(vInput.value.toString());
+      continue;
+    }
+
+    const vConfig = services
+      .contractService
+      .validateConfig(identity, config);
+
+    if (Result.isFail(vConfig)) {
+      console.warn(vConfig.value.toString());
+      continue;
+    }
+
+    const rOut = await services
+      .compilerService
+      .compile(config, input);
 
     if (save) {
       await services
@@ -141,6 +158,13 @@ export async function processChainContracts(
       console.warn(rVerification.value.toString());
       continue;
     }
+
+    // TODO: log duration
+    // const end = performance.now();
+    // console.log(`  -> completed` +
+    //   `  chainId=${identity.chainId}` +
+    //   `  address=${identity.address}` +
+    //   `  took=${Math.round(end - start).toLocaleString('en-US')}ms`);
 
     const {
       isDirectVerified,

@@ -1,4 +1,5 @@
 import cbor from "cbor";
+import https from "node:https";
 import tmp from 'tmp';
 import cp from 'node:child_process';
 import { toB58String } from "multihashes";
@@ -441,4 +442,61 @@ export function mapGetOrCreate<K, V>(
   const value = create();
   map.set(key, value);
   return value;
+}
+
+/**
+ * TODO: docs
+ * TODO: testing
+ * 
+ * @param uri 
+ * @param filename 
+ * @returns 
+ */
+export function downloadFile(uri: string, filename: string): Promise<void> {
+  return new Promise((res, rej) => _download(
+    uri,
+    filename,
+    (err) => err ? rej(err) : res())
+  );
+}
+
+/**
+ * TODO: docs
+ * TODO: testing
+ * 
+ * @param uri 
+ * @param filename 
+ * @param cb 
+ */
+function _download(
+  uri: string,
+  filename: string,
+  cb: (err?: unknown) => void,
+  redirects = 0,
+) {
+  const url = new URL(uri);
+  // remove ending ":"" from protocool
+  const protocol = url.protocol.slice(0, -1);
+  if (protocol !== 'https' && protocol !== 'http') {
+    throw new Error(`unsupported protocol "${protocol}"`)
+  }
+  https.get(uri, (hres) => {
+    const code = hres.statusCode ?? 500;
+    if ((code >= 200) && (code < 300)) {
+      // response is the file
+      const fws = fs.createWriteStream(filename);
+      fws.on('finish', cb);
+      fws.on('error', cb);
+      hres.pipe(fws);
+    } else if (hres.headers.location) {
+      // response is redirect
+      // follow redirect
+      if (redirects >= 10) {
+        throw new Error(`too many redirects (${redirects})`);
+      }
+      _download(hres.headers.location, filename, cb, redirects += 1);
+    } else {
+      cb(new Error(`Unexpected response: ${code}, ${hres.statusMessage}`));
+    }
+  });
 }
