@@ -24,6 +24,7 @@ export async function handleValidateGitDiffsCommand(
     repo,
     strict,
     verify,
+    verbose,
   } = args;
 
   const token = args.token ?? process.env.GITHUB_TOKEN;
@@ -50,6 +51,10 @@ export async function handleValidateGitDiffsCommand(
     owner,
     repo
   });
+
+  if (verbose) {
+    console.info('diffs:', diffs);
+  }
 
   if (!strict) console.info('loose mode');
 
@@ -102,7 +107,7 @@ export async function handleValidateGitDiffsCommand(
     // assert: no files without inputs or configs
     const withoutConfigOrInput = handleValidateGitDiffsCommand
       .getContractsWithoutConfigOrInput(chains);
-    if (withoutConfigOrInput) {
+    if (withoutConfigOrInput.length) {
       const msg = 'each new contract must include a config and input' +
         ', found the following missing either config or input:' +
         `\n  ${withoutConfigOrInput.flatMap(cntr => cntr.files).join('\n  ')}`;

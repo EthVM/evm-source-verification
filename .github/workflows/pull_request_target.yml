@@ -63,15 +63,14 @@ jobs:
 
       - name: create .env file
         run: |
-          echo "GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}" > .env
-          # cp .env.example .env
-          # sed -i'' "s/^GITHUB_TOKEN=/GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}/" .env
+          # echo "GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}" > .env
+          cp .env.example .env
+          sed -i'' "s/^GITHUB_TOKEN=/GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}/" .env
 
       #  ensure only valid changes have been made
       - name: "base: install, build, test"
         run: |
           npm ci
-          # TODO: comment testing back in
           npm run test
           npm run build
 
@@ -86,6 +85,7 @@ jobs:
             --owner="${{ github.event.pull_request.base.repo.owner.login }}" \
             --head="${{ github.event.pull_request.head.label }}" \
             --base="${{ github.event.pull_request.base.ref }}" \
+            --verbose \
             --strict
 
       # checkout the head now that we've verified it's safe
@@ -105,9 +105,9 @@ jobs:
 
       - name: create .env file
         run: |
-          echo "GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}" > .env
-          # cp .env.example .env
-          # sed -i'' "s/^GITHUB_TOKEN=/GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}/" .env
+          # echo "GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}" > .env
+          cp .env.example .env
+          sed -i'' "s/^GITHUB_TOKEN=/GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}/" .env
 
       - name: "base: install, build, test"
         run: |
@@ -125,4 +125,5 @@ jobs:
             --head="${{ github.event.pull_request.head.label }}" \
             --base="${{ github.event.pull_request.base.ref }}" \
             --strict \
+            --verbose \
             --verify

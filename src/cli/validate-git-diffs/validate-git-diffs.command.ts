@@ -61,6 +61,13 @@ export const registerValidateGitDiffsCommand: Command = (argv) => {
         desc: 'Throw if anything other than contracts have been mutated (added'
           + ', modified, deleted',
       },)
+
+      .demandOption('--verbose')
+      .positional('--verbose', {
+        type: 'boolean',
+        default: false,
+        desc: 'Verbose logging',
+      },)
     ,
     async (args) => {
       const token = args.token ?? process.env.GITHUB_TOKEN;
