@@ -69,22 +69,27 @@ jobs:
         name: "base: record new contracts"
         run: |
           echo "contracts added:"
+          echo "cat 1:"
           cat /tmp/added-contracts
-          echo "::set-output name=CONTRACTS_ADDED::$(cat /tmp/added-contracts)"
+          echo "cat 2:"
+          cat /tmp/added-contracts
+          echo "??? work ???"
+          echo "::set-output name=contracts-added::$(cat /tmp/added-contracts)"
+
 
       - name: echo
         run: |
-          echo "steps.contracts.output.CONTRACTS_ADDED:"
-          echo "${{ steps.contracts.output.CONTRACTS_ADDED }}"
+          echo "steps.contracts.outputs.contracts-added:"
+          echo "${{ steps.contracts.outputs.contracts-added }}"
 
       - name: Create PR
         uses: peter-evans/create-pull-request@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           author: 'EthVMBot <EthVMBot@users.noreply.github.com>'
-          commit-message: 'verified contracts: ${{ steps.contracts.output.CONTRACTS_ADDED }}'
-          branch: 'contracts-${{ steps.contracts.output.CONTRACTS_ADDED }}'
-          title: 'verified contracts: ${{ steps.contracts.output.CONTRACTS_ADDED }}'
+          commit-message: 'verified contracts: ${{ steps.contracts.outputs.contracts-added }}'
+          branch: 'contracts-${{ steps.contracts.outputs.contracts-added }}'
+          title: 'verified contracts: ${{ steps.contracts.outputs.contracts-added }}'
 
       # - id: "contracts"
       #   name: "base: record new contracts"
@@ -96,7 +101,7 @@ jobs:
       #     cat /tmp/contracts-added
 
       #     # https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions
-      #     contracts_added=$(cat /tmp/contracts-added | paste -s -d, -)
+      #     contracts-added=$(cat /tmp/contracts-added | paste -s -d, -)
       #     echo "contracts added (cs):"
       #     echo "$contracts_added"
       #     echo "::set-output name=CONTRACTS_ADDED::$contracts_added"
