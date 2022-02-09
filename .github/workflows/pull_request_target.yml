@@ -67,6 +67,21 @@ jobs:
             --strict \
             --save-additions
 
+      - id: "contracts"
+        name: "base: record new contracts"
+        run: |
+          echo "files added:"
+          cat /tmp/contract-files-added
+
+          echo "contracts added:"
+          cat /tmp/contracts-added
+
+          # https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions
+          contracts_added=$(cat /tmp/contracts-added | paste -s -d, -)
+          echo "contracts added (cs):"
+          echo "$contracts_added"
+          echo "::set-output name=CONTRACTS_ADDED::$contracts_added"
+
       # checkout the head now that we've verified it's safe
       - name: "head: checkout"
         uses: actions/checkout@v2
@@ -102,21 +117,6 @@ jobs:
       #       --verify \
       #       --save-additions
 
-      - id: "contracts"
-        name: "head: cat output files"
-        run: |
-          echo "files added:"
-          cat /tmp/contract-files-added
-
-          echo "contracts added:"
-          cat /tmp/contracts-added
-
-          # https://docs.github.com/en/actions/using-workflows/workflow-commands-for-github-actions
-          contracts_added=$(cat /tmp/contracts-added | paste -s -d, -)
-          echo "contracts added (cs):"
-          echo "$contracts_added"
-          echo "::set-output name=CONTRACTS_ADDED::$contracts_added"
-
       - name: "head: verify & save metadata"
         run: |
           node dist/bin.js \
@@ -131,14 +131,13 @@ jobs:
           git log | tac
           git status
 
-      - uses: EndBug/add-and-commit@v8
+      # - uses: EndBug/add-and-commit@v8
 
-      - name: "re-check git changes"
-        run: |
-          echo "git status:"
-          git log | tac
-          git status
-
+      # - name: "check git changes"
+      #   run: |
+      #     echo "git status:"
+      #     git log | tac
+      #     git status
 
       # https://github.com/marketplace/actions/create-pull-request
       - name: "head: create Pull Request"
@@ -149,4 +148,10 @@ jobs:
           # commit-message: "added contracts: ${{ steps.contracts.outputs.CONTRACTS_ADDED }}"
           token: "${{ secrets.GITHUB_TOKEN }}"
           base: "${{ github.event.pull_request.base.ref }}"
+          branch: 'test/pr'
 
+      - name: "check git changes"
+        run: |
+          echo "git status:"
+          git log | tac
+          git status
