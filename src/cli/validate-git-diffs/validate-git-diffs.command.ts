@@ -30,7 +30,6 @@ export const registerValidateGitDiffsCommand: Command = (argv) => {
       .demandOption('--owner')
       .positional('--owner', {
         type: 'string',
-        demandOption: true,
         desc: 'User/organisation that owns the Repository',
       },)
 
@@ -46,7 +45,6 @@ export const registerValidateGitDiffsCommand: Command = (argv) => {
         desc: 'Destination being compared to (eg destination of a Pull Request)',
       },)
 
-      .demandOption('--strict')
       .positional('--strict', {
         type: 'boolean',
         default: false,
@@ -54,7 +52,6 @@ export const registerValidateGitDiffsCommand: Command = (argv) => {
           + ', modified, deleted',
       },)
 
-      .demandOption('--verify')
       .positional('--verify', {
         type: 'boolean',
         default: false,
@@ -62,11 +59,17 @@ export const registerValidateGitDiffsCommand: Command = (argv) => {
           + ', modified, deleted',
       },)
 
-      .demandOption('--verbose')
       .positional('--verbose', {
         type: 'boolean',
         default: false,
         desc: 'Verbose logging',
+      },)
+
+      .demandOption('--save-additions')
+      .positional('--save-additions', {
+        type: 'boolean',
+        default: false,
+        desc: 'If verification passes, save added files to this file location',
       },)
     ,
     async (args) => {

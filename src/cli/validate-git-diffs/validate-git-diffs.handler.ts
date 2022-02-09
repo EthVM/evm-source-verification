@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import { getOctokit } from "@actions/github";
 import { ValidateGitDiffsCliArgs } from "./validate-git-diffs.types";
 import { getGitDiffs } from "../../libs/git-diffs";
@@ -25,7 +26,16 @@ export async function handleValidateGitDiffsCommand(
     strict,
     verify,
     verbose,
+    saveAdditions,
   } = args;
+
+  console.info(`repo: ${strict}`);
+  console.info(`repo: ${repo}`);
+  console.info(`owner: ${owner}`);
+  console.info(`base: ${base}`);
+  console.info(`head: ${head}`);
+
+  const services = await bootstrap();
 
   const token = args.token ?? process.env.GITHUB_TOKEN;
 
@@ -35,15 +45,7 @@ export async function handleValidateGitDiffsCommand(
     throw new Error(msg);
   }
 
-  const services = await bootstrap();
-
-  const client = getOctokit(token);
-
-  console.info(`repo: ${strict}`);
-  console.info(`repo: ${repo}`);
-  console.info(`owner: ${owner}`);
-  console.info(`base: ${base}`);
-  console.info(`head: ${head}`);
+  const client = getOctokit(token!);
 
   const diffs = await getGitDiffs(client, {
     base,
@@ -90,8 +92,8 @@ export async function handleValidateGitDiffsCommand(
     console.info(`✔️ strict: no non-contract-like filenames`);
   }
 
-  // assert: no contract-like but unknown files
   if (strict) {
+    // assert: no contract-like but unknown files
     const unknownContractLikeFilenames = handleValidateGitDiffsCommand
       .getUnknownContractLikeFilenames(additions, chains);
     if (unknownContractLikeFilenames.length) {
@@ -117,40 +119,45 @@ export async function handleValidateGitDiffsCommand(
     console.info(`✔️ strict: all new contracts have config and input`);
   }
 
-  // looks good
-
   if (!verify) {
     console.info('skipping verification');
-    return;
+  } else {
+    // validate all
+    let contractCount = 0;
+    chains.forEach(chain => { contractCount += chain.contracts.size });
+    if (!contractCount) {
+      console.info('no contracts to verify');
+    } else {
+      // do verify
+      const contractDirnames = Array
+        .from(chains.values())
+        .flatMap(chain => Array
+          .from(chain.contracts.values())
+          .flatMap(contract => contract.dirname));
+
+      console.info(`verifying ${contractCount} contracts:`
+        + `\n  ${contractDirnames
+          .map((contractDirname, idx) => `${idx + 1}. ${contractDirname}`)
+          .join('\n  ')}`);
+
+      await processContracts(
+        chains,
+        services,
+        { failFast: true, save: false, skip: false },
+      );
+    }
   }
-
-  // validate all
-  let contractCount = 0;
-  chains.forEach(chain => { contractCount += chain.contracts.size });
-
-  if (!contractCount) {
-    console.info('no contracts to verify');
-    return;
-  }
-
-  const contractDirnames = Array
-    .from(chains.values())
-    .flatMap(chain => Array
-      .from(chain.contracts.values())
-      .flatMap(contract => contract.dirname));
-
-  console.info(`verifying ${contractCount} contracts:`
-    + `\n  ${contractDirnames
-      .map((contractDirname, idx) => `${idx + 1}. ${contractDirname}`)
-      .join('\n  ')}`);
-
-  await processContracts(
-    chains,
-    services,
-    { failFast: true, save: false, skip: false },
-  );
 
   console.info('✔️ success: all contracts validated');
+
+  if (saveAdditions) {
+    const filename = '/tmp/contract-files-added';
+    const content = additions.join('\n');
+    console.info('saving additions');
+    console.info(`filename: ${filename}`);
+    console.info(`content: ${content}`);
+    await fs.promises.writeFile(filename, content);
+  }
 }
 
 
