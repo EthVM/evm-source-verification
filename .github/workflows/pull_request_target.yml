@@ -62,17 +62,29 @@ jobs:
             --owner="${{ github.event.pull_request.base.repo.owner.login }}" \
             --head="${{ github.event.pull_request.head.label }}" \
             --base="${{ github.event.pull_request.base.ref }}" \
-            --require-contracts
+            --require-contracts \
+            --output-verified-addresses=/tmp/added-contracts
+
+      - id: "contracts"
+        name: "base: record new contracts"
+        run: |
+          echo "contracts added:"
+          cat /tmp/added-contracts
+          echo "::set-output name=CONTRACTS_ADDED::$(cat /tmp/added-contracts)"
+
+      - name: echo
+        run: |
+          echo "steps.contracts.output.CONTACTS_ADDED:"
+          echo "${{ steps.contracts.output.CONTACTS_ADDED }}"
 
       - name: Create PR
         uses: peter-evans/create-pull-request@v3
         with:
-          # token: ${{ secrets.MEW_BOT_TOKEN }}
           token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: 'chore: 👷 verify contracts & generate metadata'
-          branch: chore/generate-metadata
-          # base: develop
-          title: 'chore: 👷 verify contracts & generate metadata'
+          author: EthVMBot <EthVMBot@users.noreply.github.com>
+          commit-message: 'verified contracts: ${{ steps.contracts.output.CONTACTS_ADDED }}'
+          branch: contracts/${{ steps.contracts.output.CONTACTS_ADDED }}
+          title: 'verified contracts: ${{ steps.contracts.output.CONTACTS_ADDED }}'
 
       # - id: "contracts"
       #   name: "base: record new contracts"
