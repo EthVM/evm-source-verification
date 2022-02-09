@@ -27,6 +27,8 @@ jobs:
           echo "base: ${{ github.event.pull_request.base.ref }}"
           echo "head.repo.owner: ${{ github.event.pull_request.head.repo.owner.login }}"
           echo "${{ toJSON(github.event.pull_request) }}"
+          echo "base.label ${{ github.event.pull_request.base.label }}"
+          echo "head.label ${{ github.event.pull_request.head.label }}"
 
       # checkout repo/branch being pushed to
       # https://github.com/actions/checkout
@@ -69,7 +71,7 @@ jobs:
             --token="${{ secrets.GITHUB_TOKEN }}" \
             --owner="${{ github.event.pull_request.repository.owner  }}" \
             --repo="${{ github.event.pull_request.repository.repo }}" \
-            --head="${{ github.event.pull_request.head.repo.owner.login }}:${{ github.event.pull_request.head.ref }}" \
+            --head="${{ github.event.pull_request.head.label }}" \
             --base="${{ github.event.pull_request.base.ref }}"
 
       # checkout the head now that we've verified it's safe
