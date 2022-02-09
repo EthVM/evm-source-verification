@@ -68,18 +68,7 @@ jobs:
       - id: contracts
         name: record new contracts
         run: |
-          echo "contracts added:"
-          echo "cat 1:"
-          cat /tmp/added-contracts
-          echo "cat 2:"
-          cat /tmp/added-contracts
-          echo "??? work ???"
           echo "::set-output name=contracts-added::$(cat /tmp/added-contracts)"
-
-      - name: echo
-        run: |
-          echo "steps.contracts.outputs.contracts-added:"
-          echo "${{ steps.contracts.outputs.contracts-added }}"
 
       # https://github.com/marketplace/actions/create-pull-request
       - id: create-pr
@@ -92,25 +81,36 @@ jobs:
           branch: 'contracts-${{ steps.contracts.outputs.contracts-added }}'
           title: 'verified contracts: ${{ steps.contracts.outputs.contracts-added }}'
           body: |
-            **Verified Contracts**: ${{ steps.contracts.outputs.contracts-added }}
+            **Verified Contracts**:
 
-            Generated from [this Pull Request](${{ github.event.pull_request._links.html.href }})
+            ${{ steps.contracts.outputs.contracts-added }}
 
-      # https://github.com/mshick/add-pr-comment
-      - name: add comment
-        uses: mshick/add-pr-comment@v1
+            Generated from [Pull Request](${{ github.event.pull_request._links.html.href }})
+
+      # # https://github.com/mshick/add-pr-comment
+      # - name: add comment
+      #   uses: mshick/add-pr-comment@v1
+      #   with:
+      #     message: |
+      #       **Congratulations!**
+
+      #       Your contract has been verified and will soon be pulled into the main branch
+
+      #       See [Pull Request ${{ steps.create-pr.outputs.pull-request-number }}](${{ steps.create-pr.outputs.pull-request-url }})
+      #     allow-repeats: true
+      #     repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      # https://github.com/marketplace/actions/close-pull-request
+      - name: close pr
+        uses: superbrothers/close-pull-request@v3
         with:
-          message: |
+          # Optional. Post a issue comment just before closing a pull request.
+          comment: |
             **Congratulations!**
 
             Your contract has been verified and will soon be pulled into the main branch
 
-            See this [Pull Request ${{ steps.create-pr.outputs.pull-request-number }}](${{ steps.create-pr.outputs.pull-request-url }})
-          allow-repeats: true
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-
-      # # https://github.com/marketplace/actions/close-pull-request
-      # - name
+            See [Pull Request ${{ steps.create-pr.outputs.pull-request-number }}](${{ steps.create-pr.outputs.pull-request-url }})
 
       # - id: "contracts"
       #   name: "base: record new contracts"
