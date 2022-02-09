@@ -24,6 +24,7 @@ export async function handleValidateGitDiffsCommand(
     repo,
     strict,
     verify,
+    verbose,
   } = args;
 
   const token = args.token ?? process.env.GITHUB_TOKEN;
@@ -50,6 +51,10 @@ export async function handleValidateGitDiffsCommand(
     owner,
     repo
   });
+
+  if (verbose) {
+    console.info('diffs:', diffs);
+  }
 
   if (!strict) console.info('loose mode');
 
