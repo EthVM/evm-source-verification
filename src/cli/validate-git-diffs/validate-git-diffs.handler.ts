@@ -38,6 +38,7 @@ export async function handleValidateGitDiffsCommand(
 
   const client = getOctokit(token);
 
+  console.info(`repo: ${strict}`);
   console.info(`repo: ${repo}`);
   console.info(`owner: ${owner}`);
   console.info(`base: ${base}`);
@@ -50,6 +51,8 @@ export async function handleValidateGitDiffsCommand(
     repo
   });
 
+  console.info('✔️: loose mode');
+
   if (strict) {
     // assert: only changes were additions
     const nonAdditionFilenames = handleValidateGitDiffsCommand
@@ -59,6 +62,8 @@ export async function handleValidateGitDiffsCommand(
         `\n  ${nonAdditionFilenames.join('\n  ')}`;
       throw new Error(msg);
     }
+
+    console.info(`✔️ strict: no non-additions`);
   }
 
   const additions = diffs.added;
@@ -76,6 +81,8 @@ export async function handleValidateGitDiffsCommand(
         ` found non-contracts:\n  ${nonContractLikeFilenames.join('\n  ')}`;
       throw new Error(msg);
     }
+
+    console.info(`✔️ strict: no non-contract-like filenames`);
   }
 
   // assert: no contract-like but unknown files
@@ -87,6 +94,8 @@ export async function handleValidateGitDiffsCommand(
         ` found contracts:\n  ${unknownContractLikeFilenames.join('\n  ')}`;
       throw new Error(msg);
     }
+
+    console.info(`✔️ strict: no unknown contract-like filenames`);
   }
 
   if (strict) {
@@ -99,13 +108,15 @@ export async function handleValidateGitDiffsCommand(
         `\n  ${withoutConfigOrInput.flatMap(cntr => cntr.files).join('\n  ')}`;
       throw new Error(msg);
     }
+
+    console.info(`✔️ strict: all new contracts have config and input`);
   }
 
   // looks good
-  console.info('success: diff only contains valid additions');
+  console.info('✔️ success: diff only contains valid additions');
 
   if (!verify) {
-    console.info('success: not verifying');
+    console.info('skipping verification');
     return;
   }
 
@@ -135,7 +146,7 @@ export async function handleValidateGitDiffsCommand(
     { failFast: true, save: false, skip: false },
   );
 
-  console.info('success: all contracts validated');
+  console.info('✔️ success: all contracts validated');
 }
 
 

@@ -1,4 +1,4 @@
-name: test
+name: Validate Contracts
 
 on:
   pull_request_target:
@@ -13,7 +13,7 @@ on:
 # ! danger !:
 # https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions#understanding-the-risk-of-script-injections
 jobs:
-  prt:
+  Validate:
     # TODO: if: name PR starts with ...
     runs-on: ubuntu-18.04
     steps:
@@ -49,7 +49,7 @@ jobs:
           git branch -v
           git remote -v
 
-      - name: "install NodeJS"
+      - name: install NodeJS
         uses: actions/setup-node@v2
         with:
           # cache npm dependencies
@@ -72,7 +72,7 @@ jobs:
         run: |
           npm ci
           # TODO: comment testing back in
-          # npm run test
+          npm run test
           npm run build
 
       # https://github.community/t/how-do-you-figure-out-if-a-pr-is-from-a-work-in-pull-request-target-workflows/170001
@@ -85,7 +85,8 @@ jobs:
             --repo="${{ github.event.pull_request.base.repo.name  }}" \
             --owner="${{ github.event.pull_request.base.repo.owner.login }}" \
             --head="${{ github.event.pull_request.head.label }}" \
-            --base="${{ github.event.pull_request.base.ref }}"
+            --base="${{ github.event.pull_request.base.ref }}" \
+            --strict
 
       # checkout the head now that we've verified it's safe
       - name: "head: checkout"
@@ -123,57 +124,5 @@ jobs:
             --owner="${{ github.event.pull_request.base.repo.owner.login }}" \
             --head="${{ github.event.pull_request.head.label }}" \
             --base="${{ github.event.pull_request.base.ref }}" \
+            --strict \
             --verify
-
-
-      # # https://github.com/actions/setup-node
-      # - name: change something
-      #   run: base64 /dev/urandom | head -c 10 | tr -d '\n' >> random.txt
-
-      # # new PR
-      # # https://github.com/marketplace/actions/create-pull-request
-      # # this *shouldn't* work because we're on the pull_request event
-      # # > Note: If you want pull requests created by this action to trigger an
-      # # on: push or on: pull_request workflow then you cannot use the default
-      # # GITHUB_TOKEN. See the documentation here for workarounds.
-      # # https://github.com/peter-evans/create-pull-request/blob/main/docs/concepts-guidelines.md#triggering-further-workflow-runs
-      # - name: Create Pull Request
-      #   uses: peter-evans/create-pull-request@v3
-      #   # with:
-      #   #     base: ${{ github.base_ref }}
-
-
-      # # get added files
-      # - name: get git changes
-      #   uses: lots0logs/gh-action-get-changed-files@2.1.4
-      #   with:
-      #     token: ${{ secrets.GITHUB_TOKEN }}
-
-      # # print changes
-      # - name: 'view changes'
-      #   run: |
-      #       echo "=== files: ==="
-      #       cat ~/files.json
-
-      #       echo "=== added: ==="
-      #       cat ~/files_added.json
-
-      #       echo "=== modified: ==="
-      #       cat ~/files_modified.json
-
-      #       echo "=== removed: ==="
-      #       cat ~/files_removed.json
-
-      # - name: files2
-      #   id: files
-      #   uses: jitterbit/get-changed-files@v1
-
-      # # print changes
-      # - name: view changes 2
-      #   run: |
-      #       for changed_file in ${{ steps.files.outputs.all }}; do
-      #         echo "file: ${changed_file}."
-      #       done
-
-      # fetch origin target
-      # fetch 
