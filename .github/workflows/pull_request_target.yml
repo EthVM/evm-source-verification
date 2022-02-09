@@ -64,7 +64,8 @@ jobs:
             --base="${{ github.event.pull_request.base.ref }}" \
             --require-contracts \
             --verbose \
-            --strict
+            --strict \
+            --save-additions
 
       # checkout the head now that we've verified it's safe
       - name: "head: checkout"
@@ -83,23 +84,23 @@ jobs:
       - name: "head: install, build, test"
         run: |
           npm ci
-          npm run test
+          # npm run test
           npm run build
 
-      - name: "head: re-validate additions"
-        run: |
-          node dist/bin.js \
-            validate-git-diffs \
-            --token=${{ secrets.GITHUB_TOKEN }} \
-            --repo="${{ github.event.pull_request.base.repo.name  }}" \
-            --owner="${{ github.event.pull_request.base.repo.owner.login }}" \
-            --head="${{ github.event.pull_request.head.label }}" \
-            --base="${{ github.event.pull_request.base.ref }}" \
-            --require-contracts \
-            --strict \
-            --verbose \
-            --verify \
-            --save-additions
+      # - name: "head: re-validate additions"
+      #   run: |
+      #     node dist/bin.js \
+      #       validate-git-diffs \
+      #       --token=${{ secrets.GITHUB_TOKEN }} \
+      #       --repo="${{ github.event.pull_request.base.repo.name  }}" \
+      #       --owner="${{ github.event.pull_request.base.repo.owner.login }}" \
+      #       --head="${{ github.event.pull_request.head.label }}" \
+      #       --base="${{ github.event.pull_request.base.ref }}" \
+      #       --require-contracts \
+      #       --strict \
+      #       --verbose \
+      #       --verify \
+      #       --save-additions
 
       - id: "contracts"
         name: "head: cat output files"
@@ -116,7 +117,7 @@ jobs:
           echo "$contracts_added"
           echo "::set-output name=CONTRACTS_ADDED::$contracts_added"
 
-      - name: "head: save metadata"
+      - name: "head: verify & save metadata"
         run: |
           node dist/bin.js \
             verify \
@@ -129,6 +130,7 @@ jobs:
         uses: peter-evans/create-pull-request@v3
         with:
           # author: "EthVM Bot"
-          branch: "verified/${{ steps.contracts.outputs.CONTRACTS_ADDED }}"
-          commit-message: "added contracts: ${{ steps.contracts.outputs.CONTRACTS_ADDED }}"
+          # branch: "verified/${{ steps.contracts.outputs.CONTRACTS_ADDED }}"
+          # commit-message: "added contracts: ${{ steps.contracts.outputs.CONTRACTS_ADDED }}"
+          token: "${{ secrets.GITHUB_TOKEN }}"
 
