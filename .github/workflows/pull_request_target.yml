@@ -17,22 +17,6 @@ jobs:
     # TODO: if: name PR starts with ...
     runs-on: ubuntu-18.04
     steps:
-      - name: echo
-        run: |
-          echo "repo_name: ${{ github.event.pull_request.base.repo.name  }}"
-          echo "repo_owner: ${{ github.event.pull_request.base.repo.owner.login }}"
-          echo "head_label: ${{ github.event.pull_request.head.label }}"
-          echo "base_ref: ${{ github.event.pull_request.base.ref }}"
-          echo "----------------------------------"
-          echo "head_ref_2: ${{ github.head_ref }}"
-          echo "base_ref_2: ${{ github.base_ref }}"
-          echo "----------------------------------"
-          echo "GITHUB_WORKSPACE: $GITHUB_WORKSPACE"
-          echo "----------------------------------"
-          echo "repo: ${{ github.event.pull_request.base.label }}"
-          echo "clone_url: ${{ github.event.pull_request.base.repo.clone_url }}"
-          echo "ref: ${{ github.base_ref }}"
-
       # checkout repo/branch being pushed to
       # https://github.com/actions/checkout
       - name: "base: checkout"
@@ -42,12 +26,6 @@ jobs:
           repository: ${{ github.event.pull_request.base.repo.full_name }}
           # branch
           ref: ${{ github.event.pull_request.base.ref }}
-
-      - name: "base: git whoami"
-        run: |
-          git status
-          git branch -v
-          git remote -v
 
       - name: install NodeJS
         uses: actions/setup-node@v2
@@ -63,7 +41,6 @@ jobs:
 
       - name: create .env file
         run: |
-          # echo "GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}" > .env
           cp .env.example .env
           sed -i'' "s/^GITHUB_TOKEN=/GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}/" .env
 
@@ -97,15 +74,8 @@ jobs:
           # branch
           ref: ${{ github.event.pull_request.head.ref }}
 
-      - name: "head: git whoami"
-        run: |
-          git status
-          git branch -v
-          git remote -v
-
       - name: create .env file
         run: |
-          # echo "GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}" > .env
           cp .env.example .env
           sed -i'' "s/^GITHUB_TOKEN=/GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}/" .env
 
@@ -124,6 +94,18 @@ jobs:
             --owner="${{ github.event.pull_request.base.repo.owner.login }}" \
             --head="${{ github.event.pull_request.head.label }}" \
             --base="${{ github.event.pull_request.base.ref }}" \
+            --save-additions \
             --strict \
             --verbose \
             --verify
+
+      - name: "todo"
+        run: cat /tmp/contract-files-added
+
+      # create metadata
+
+      # - name: Create Pull Request
+      #   uses: peter-evans/create-pull-request@v3
+
+
+      # create PR

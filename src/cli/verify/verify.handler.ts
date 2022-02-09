@@ -55,7 +55,7 @@ export async function handleVerifyCommand(args: VerifyCliArgs): Promise<void> {
   }
 
   // success
-  process.exit(0);
+  console.info('✔ success: verify complete');
 }
 
 
