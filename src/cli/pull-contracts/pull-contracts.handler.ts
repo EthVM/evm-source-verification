@@ -145,12 +145,16 @@ export async function pullContractsCommand(
   console.info(`✔️ success: ${contractCount} contracts validated`);
 
   if (outputVerifiedAddresses) {
+    // <chainId>.<address>,<address> <chainId><address>...
     const commaSeparatedContracts = Array
       .from(chains.values())
-      .flatMap(chain => Array
+      .map(chain => `${chain.id}.${Array
         .from(chain.contracts.values())
-        .flatMap(contract => contract.address))
-        .join(',')
+        .map(contract => contract.address)
+        .join(',')}`
+      )
+      .join(' ')
+
 
     console.info(`saving processed contracts` +
       `\n  to: "${outputVerifiedAddresses}"` +

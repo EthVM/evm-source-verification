@@ -65,8 +65,8 @@ jobs:
             --require-contracts \
             --output-verified-addresses=/tmp/added-contracts
 
-      - id: "contracts"
-        name: "base: record new contracts"
+      - id: contracts
+        name: record new contracts
         run: |
           echo "contracts added:"
           echo "cat 1:"
@@ -76,13 +76,14 @@ jobs:
           echo "??? work ???"
           echo "::set-output name=contracts-added::$(cat /tmp/added-contracts)"
 
-
       - name: echo
         run: |
           echo "steps.contracts.outputs.contracts-added:"
           echo "${{ steps.contracts.outputs.contracts-added }}"
 
-      - name: Create PR
+      # https://github.com/marketplace/actions/create-pull-request
+      - id: create-pr
+        name: create pr
         uses: peter-evans/create-pull-request@v3
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -90,15 +91,26 @@ jobs:
           commit-message: 'verified contracts: ${{ steps.contracts.outputs.contracts-added }}'
           branch: 'contracts-${{ steps.contracts.outputs.contracts-added }}'
           title: 'verified contracts: ${{ steps.contracts.outputs.contracts-added }}'
+          body: |
+            **Verified Contracts**: ${{ steps.contracts.outputs.contracts-added }}
 
-      - uses: mshick/add-pr-comment@v1
+            Generated from [this Pull Request](${{ github.event.pull_request._links.html.href }})
+
+      # https://github.com/mshick/add-pr-comment
+      - name: add comment
+        uses: mshick/add-pr-comment@v1
         with:
           message: |
             **Congratulations!**
 
             Your contract has been verified and will soon be pulled into the main branch
+
+            See this [Pull Request ${{ steps.create-pr.outputs.pull-request-number }}](${{ steps.create-pr.outputs.pull-request-url }})
           allow-repeats: true
           repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      # # https://github.com/marketplace/actions/close-pull-request
+      # - name
 
       # - id: "contracts"
       #   name: "base: record new contracts"
@@ -172,7 +184,6 @@ jobs:
       # #     git log | tac
       # #     git status
 
-      # # https://github.com/marketplace/actions/create-pull-request
       # - name: "head: create Pull Request"
       #   uses: peter-evans/create-pull-request@v3
       #   with:
