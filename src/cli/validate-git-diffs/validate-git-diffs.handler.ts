@@ -107,7 +107,7 @@ export async function handleValidateGitDiffsCommand(
     // assert: no files without inputs or configs
     const withoutConfigOrInput = handleValidateGitDiffsCommand
       .getContractsWithoutConfigOrInput(chains);
-    if (withoutConfigOrInput) {
+    if (withoutConfigOrInput.length) {
       const msg = 'each new contract must include a config and input' +
         ', found the following missing either config or input:' +
         `\n  ${withoutConfigOrInput.flatMap(cntr => cntr.files).join('\n  ')}`;
