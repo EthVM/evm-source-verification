@@ -6,5 +6,5 @@ export interface PullContractsCliArgs {
   base: string;
   head: string;
   requireContracts: boolean;
-  verifiedAddresses?: string;
+  outputVerifiedAddresses?: string;
 }
