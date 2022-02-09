@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 // TODO: resolve circular import
 // eslint-disable-next-line import/no-cycle
-import { fabs, fexists, toBN, writeJsonFile } from "../libs/utils";
+import { fabs, fexists, toBN, writeJSONFile } from "../libs/utils";
 import {
   ContractConfig,
   ContractInput,
@@ -366,7 +366,7 @@ export class ContractService implements IContractService {
     identity: ContractIdentity,
     metadata: VerifiedMetadata,
   ): Promise<void> {
-    await writeJsonFile(
+    await writeJSONFile(
       this.getMetadataFilename(identity),
       metadata,
       { pretty: true },

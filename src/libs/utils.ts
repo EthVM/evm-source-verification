@@ -205,20 +205,31 @@ export function hasOwn(
 }
 
 /**
+ * Read a UTF8 file from the filesystem
+ *
+ * @param filename  filename to read from the filesystem
+ * @returns         the json object or undefined if the file was not found
+ */
+export function readUTF8File(filename: string): Promise<undefined | string> {
+  return fs
+    .promises
+    .readFile(filename, 'utf-8')
+    .catch((err: NodeJS.ErrnoException) => {
+      if (err && err.code !== 'ENOENT') throw err;
+      return undefined;
+    });
+}
+
+/**
  * Read a JSON file from the filesystem
  *
  * @param filename  filename to read from the filesystem
  * @returns         the json object or undefined if the file was not found
  */
-export function readJsonFile<T>(filename: string): Promise<undefined | T> {
-  return fs
-    .promises
-    .readFile(filename, 'utf-8')
-    .then(raw => JSON.parse(raw) as T)
-    .catch((err: NodeJS.ErrnoException) => {
-      if (err && err.code !== 'ENOENT') throw err;
-      return undefined;
-    });
+export function readJSONFile<T>(filename: string): Promise<undefined | T> {
+  return readUTF8File(filename).then((str) => str === undefined
+    ? str
+    : JSON.parse(str) as T);
 }
 
 /**
@@ -229,7 +240,7 @@ export function readJsonFile<T>(filename: string): Promise<undefined | T> {
  * @param options
  * @returns
  */
-export function writeJsonFile(
+export function writeJSONFile(
   filename: string,
   // eslint-disable-next-line @typescript-eslint/ban-types
   contents: object | unknown[],

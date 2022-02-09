@@ -3,9 +3,10 @@ import { Result } from "@nkp/result";
 import { toPercentage } from '@nkp/percentage';
 import Web3 from "web3";
 import { saveContract } from "./contracts.save";
-import { ChainId, ContractIdentity } from "../types";
+import { ChainId, CompiledOutput, ContractConfig, ContractIdentity, ContractInput } from "../types";
 import { IServices } from "../bootstrap";
 import { MatchedChains, MatchedContracts } from "../services/contract.service";
+import { ymdhms } from './utils';
 
 export interface ProcessContractsOptions {
   save: boolean;
@@ -54,7 +55,6 @@ export async function processChainContracts(
   const {
     contractService,
     verificationService,
-    compilerService,
     nodeService,
   } = services;
 
@@ -105,17 +105,40 @@ export async function processChainContracts(
     const start = performance.now();
 
     // eslint-disable-next-line no-await-in-loop
-    const [config, input] = await Promise.all([
-      await contractService.getConfig(identity),
-      await contractService.getInput(identity),
-    ]);
+    let config: ContractConfig;
+    let input: ContractInput;
+    try {
+      ([config, input] = await Promise.all([
+        await contractService.getConfig(identity),
+        await contractService.getInput(identity),
+      ]));
+    } catch (err) {
+      // failed to get config or input
+      const date = ymdhms()
+      const msg = `[${date}] (${j})` +
+        ` ${identity.chainId}` +
+        ` ${identity.address}` +
+        ` errored: ${(err as Error).toString()}`;
+      await services.stateService.addLog(identity, 'error', msg);
+      if (failFast) throw err;
+      else console.warn(msg);
+      continue;
+    }
 
     const vInput = services
       .contractService
       .validateInput(identity, input);
 
     if (Result.isFail(vInput)) {
-      console.warn(vInput.value.toString());
+      // failed to get input
+      const date = ymdhms()
+      const msg = `[${date}] (${j})` +
+        ` ${identity.chainId}` +
+        ` ${identity.address}` +
+        ` input validation failed: ${vInput.value.toString()}`;
+      await services.stateService.addLog(identity, 'error', msg);
+      if (failFast) throw vInput.value;
+      else console.warn(msg);
       continue;
     }
 
@@ -124,13 +147,22 @@ export async function processChainContracts(
       .validateConfig(identity, config);
 
     if (Result.isFail(vConfig)) {
-      console.warn(vConfig.value.toString());
+      // failed to get config
+      const date = ymdhms()
+      const msg = `[${date}] (${j})` +
+        ` ${identity.chainId}` +
+        ` ${identity.address}` +
+        ` config validation failed: ${vConfig.value.toString()}`;
+      await services.stateService.addLog(identity, 'error', msg);
+      if (failFast) throw vConfig.value;
+      else console.warn(msg);
       continue;
     }
 
     const rOut = await services
       .compilerService
-      .compile(config, input);
+      .compile(config, input)
+      .catch((err: Error) => Result.fail(err));
 
     if (save) {
       await services
@@ -139,54 +171,62 @@ export async function processChainContracts(
     }
 
     if (Result.isFail(rOut)) {
-      // fail early
+      // failed to compile
+      const date = ymdhms()
+      const msg = `[${date}] (${j})` +
+        ` ${identity.chainId}` +
+        ` ${identity.address}` +
+        ` compilation failed: ${(rOut.value as Error).toString()}`;
+      await services.stateService.addLog(identity, 'error', msg);
       if (failFast) throw rOut.value;
-      // log & go to next contract
-      console.warn(rOut.value.toString());
+      else console.warn(msg);
       continue;
     }
 
-    const rVerification = await verificationService.verify(
-      rOut.value,
-      config,
-    );
+    const rVer = await verificationService
+      .verify(rOut.value, config)
+      .catch((err: Error) => Result.fail(err));
 
-    if (Result.isFail(rVerification)) {
-      // fail early
-      if (failFast) throw rVerification.value;
-      // log & go to next contract
-      console.warn(rVerification.value.toString());
+    if (Result.isFail(rVer)) {
+      // failed to verify
+      const date = ymdhms()
+      const msg = `[${date}] (${j})` +
+        ` ${identity.chainId}` +
+        ` ${identity.address}` +
+        ` verification failed: ${(rVer.value as Error).toString()}`;
+      await services.stateService.addLog(identity, 'error', msg);
+      if (failFast) throw rVer.value;
+      else console.warn(msg);
       continue;
     }
-
-    // TODO: log duration
-    // const end = performance.now();
-    // console.log(`  -> completed` +
-    //   `  chainId=${identity.chainId}` +
-    //   `  address=${identity.address}` +
-    //   `  took=${Math.round(end - start).toLocaleString('en-US')}ms`);
 
     const {
       isDirectVerified,
       isOpCodeVerified,
       isRuntimeVerified,
-    } = rVerification.value
+    } = rVer.value
 
     if (!isRuntimeVerified && !isOpCodeVerified) {
-      // failed
-      const msg = `contract is not verified` +
+      // - is not verified -
+      const date = ymdhms()
+      const msg = `[${date}] (${j})` +
+        ` ${identity.chainId}` +
+        ` ${identity.address}` +
+        ` contract is not verified` +
         `  chainid=${chainId}` +
         `  address=${contract.address}` +
         `  isDirectVerified=${isDirectVerified}` +
         `  isRuntimeVerified=${isRuntimeVerified}` +
         `  isOpCodeVerified=${isOpCodeVerified}`
+      await services.stateService.addLog(identity, 'error', msg);
       if (failFast) throw new Error(msg);
-      console.warn(msg);
+      else console.warn(msg);
+      continue;
     }
 
     if (save) {
       await saveContract(
-        rVerification.value,
+        rVer.value,
         identity,
         services,
       );

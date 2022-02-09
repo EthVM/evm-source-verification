@@ -1,4 +1,4 @@
-name: Validate Contracts
+name: Pull Contracts
 
 on:
   pull_request_target:
@@ -8,7 +8,9 @@ on:
       - reopened
       - edited
     branches:
-      - devop/gha
+      - main
+    paths:
+      - ./contracts/*/**
 
 # ! danger !:
 # https://docs.github.com/en/actions/security-guides/security-hardening-for-github-actions#understanding-the-risk-of-script-injections
@@ -22,9 +24,9 @@ jobs:
       - name: "base: checkout"
         uses: actions/checkout@v2
         with:
-          # owner / repo
+          # owner / repo (EthVM/evm-soruce-verification)
           repository: ${{ github.event.pull_request.base.repo.full_name }}
-          # branch
+          # branch (main)
           ref: ${{ github.event.pull_request.base.ref }}
 
       - name: install NodeJS
@@ -39,13 +41,13 @@ jobs:
       - name: set NPM version
         run: npm i -g npm@6.14.16
 
-      - name: "base: create .env file"
+      - name: "create .env file"
         run: |
           cp .env.example .env
           sed -i'' "s/^GITHUB_TOKEN=/GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}/" .env
 
       #  ensure only valid changes have been made
-      - name: "base: install, build, test"
+      - name: "install, build, test"
         run: |
           npm ci
           npm run test
@@ -53,7 +55,7 @@ jobs:
 
       # https://github.community/t/how-do-you-figure-out-if-a-pr-is-from-a-work-in-pull-request-target-workflows/170001
       # https://docs.github.com/en/rest/reference/repos#get-a-repository
-      - name: "validate contract additions"
+      - name: "pull, validate and generate metadata"
         run: |
           node dist/bin.js \
             pull-contracts \
