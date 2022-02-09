@@ -50,6 +50,11 @@ export const registerPullContractsCommand: Command = (argv) => {
         default: false,
         desc: 'Error if no contracts are added',
       },)
+
+      .positional('--output-verified-addresses', {
+        type: 'string',
+        desc: 'File to place a comma separated list of verified contract addresses',
+      },)
     ,
     async (args) => {
       const token = args.token ?? process.env.GITHUB_TOKEN;

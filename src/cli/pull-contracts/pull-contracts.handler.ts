@@ -17,7 +17,7 @@ import { downloadFile } from '../../libs/utils';
  * @param args
  */
 export async function pullContractsCommand(
-  args: Required<PullContractsCliArgs>,
+  args: PullContractsCliArgs,
 ): Promise<void> {
   const {
     base,
@@ -25,6 +25,7 @@ export async function pullContractsCommand(
     owner,
     repo,
     requireContracts,
+    outputVerifiedAddresses,
   } = args;
 
   console.info(`repo: ${repo}`);
@@ -142,6 +143,21 @@ export async function pullContractsCommand(
   );
 
   console.info(`✔️ success: ${contractCount} contracts validated`);
+
+  if (outputVerifiedAddresses) {
+    const commaSeparatedContracts = Array
+      .from(chains.values())
+      .flatMap(chain => Array
+        .from(chain.contracts.values())
+        .flatMap(contract => contract.address))
+        .join(',')
+
+    console.info(`saving processed contracts` +
+      `\n  to: "${outputVerifiedAddresses}"` +
+      `\n  content: ${commaSeparatedContracts}`)
+
+    await fs.promises.writeFile(outputVerifiedAddresses, commaSeparatedContracts);
+  }
 }
 
 
