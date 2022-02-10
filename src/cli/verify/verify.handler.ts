@@ -1,9 +1,9 @@
 import fs from "node:fs";
 import { VerifyCliArgs } from "./verify.types";
-import { processChainContracts, processContracts } from "../../libs/contracts.process";
 import { bootstrap, IServices } from "../../bootstrap";
 import { Address, ChainId } from "../../types";
 import { toBN } from "../../libs/utils";
+import { processChainContracts, processContracts } from "../../libs/contracts.process";
 
 interface VerifyCliOptions {
   save: boolean;

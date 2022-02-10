@@ -42,7 +42,7 @@ export async function handleMetadataCommand(argv: CompileCliArgs): Promise<void>
   }
 
   // compile based on the options given
-  let output: undefined | Result<VerifyContractResult, Error>;
+  let output: undefined | VerifyContractResult;
 
   if (address) {
     // compile from identity
@@ -71,10 +71,7 @@ export async function handleMetadataCommand(argv: CompileCliArgs): Promise<void>
   // something went wrong with options
   if (!output) throw new Error('invalid options');
 
-  // failed
-  if (Result.isFail(output)) throw output.value;
-
-  const metadtata = getMetadata(output.value);
+  const metadtata = getMetadata(output);
 
   const json = pretty
     ? JSON.stringify(metadtata, null, 2)
@@ -129,7 +126,7 @@ async function compileFromConfigAndInput(
   chainId: ChainId,
   configFilename: string,
   inputFilename: string,
-): Promise<Result<VerifyContractResult, Error>> {
+): Promise<VerifyContractResult> {
   const services = await bootstrap();
 
   const [jconfig, jinput] = await Promise.all([
@@ -137,18 +134,19 @@ async function compileFromConfigAndInput(
     readJSONFile<ContractInput>(fabs(inputFilename)),
   ]);
 
-  if (!jinput) return Result.fail(Error(`input file "${inputFilename}" not found`));
-  if (!jconfig) return Result.fail(Error(`config file "${configFilename}" not found`));
+  if (!jinput)
+    throw new Error(`input file "${inputFilename}" not found`);
+
+  if (!jconfig)
+    throw new Error(`config file "${configFilename}" not found`);
 
   const output = await services.compilerService.compile(jconfig, jinput);
-
-  if (Result.isFail(output)) return output;
 
   const verify = await verifyOutput(
     chainId,
     services,
     jconfig,
-    output.value
+    output,
   );
 
   return verify;
@@ -165,7 +163,7 @@ async function compileFromConfigAndInput(
 async function compileFromDirectory(
   chainId: ChainId,
   dir: string,
-): Promise<Result<VerifyContractResult, Error>> {
+): Promise<VerifyContractResult> {
   const services = await bootstrap();
 
   const { configBasename, inputBasename, } = services.contractService;
@@ -178,18 +176,19 @@ async function compileFromDirectory(
     readJSONFile<ContractInput>(inputFilename),
   ]);
 
-  if (!jconfig) return Result.fail(Error(`config file ${configBasename} not found in "${dir}"`));
-  if (!jinput) return Result.fail(Error(`input file "${inputBasename}" not found in "${dir}"`));
+  if (!jconfig)
+    throw new Error(`config file ${configBasename} not found in "${dir}"`);
+
+  if (!jinput)
+    throw new Error(`input file "${inputBasename}" not found in "${dir}"`);
 
   const output = await services.compilerService.compile(jconfig, jinput);
-
-  if (Result.isFail(output)) return output;
 
   const verify = await verifyOutput(
     chainId,
     services,
     jconfig,
-    output.value
+    output,
   );
 
   return verify;
@@ -204,7 +203,7 @@ async function compileFromDirectory(
  */
 async function compileFromIdentity(
   identity: ContractIdentity
-): Promise<Result<VerifyContractResult, Error>> {
+): Promise<VerifyContractResult> {
   const services = await bootstrap();
 
   const [jconfig, jinput] = await Promise.all([
@@ -216,13 +215,11 @@ async function compileFromIdentity(
     .compilerService
     .compile(jconfig, jinput);
 
-  if (Result.isFail(output)) return output;
-
   const verify = await verifyOutput(
     identity.chainId,
     services,
     jconfig,
-    output.value
+    output,
   );
 
   return verify;
@@ -233,7 +230,7 @@ async function verifyOutput(
   services: IServices,
   config: ContractConfig,
   output: CompiledOutput,
-): Promise<Result<VerifyContractResult, Error>> {
+): Promise<VerifyContractResult> {
   const result = await services
     .verificationService
     .verify(output, config);

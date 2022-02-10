@@ -1,4 +1,3 @@
-import { Result } from "@nkp/result";
 import { hasOwn, toBN } from "../libs/utils";
 import { directVerification, opCodeCodeVerification, runtimeCodeVerification } from "../libs/verifications";
 import { CompiledOutput, ContractConfig, ContractSourceFile, ContractSourceObject } from "../types";
@@ -20,7 +19,7 @@ export interface IVerificationService {
   verify(
     output: CompiledOutput,
     config: ContractConfig,
-  ): Promise<Result<VerifyContractResult, Error>>;
+  ): Promise<VerifyContractResult>;
 }
 
 
@@ -34,6 +33,7 @@ export interface VerifyContractResult {
   mainSrcFile: ContractSourceFile;
   mainSrcObj: ContractSourceObject;
   liveCode: string;
+  compiler: string;
 }
 
 
@@ -53,14 +53,14 @@ export class VerificationService implements IVerificationService {
   async verify(
     output: CompiledOutput,
     config: ContractConfig,
-  ): Promise<Result<VerifyContractResult, Error>> {
+  ): Promise<VerifyContractResult> {
     const { address, chainId: cChainId, name } = config;
 
     const chainId = toBN(cChainId).toNumber();
 
     const web3 = await this.nodeService.getWeb3({ chainId });
 
-    if (!web3) return Result.fail(new Error(`unsupported chainId: ${chainId}`))
+    if (!web3) throw new Error(`unsupported chainId: ${chainId}`);
 
     // search the solidity compiled json output for the file containing the
     // main contract
@@ -74,7 +74,7 @@ export class VerificationService implements IVerificationService {
         `  chainid=${chainId}` +
         `  address=${address}` +
         `  contractName=${name}`
-      return Result.fail(new Error(msg));
+      throw new Error(msg);
     }
 
     const mainSrcObj = mainSrcFile[name];
@@ -88,7 +88,7 @@ export class VerificationService implements IVerificationService {
         `  chainid=${chainId}` +
         `  address=${address}` +
         `  contractName=${name}`;
-      return Result.fail(new Error(msg));
+      throw new Error(msg);
     }
 
     const isDirectVerified = directVerification(liveCode, compiledCode);
@@ -96,6 +96,7 @@ export class VerificationService implements IVerificationService {
     const isOpCodeVerified = opCodeCodeVerification(liveCode, compiledCode);
 
     const result: VerifyContractResult = {
+      compiler: config.compiler,
       isDirectVerified,
       isOpCodeVerified,
       isRuntimeVerified,
@@ -104,6 +105,6 @@ export class VerificationService implements IVerificationService {
       mainSrcObj,
     };
 
-    return Result.success(result);
+    return result;
   }
 }

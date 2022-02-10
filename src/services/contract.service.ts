@@ -189,7 +189,7 @@ export interface IContractService {
    * @param identity 
    * @param config 
    */
-  validateConfig(identity: ContractIdentity, config: ContractConfig): Result<void, Error>;
+  validateConfig(identity: ContractIdentity, config: ContractConfig): void;
 
 
   /**
@@ -198,7 +198,7 @@ export interface IContractService {
    * @param identity 
    * @param input 
    */
-  validateInput(identity: ContractIdentity, input: ContractInput): Result<void, Error>;
+  validateInput(identity: ContractIdentity, input: ContractInput): void;
 }
 
 
@@ -494,7 +494,7 @@ export class ContractService implements IContractService {
 
   /** @see IContractService.validateConfig */
   // eslint-disable-next-line class-methods-use-this
-  validateConfig(identity: ContractIdentity, config: ContractConfig): Result<void, Error> {
+  validateConfig(identity: ContractIdentity, config: ContractConfig): void {
     const {
       chainId,
       address,
@@ -508,40 +508,37 @@ export class ContractService implements IContractService {
     } = config;
 
     if (!cname)
-      return Result.fail(new Error(`config of chainId=${chainId},` +
-        ` address=${address} has no name`));
+      throw new Error(`config of chainId=${chainId},` +
+        ` address=${address} has no name`);
 
     if (!caddress)
-      return Result.fail(new Error(`config of chainId=${chainId},` +
-        ` address=${address} has no address`));
+      throw new Error(`config of chainId=${chainId},` +
+        ` address=${address} has no address`);
 
     if (!cchainId)
-      return Result.fail(new Error(`config of chainId=${chainId},` +
-        ` address=${address} has no chainId`));
+      throw new Error(`config of chainId=${chainId},` +
+        ` address=${address} has no chainId`);
 
     if (!ccompiler)
-      return Result.fail(new Error(`config of chainId=${chainId},` +
-        ` address=${address} has no compiler`));
+      throw new Error(`config of chainId=${chainId},` +
+        ` address=${address} has no compiler`);
 
     // validate identity
 
     if (caddress !== address)
-      return Result.fail(new Error(`addresses of chainId=${chainId},` +
-        ` address=${address} do not match`));
+      throw new Error(`addresses of chainId=${chainId},` +
+        ` address=${address} do not match`);
 
     if (toBN(cchainId).toNumber() !== chainId)
-      return Result.fail(new Error(`chainIds of of chainId=${chainId},` +
-        ` address=${address} do not match`));
-
-    return Result.success(undefined);
+      throw new Error(`chainIds of of chainId=${chainId},` +
+        ` address=${address} do not match`);
   }
 
 
   /** @see IContractService.validateInput */
   // eslint-disable-next-line class-methods-use-this
-  validateInput(identity: ContractIdentity, input: ContractInput): Result<void, Error> {
+  validateInput(identity: ContractIdentity, input: ContractInput): void {
     // TODO
-    return Result.success(undefined);
   }
 
 

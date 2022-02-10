@@ -17,7 +17,30 @@ export interface ICompilerService {
   compile(
     config: ContractConfig,
     input: ContractInput,
-  ): Promise<Result<CompiledOutput, Error>>;
+  ): Promise<CompiledOutput>;
+
+  /**
+   * Is this compiler supported?
+   *
+   * @param compilername    name of the compiler
+   * @returns               whether this compiler is supported
+   */
+  isSupported(compilername: string): boolean;
+
+  /**
+   * Get the type of the compiler
+   *
+   * @param compilername    name of the compiler
+   * @returns               type of the compiler
+   */
+  getCompilerType(compilername: string): CompilerType;
+}
+
+// eslint-disable-next-line no-shadow
+export enum CompilerType {
+  Solidity,
+  Vyper,
+  Unknown,
 }
 
 /**
@@ -34,29 +57,49 @@ export class CompilerService implements ICompilerService {
     this.solidity = solidity;
   }
 
+  /** {@link ICompilerService.isSupported} */
+  // eslint-disable-next-line class-methods-use-this
+  isSupported(compilername: string): boolean {
+    const type = this.getCompilerType(compilername);
+    if (type === CompilerType.Solidity) return true;
+    return false;
+  }
+
+  /** {@link ICompilerService.getCompilerType} */
+  // eslint-disable-next-line class-methods-use-this
+  getCompilerType(compilername: string): CompilerType {
+    // TODO: improve this
+    const type = compilername.includes('vyper')
+      ? CompilerType.Vyper
+      : CompilerType.Solidity;
+    return type;
+  }
+
 
   /** {@link ICompilerService.compile} */
   async compile(
     config: ContractConfig,
     input: ContractInput,
-  ): Promise<Result<CompiledOutput, Error>> {
+  ): Promise<CompiledOutput> {
     const { compiler, } = config;
 
-    // TODO: other types
-    // TODO: better validation
-    const type = compiler.includes('vyper') ? 'vyper' : 'solidity';
+    const type = this.getCompilerType(compiler);
 
+    if (!this.isSupported(compiler)) {
+      throw new Error(`unsupported compiler ${compiler}`);
+    }
+    
     // is solidity compiler
     switch (type) {
-      case 'solidity': {
+      case CompilerType.Solidity: {
         const output = await this.solidity.compile(
           compiler,
           input,
         );
-        return Result.success(output);
+        return output;
       }
       default:
-        return Result.fail(new Error(`unsupported compiler: ${type}`));
+        throw new Error('something went wrong');
     }
   }
 }

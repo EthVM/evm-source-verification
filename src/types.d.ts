@@ -68,6 +68,7 @@ interface HashList {
  */
 export interface VerifiedMetadata {
   abi: any[];
+  compiler: string;
   opcodeHash: string;
   runtimeHash: string;
   metalessHash: string;
