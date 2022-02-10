@@ -1,11 +1,13 @@
 import { getOctokit } from "@actions/github";
+import { components } from "@octokit/openapi-types";
 
 // TODO: test
 describe('diffs', () => {
   it('todo: should work', async () => {
     // Create GitHub client with the API token.
+    // TODO
     const token = process.env.GITHUB_TOKEN!;
-    const client = getOctokit(token);
+    // const client = getOctokit(token);
 
     // https://api.github.com/repos/octocat/linguist/compare/master...octo-org:master
     try {

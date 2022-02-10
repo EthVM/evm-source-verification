@@ -5,7 +5,9 @@ const config: InitialOptionsTsJest = {
   preset: "ts-jest",
   rootDir: "../",
   testEnvironment: "node",
-  testPathIgnorePatterns: ['./dist'],
+  // testPathIgnorePatterns: ['<rootDir>/dist', '<rootDir>/contracts', '<rootDir>/compilers'],
+  testPathIgnorePatterns: ['<rootDir>/dist',],
+  watchPathIgnorePatterns: ['<rootDir>/dist', '<rootDir>/contracts', '<rootDir>/compilers'],
   // moduleNameMapper: {
   //   "^@src/(.*)$": "<rootDir>/src/$1",
   // },

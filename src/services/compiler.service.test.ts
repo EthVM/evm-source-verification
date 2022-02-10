@@ -31,9 +31,7 @@ describe('CompilerService', () => {
       ]);
 
       const out = await compilerService.compile(config, input);
-      if (Result.isFail(out)) throw out.value;
-
-      expect(out.value).toEqual(expected);
+      expect(out).toEqual(expected);
     }
   }, count * SOLIDITY_COMPILE_TIMEOUT);
 });

@@ -16,7 +16,6 @@ import readline from 'node:readline';
 import path from 'node:path';
 import fs from 'node:fs';
 import { delay } from '@nkp/delay';
-import { Result } from '@nkp/result';
 import { TestCase } from './test-case';
 import { ICompilerService } from '../../src/services/compiler.service';
 import { IVerificationService } from '../../src/services/verification.service';
@@ -171,16 +170,14 @@ async function rebuildTestCase(
     `  name="${config.name}"` +
     `  compiler="${config.compiler}"`);
   const output = await compilerService.compile(config, input)
-  if (Result.isFail(output)) throw output.value;
 
-  const verification = await verificationService.verify(output.value, config);
-  if (Result.isFail(verification)) throw verification.value;
-  const metadata = getMetadata(verification.value);
+  const verification = await verificationService.verify(output, config);
+  const metadata = getMetadata(verification);
 
   console.log(`saving: "${frel(testCase.getOutputFilename())}"`)
   await fs.promises.writeFile(
     testCase.getOutputFilename(),
-    JSON.stringify(output.value, null, 2),
+    JSON.stringify(output, null, 2),
   );
 
   console.log(`saving: "${frel(testCase.getMetadataFilename())}"`)

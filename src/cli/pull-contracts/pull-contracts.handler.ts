@@ -47,6 +47,8 @@ export async function pullContractsCommand(
   const gres = await client.rest.repos.compareCommits({ base, head, owner, repo});
   const diffs = getDiffs2(gres.data.files || []);
 
+  console.info('diffs:', diffs);
+
   // assert: only changes were additions
   const nonAdditionFilenames = pullContractsCommand
     .getNonAdditions(diffs)

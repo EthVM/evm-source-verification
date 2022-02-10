@@ -46,7 +46,7 @@ export async function handleValidateGitDiffsCommand(
     throw new Error(msg);
   }
 
-  const client = getOctokit(token!);
+  const client = getOctokit(token);
 
   const diffs = await getGitDiffs(client, {
     base,
