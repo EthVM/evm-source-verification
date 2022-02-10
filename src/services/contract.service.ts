@@ -369,7 +369,6 @@ export class ContractService implements IContractService {
     await writeJSONFile(
       this.getMetadataFilename(identity),
       metadata,
-      { pretty: true },
     );
   }
 

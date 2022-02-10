@@ -134,14 +134,9 @@ export function parallelProcessContracts(
             `  ${toPercentage(index / total)}`
             ;
 
-          // console.info(`[${ymdhms()}] complete:` +
-          //   `  ${idCtx}` +
-          //   `  ${index}/${total}` +
-          //   `  ${toPercentage(index / total)}`
-          // );
-
           didNotify = true;
           if (Result.isSuccess(result)) {
+            // handle success
             const output = result.value;
             if (ContractResult.isSkipped(output)) {
               // handle skipped
@@ -169,7 +164,6 @@ export function parallelProcessContracts(
                 await saveContract(output.verification, identity, services);
               }
             }
-            // handle success
           }
 
           else {
