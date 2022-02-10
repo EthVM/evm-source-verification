@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/NegativeValueCertificatesMinter.sol": {
+      "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.2;\n\n\ninterface IIOU {\n  function ownerOf(uint256 tokenId) external returns (address owner);\n}\n\ninterface INegativeValueCertificate {\n  function safeMint(address to) external;\n}\n\ncontract NegativeValueCertificatesMinter {\n  address public owner;\n  uint256 public priceInWei;\n  bool public isPremint;\n  bool public isLocked;\n\n  INegativeValueCertificate public negativeValueCertificateContract;\n  IIOU public iouContract;\n  mapping (uint256 => bool) public usedIOUs;\n\n  constructor(address _nvcContract, address _iouContract, address _owner) {\n    owner = _owner;\n    negativeValueCertificateContract = INegativeValueCertificate(_nvcContract);\n    iouContract = IIOU(_iouContract);\n    priceInWei = 99377340000000000;\n    isPremint = true;\n    isLocked = false;\n  }\n\n  modifier onlyOwner(string memory _msg) {\n     require(msg.sender == owner, _msg);\n     _;\n  }\n\n  function transferOwnership(address newOwner) external onlyOwner(\"Only owner can transfer ownership\") {\n     owner = newOwner;\n  }\n\n  function updatePrice(uint256 _newPrice) external onlyOwner(\"Only owner can update the price\") {\n     priceInWei = _newPrice;\n  }\n\n  function flipIsPremint() external onlyOwner(\"Only owner can flip the premint\") {\n     isPremint = !isPremint;\n  }\n\n  function flipIsLocked() external onlyOwner(\"Only owner can flip the lock\") {\n     isLocked = !isLocked;\n  }\n\n  function mint() public payable {\n    _mint(0);\n  }\n\n  function mintWithIOU(uint256 iouId) public payable {\n    _mint(iouId);\n  }\n\n  function _mint(uint256 iouId) internal {\n    require(!isLocked, \"Minting contract is locked\");\n\n    if (isPremint) {\n      require(iouContract.ownerOf(iouId) == msg.sender, \"You are not the owner of this IOU\");\n      require(!usedIOUs[iouId], \"This IOU has already been used\");\n      usedIOUs[iouId] = true;\n    }\n\n    require(msg.value >= priceInWei, \"Insufficient payment\");\n    payable(owner).transfer(msg.value);\n    negativeValueCertificateContract.safeMint(msg.sender);\n\n  }\n\n  function donate() external payable {\n    payable(owner).transfer(msg.value);\n  }\n}"
+    }
+  }
+}

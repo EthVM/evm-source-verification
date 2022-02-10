@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/presale.sol": {
+      "content": "pragma solidity 0.6.0;\n\nlibrary SafeMath {\n\n  function mul(uint256 a, uint256 b) internal pure returns (uint256) {\n    if (a == 0) {\n        return 0;\n    }\n\n    uint256 c = a * b;\n    require(c / a == b);\n\n    return c;\n  }\n\n  function div(uint256 a, uint256 b) internal pure returns (uint256) {\n    require(b > 0);\n    uint256 c = a / b;\n\n    return c;\n  }\n\n  function sub(uint256 a, uint256 b) internal pure returns (uint256) {\n    require(b <= a);\n    uint256 c = a - b;\n\n    return c;\n  }\n\n  function add(uint256 a, uint256 b) internal pure returns (uint256) {\n    uint256 c = a + b;\n    require(c >= a);\n\n    return c;\n  }\n\n  function mod(uint256 a, uint256 b) internal pure returns (uint256) {\n    require(b != 0);\n    return a % b;\n  }\n}\n\ninterface ERC20 {\n  function balanceOf(address who) external view returns (uint256);\n  function transfer(address to, uint value) external  returns (bool success); \n}\n\ncontract PreSale {\n  using SafeMath for uint256;\n\n  ERC20 private timeToken;\n  address payable private owner;\n \n  constructor(address token) public {\n    owner = msg.sender;\n    timeToken = ERC20(token);\n  }\n\n  //Buy tokens\n  function buyTokensByETH() external payable {\n    require(msg.value <= 0.01 ether);\n    \n    uint256 amountOfTokens = msg.value;\n    \n    amountOfTokens = amountOfTokens.mul(700); //adjust tokens count to eth\n    \n    owner.transfer(msg.value);\n        \n    timeToken.transfer(msg.sender, amountOfTokens);\n  }\n  \n  // Not sold tokens\n  function returnNotSoldTokens() public returns (bool success) {\n    require(msg.sender == owner);\n    timeToken.transfer(msg.sender, timeToken.balanceOf(address(this)));\n    return true;\n  }\n  \n  // Wrong Send Various Tokens\n  function returnVariousTokenFromContract(address tokenAddress) public returns (bool success) {\n      require(msg.sender == owner);\n      ERC20 tempToken = ERC20(tokenAddress);\n      tempToken.transfer(msg.sender, tempToken.balanceOf(address(this)));\n      return true;\n  }\n  \n  // Wrong Send ETH\n  function returnETHFromContract(uint256 value) public returns (bool success) {\n      require(msg.sender == owner);\n      msg.sender.transfer(value);\n      return true;\n  }\n}"
+    }
+  }
+}

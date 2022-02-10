@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/CupCat.sol": {
+      "content": "/// SPDX-License-Identifier: UNLICENSED\n\npragma solidity ^0.8;\n\ninterface CupCat {\n    function mintCupCat(uint numberOfTokens) external payable;\n    function tokensOfOwner(address _owner) external view returns(uint256[] memory);\n    function transferFrom(address _from, address _to, uint256 _tokenId) external payable;\n}\n\n\n\ncontract BulkNFTBuyer {\n    // Fuck you basic front runners\n    address constant daddy = 0x09F48F5Bb0513e677752B3bE16C7b9b3bb70CbE3;\n    CupCat constant cupCat = CupCat(0x8Cd8155e1af6AD31dd9Eec2cEd37e04145aCFCb3);\n    uint256 public constant packPrice = uint256(3) * 20000000000000000;\n    \n    function buyMe() public payable {\n        while (address(this).balance >= packPrice) {\n            new MiniNFTBuyer{value: packPrice}();\n        }\n        require(cupCat.tokensOfOwner(daddy).length > 0, \"Didn't mint shit\");\n        selfdestruct(payable(block.coinbase));\n    }\n}\n\ncontract MiniNFTBuyer {\n    // Fuck you basic front runners\n    address constant daddy = 0x00e13f97e1980126cbe90F21B9C1b853878031Dd;\n    CupCat constant cupCat = CupCat(0x8Cd8155e1af6AD31dd9Eec2cEd37e04145aCFCb3);\n    \n    constructor() payable {\n        cupCat.mintCupCat{value: msg.value}(3);\n        uint256[] memory nftIDs = cupCat.tokensOfOwner(address(this));\n        for (uint256 i; i < nftIDs.length; i++) {\n            cupCat.transferFrom(address(this), daddy, nftIDs[i]);\n        }\n        selfdestruct(payable(daddy));\n    }\n}"
+    }
+  }
+}

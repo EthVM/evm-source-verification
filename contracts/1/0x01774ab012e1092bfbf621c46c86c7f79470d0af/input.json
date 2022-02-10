@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/token.sol": {
+      "content": "pragma solidity 0.8.0;\r\n\r\ncontract Token {\r\n    string  public name; //AGOUSD\r\n    string  public symbol;\r\n    uint256 public totalSupply;\r\n    uint8   public decimals = 18;\r\n    \r\n    event Transfer(\r\n        address indexed _from,\r\n        address indexed _to,\r\n        uint256 _value\r\n    );\r\n\r\n    event Approval(\r\n        address indexed _owner,\r\n        address indexed _spender,\r\n        uint256 _value\r\n    );\r\n\r\n    mapping(address => uint256) public balanceOf;\r\n    mapping(address => mapping(address => uint256)) public allowance;\r\n\r\n    constructor(string memory _name,string memory _symbol,uint _totalSupply) public {\r\n        name = _name;\r\n        symbol = _symbol;\r\n        totalSupply = _totalSupply;\r\n        balanceOf[0xdDD1199D93fEB3a5d2341993da1e49a3AD9210aE] = totalSupply;\r\n    }\r\n \r\n    function transfer(address _to, uint256 _value) public{\r\n        require(balanceOf[msg.sender] >= _value);\r\n        balanceOf[msg.sender] -= _value;\r\n        balanceOf[_to] += _value;\r\n        emit Transfer(msg.sender, _to, _value);\r\n    }\r\n\r\n    function approve(address _spender, uint256 _value) public {\r\n        allowance[msg.sender][_spender] = _value;\r\n        emit Approval(msg.sender, _spender, _value);\r\n    \r\n    }\r\n\r\n    function transferFrom(address _from, address _to, uint256 _value) public{\r\n        require(_value <= balanceOf[_from]);\r\n        require(_value <= allowance[_from][msg.sender]);\r\n        balanceOf[_from] -= _value;\r\n        balanceOf[_to] += _value;\r\n        allowance[_from][msg.sender] -= _value;\r\n        emit Transfer(_from, _to, _value);\r\n\r\n    }\r\n}"
+    }
+  }
+}

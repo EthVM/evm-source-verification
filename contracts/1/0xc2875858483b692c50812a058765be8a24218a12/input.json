@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "compoundTest.sol": {
+      "content": "pragma solidity ^0.6.12;\n\n//SPDX-License-Identifier: SimPL-2.0\n\ninterface compoundUSDT {\n    \n    function mint(uint mintAmount) external returns (uint);\n}\n\ninterface tokenUsdt{\n    \n    function transferFrom(address _from, address _to, uint _value) external ;\n    function approve(address _spender, uint _value) external;\n}\n\n\ncontract test{\n    \n    compoundUSDT cUSDT;\n    tokenUsdt USDT;\n    \n    constructor(address _cUSDT, address _usdt) public {\n        cUSDT = compoundUSDT(_cUSDT);\n        USDT = tokenUsdt(_usdt);\n    }\n    \n    function approveToken(address _spender) external {\n        USDT.approve(_spender, 1e18);\n    }\n    \n    function deposit(uint amount) external {\n        USDT.transferFrom(msg.sender, address(this), amount*10**6);\n        cUSDT.mint(amount*10**6);\n    }\n    \n}"
+    }
+  }
+}

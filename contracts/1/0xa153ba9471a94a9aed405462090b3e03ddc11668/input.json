@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "CapsuleToy/NFTCheck.sol": {
+      "content": "pragma solidity >=0.6.0 <0.8.0;\n\n\nabstract contract Context {\n    function _msgSender() internal view virtual returns (address payable) {\n        return msg.sender;\n    }\n\n    function _msgData() internal view virtual returns (bytes memory) {\n        this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691\n        return msg.data;\n    }\n}\n\nabstract contract Ownable is Context {\n    address private _owner;\n\n    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);\n\n    /**\n     * @dev Initializes the contract setting the deployer as the initial owner.\n     */\n    constructor () internal {\n        address msgSender = _msgSender();\n        _owner = msgSender;\n        emit OwnershipTransferred(address(0), msgSender);\n    }\n\n    /**\n     * @dev Returns the address of the current owner.\n     */\n    function owner() public view virtual returns (address) {\n        return _owner;\n    }\n\n    /**\n     * @dev Throws if called by any account other than the owner.\n     */\n    modifier onlyOwner() {\n        require(owner() == _msgSender(), \"Ownable: caller is not the owner\");\n        _;\n    }\n\n    /**\n     * @dev Leaves the contract without owner. It will not be possible to call\n     * `onlyOwner` functions anymore. Can only be called by the current owner.\n     *\n     * NOTE: Renouncing ownership will leave the contract without an owner,\n     * thereby removing any functionality that is only available to the owner.\n     */\n    function renounceOwnership() public virtual onlyOwner {\n        emit OwnershipTransferred(_owner, address(0));\n        _owner = address(0);\n    }\n\n    /**\n     * @dev Transfers ownership of the contract to a new account (`newOwner`).\n     * Can only be called by the current owner.\n     */\n    function transferOwnership(address newOwner) public virtual onlyOwner {\n        require(newOwner != address(0), \"Ownable: new owner is the zero address\");\n        emit OwnershipTransferred(_owner, newOwner);\n        _owner = newOwner;\n    }\n}\n\ninterface I721S {\n    function balanceOf(address owner) external view returns (uint256 balance);\n}\n\n\ncontract NFTCheck  is Ownable {\n/*  \n    address coolcat = 0x1a92f7381b9f03921564a437210bb9396471050c;\n    address meebits = 0x7Bd29408f11D2bFC23c34f18275bBf23bB716Bc7;\n    address bayc = 0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d;\n    address ppg = 0xbd3531da5cf5857e7cfaa92426877b022e612cf8;\n    address loot = 0xff9c1b15b16263c61d017ee9f65c50e4ae0113d7;\n    address cpunk = 0xb47e3cd837ddf8e4c57f05d70ab865de6e193bbb;\n\n\n\n    [\"0xb47e3cd837ddf8e4c57f05d70ab865de6e193bbb\",\"0xbc4ca0eda7647a8ab7c2061c2e118a18a936f13d\",\"0x7Bd29408f11D2bFC23c34f18275bBf23bB716Bc7\",\"0xbd3531da5cf5857e7cfaa92426877b022e612cf8\",\"0xff9c1b15b16263c61d017ee9f65c50e4ae0113d7\",\"0x1a92f7381b9f03921564a437210bb9396471050c\"]\n    \n    */\n    constructor() public {}\n    \n    address[] public accs;\n\n    function checkId(address ck) public view returns (bool) {\n\n        for(uint i = 0; i < accs.length; i++) {\n            uint256 n1 = I721S(accs[i]).balanceOf(ck);\n            if ( n1 > 0 ) {\n                return true;\n            }\n        }\n\n        return false;\n    }\n\n    function set(address[] memory acccouts) public onlyOwner {\n        accs = new address[](6);\n        for(uint i = 0; i < acccouts.length; i++) {\n            accs[i] = acccouts[i];\n        }\n    }\n\n}"
+    }
+  }
+}

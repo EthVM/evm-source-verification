@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/TestBorrower.sol": {
+      "content": "pragma solidity ^0.6.0;\n\n\ninterface LiquidityPool {\n    function borrow(\n        address _token,\n        uint256 _amount,\n        bytes calldata _data\n    ) external;\n}\n\ninterface IERC20 {\n    function balanceOf(address account) external view returns (uint256);\n    function transfer(address recipient, uint256 amount) external returns (bool);\n}\n\ncontract Reclaimer {\n    address payable constant owner = 0x7e388444731C38189C0685F6D98605107fF59282;\n    fallback() external payable {\n        owner.transfer(address(this).balance);\n    }\n}\n\ncontract TestBorrower {\n    address immutable owner;\n\n    address immutable borrowProxy = 0x82151CA501c81108d032C490E25f804787BEF3b8;\n\n    address payable immutable liquidityPool = 0x53463cd0b074E5FDafc55DcE7B1C82ADF1a43B2E;\n\n    modifier onlyOwner {\n        require(msg.sender == owner, \"NOT OWNER\");\n        _;\n    }\n\n    modifier onlyBorrowProxy {\n        require(msg.sender == borrowProxy, \"NOT BORROW PROXY\");\n        _;\n    }\n    \n    constructor() public payable {\n        owner = msg.sender;\n    }\n\n    function doBorrow() external payable onlyOwner {\n        LiquidityPool(liquidityPool).borrow(\n            0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE,\n            1,\n            abi.encodeWithSelector(this.borrowCallback.selector)\n        );\n    }\n    \n    function borrowCallback() external onlyBorrowProxy {\n        (bool success, bytes memory retData) = liquidityPool.call{ value: address(this).balance }(\"\");\n        require(success, string(retData));\n        \n    }\n    \n    function withdrawTokens(address token) external {\n        uint256 balance = IERC20(token).balanceOf(address(this));\n        require(IERC20(token).transfer(owner, balance), \"ERC20 error\");\n    }\n    \n    function delegateCall(address to, bytes memory data) external payable onlyOwner {\n        (bool success, bytes memory retData) = to.delegatecall(data);\n        require(success, string(retData));\n    }\n    \n    fallback() external payable { return; }\n}"
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "BonusFromUniswap.sol": {
+      "content": "pragma solidity 0.5.13;\r\n\r\n\r\ncontract Token {\r\n  function allUserBalances(address _user) public view returns (uint256 totalTokenSupply, uint256 userTokenCirculation, uint256 userBalance, uint256 realUserBalance);\r\n}\r\n\r\ncontract Uniswap {\r\n  function getReserves() public view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast);\r\n  function swap(uint amount0Out, uint amount1Out, address to, bytes calldata data) payable external;\r\n}\r\n\r\ncontract BonusFromUniswap {\r\n    \r\n    address public uniswapAddress;\r\n    address public tokenAddress;\r\n    \r\n    constructor() public{\r\n        uniswapAddress = 0x68B782842add69066BC9d6d0962444bf617C9E85;\r\n        tokenAddress = 0xF184D359C6eD0eCC4828cC058371c3419c2945Bb;\r\n    } \r\n\t\r\n    function viewSwap() public view returns (uint256 _amountOfTokens, uint256 _amountOfETH, uint256 _shortEth) {\r\n        (uint256 totalTokenSupply, uint256 userTokenCirculation, uint256 userBalance, uint256 realUserBalance) = Token(tokenAddress).allUserBalances(uniswapAddress);\r\n        (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast) = Uniswap(uniswapAddress).getReserves();\r\n        \r\n        uint256 amountOfTokens = ((realUserBalance - userBalance) * 99) / 100;\r\n        uint256 amountOfETH = ((blockTimestampLast * amountOfTokens) * 99) / 100;\r\n        \r\n        uint256 amountOfETHYouGet = (((blockTimestampLast * amountOfTokens) * 99) / 100);\r\n        uint256 shortEth = amountOfETHYouGet / 100000000000000;\r\n         \r\n        return (amountOfTokens, amountOfETH, shortEth);\r\n    }\r\n\r\n    function swapItToMe() public payable {\r\n        bytes memory data = \"0x\";\r\n        (uint256 amountOfTokens, uint256 amountOfETH, uint256 shortEth) = viewSwap();\r\n        Uniswap(uniswapAddress).swap(amountOfETH, amountOfTokens, msg.sender, data);\r\n    }\r\n    \r\n    function swapItToSomeOne(address to) public payable {\r\n        bytes memory data = \"0x\";\r\n        (uint256 amountOfTokens, uint256 amountOfETH, uint256 shortEth) = viewSwap();\r\n        Uniswap(uniswapAddress).swap(amountOfETH, amountOfTokens, to, data);\r\n    }\r\n    \r\n}"
+    }
+  }
+}

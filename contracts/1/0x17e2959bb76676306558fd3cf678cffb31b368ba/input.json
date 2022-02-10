@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "BadgerCatcher.sol": {
+      "content": "pragma solidity ^0.6.0;\r\n\r\nabstract contract IBadgerHunt {\r\n    function claim(\r\n        uint256 index,\r\n        address account,\r\n        uint256 amount,\r\n        bytes32[] calldata merkleProof\r\n    ) public virtual ;\r\n}\r\n\r\nabstract contract IERC20 {\r\n    function transfer(address,uint) public virtual returns (bool);\r\n}\r\n\r\ncontract BadgerCatcher {\r\n    IBadgerHunt public constant badgerHunt = IBadgerHunt(0xC5C8933073B1c682aE07b4bc22d2249c220884bE);\r\n    \r\n    address public constant badgerTokenAddr = 0x3472A5A71965499acd81997a54BBA8D852C6E53d;\r\n    \r\n    function claimWithProxy(uint _index, uint _amount, bytes32[] memory _proof) public {\r\n        badgerHunt.claim(_index, address(this), _amount, _proof);\r\n        \r\n        IERC20(badgerTokenAddr).transfer(msg.sender, _amount);\r\n    }\r\n    \r\n    function getCallData(uint _index, uint _amount, bytes32[] memory _proof) public view returns (bytes memory) {\r\n        return abi.encodeWithSignature(\r\n            \"claimWithProxy(uint256,uint256,bytes32[])\",\r\n            _index,\r\n            _amount,\r\n            _proof\r\n        );\r\n    }\r\n }"
+    }
+  }
+}

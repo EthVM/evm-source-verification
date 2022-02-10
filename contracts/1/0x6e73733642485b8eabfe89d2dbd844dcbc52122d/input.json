@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/DiamondRouter.sol": {
+      "content": "// SPDX-License-Identifier: Unlicensed\npragma solidity ^0.8.9;\n\nabstract contract Context {\n    function _msgSender() internal view virtual returns (address payable) {\n        return payable(msg.sender);\n    }\n\n    function _msgData() internal view virtual returns (bytes memory) {\n        this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691\n        return msg.data;\n    }\n}\n\n/**\n * @dev Contract module which provides a basic access control mechanism, where\n * there is an account (an owner) that can be granted exclusive access to\n * specific functions.\n *\n * By default, the owner account will be the one that deploys the contract. This\n * can later be changed with {transferOwnership}.\n *\n * This module is used through inheritance. It will make available the modifier\n * `onlyOwner`, which can be applied to your functions to restrict their use to\n * the owner.\n */\ncontract Ownable is Context {\n    address private _owner;\n    address private _previousOwner;\n\n    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);\n\n    /**\n     * @dev Initializes the contract setting the deployer as the initial owner.\n     */\n    constructor () {\n        address msgSender = _msgSender();\n        _owner = msgSender;\n        emit OwnershipTransferred(address(0), msgSender);\n    }\n\n    /**\n     * @dev Returns the address of the current owner.\n     */\n    function owner() public view returns (address) {\n        return _owner;\n    }\n\n    /**\n     * @dev Throws if called by any account other than the owner.\n     */\n    modifier onlyOwner() {\n        require(_owner == _msgSender(), \"Ownable: caller is not the owner\");\n        _;\n    }\n\n    /**\n    * @dev Leaves the contract without owner. It will not be possible to call\n    * `onlyOwner` functions anymore. Can only be called by the current owner.\n    *\n    * NOTE: Renouncing ownership will leave the contract without an owner,\n    * thereby removing any functionality that is only available to the owner.\n    */\n    function renounceOwnership() public virtual onlyOwner {\n        emit OwnershipTransferred(_owner, address(0));\n        _owner = address(0);\n    }\n\n    /**\n     * @dev Transfers ownership of the contract to a new account (`newOwner`).\n     * Can only be called by the current owner.\n     */\n    function transferOwnership(address newOwner) public virtual onlyOwner {\n        require(newOwner != address(0), \"Ownable: new owner is the zero address\");\n        emit OwnershipTransferred(_owner, newOwner);\n        _owner = newOwner;\n    }\n}\n\ncontract DiamondRouter is Ownable {\n    address payable private _houseWallet = payable(0xcCAD98e0534ffc26b6746679D14A484f923D5054);\n\n    fallback() payable external {\n        _distributeIncomingETH(msg.value);\n    }\n\n    receive() payable external {\n        _distributeIncomingETH(msg.value);\n    }\n\n    function _distributeIncomingETH(uint256 incomingETH) private {\n        require(incomingETH > 0, \"Amount must be greater than 0\");\n        (bool success, ) = _houseWallet.call{value:incomingETH}(\"\");\n        require(success, \"Unable to send to house wallet\");\n    }\n\n    function updateHouseWallet(address payable newHouseWallet) external onlyOwner() {\n        _houseWallet = payable(newHouseWallet);\n    }\n}\n"
+    }
+  }
+}

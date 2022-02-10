@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "ibffDistribution.sol": {
+      "content": "/**\n *Submitted for verification at Etherscan.io on 2021-07-25\n*/\n\n// SPDX-License-Identifier: MIT\npragma solidity 0.8.6;\n\nlibrary Math {\n    function max(uint256 a, uint256 b) internal pure returns (uint256) {\n        return a > b ? a : b;\n    }\n}\n\ninterface erc20 {\n    function transfer(address recipient, uint256 amount) external returns (bool);\n    function balanceOf(address) external view returns (uint);\n    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);\n}\n\ninterface ve {\n    \n    struct Point {\n        int128 bias;\n        int128 slope;\n        uint ts;\n        uint blk;\n    }\n    \n    function balanceOf(address, uint) external view returns (uint);\n    function totalSupply() external view returns (uint);\n    function user_point_epoch(address) external view returns (uint);\n    function user_point_history(address, uint) external view returns (Point memory);\n}\n\ncontract distribution {\n    address constant _ibff = 0xb347132eFf18a3f63426f4988ef626d2CbE274F5;\n    address constant _veibff = 0x4D0518C9136025903751209dDDdf6C67067357b1;\n    \n    uint constant PRECISION = 10 ** 18;\n    uint constant WEEK = 86400 * 7;\n    \n    uint _active_period;\n    uint _reward_per;\n    \n    mapping(address => uint) _last_claim;\n    \n    uint public totalSupply;\n    \n    function _update_period() internal returns (uint) {\n        uint _period = _active_period;\n        if (block.timestamp >= _period + WEEK) {\n            _period = block.timestamp / WEEK * WEEK;\n            uint _amount = erc20(_ibff).balanceOf(address(this));\n            uint _totalSupply = ve(_veibff).totalSupply();\n            _reward_per = _amount * PRECISION / _totalSupply;\n            totalSupply = _totalSupply;\n            _active_period = _period;\n        }\n        return _period;\n    }\n    \n    function add_reward(uint amount) external returns (bool) {\n        _safeTransferFrom(_ibff, amount);\n        _update_period();\n        return true;\n    }\n    \n    function ve_balance_at(address account, uint timestamp) public view returns (uint) {\n        uint _epoch = ve(_veibff).user_point_epoch(account);\n        uint _balance_at = 0;\n        for (uint i = _epoch; i > 0; i--) {\n            ve.Point memory _point = ve(_veibff).user_point_history(account, i);\n            if (_point.ts <= timestamp) {\n                int128 _bias = _point.bias - (_point.slope * int128(int(timestamp - _point.ts)));\n                if (_bias > 0) {\n                    _balance_at = uint(int(_bias));\n                }\n                break;\n            }\n        }\n        return _balance_at;\n    }\n    \n    function claimable(address account) external view returns (uint) {\n        uint _period = _active_period;\n        uint _last = Math.max(_period, _last_claim[account]);\n        uint _reward = ve_balance_at(account, _period) * _reward_per / PRECISION;\n        return _reward * (block.timestamp - _last) / WEEK;\n    }\n\n    function claim() external returns (uint) {\n        uint _period = _update_period();\n        uint _last = Math.max(_period, _last_claim[msg.sender]);\n        uint _reward = ve_balance_at(msg.sender, _period) * _reward_per / PRECISION;\n        uint _accrued = _reward * (block.timestamp - _last) / WEEK;\n        if (_accrued > 0) {\n            _last_claim[msg.sender] = block.timestamp;\n            _safeTransfer(_ibff, msg.sender, _accrued);\n        }\n        return _accrued;\n    }\n    \n    function _safeTransfer(\n        address token,\n        address to,\n        uint256 value\n    ) internal {\n        (bool success, bytes memory data) =\n            token.call(abi.encodeWithSelector(erc20.transfer.selector, to, value));\n        require(success && (data.length == 0 || abi.decode(data, (bool))));\n    }\n    \n    function _safeTransferFrom(address token, uint256 value) internal {\n        (bool success, bytes memory data) =\n            token.call(abi.encodeWithSelector(erc20.transferFrom.selector, msg.sender, address(this), value));\n        require(success && (data.length == 0 || abi.decode(data, (bool))));\n    }\n}"
+    }
+  }
+}

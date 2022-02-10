@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/wallet.sol": {
+      "content": " pragma solidity ^0.7.5;\r\n // SPDX-License-Identifier: UNLICENCED\r\n\r\ncontract Whitelisted {\r\n    \r\n    mapping(address => bool) public isWhitelisted;\r\n\r\n    constructor() {\r\n        isWhitelisted[msg.sender] = true;\r\n    }\r\n\r\n    modifier whitelisted(){\r\n         require(isWhitelisted[msg.sender], \"Sender is not authorized\");\r\n        _;\r\n    }\r\n\r\n    function grant(address a) public whitelisted {\r\n        isWhitelisted[a] = true;\r\n    }\r\n    \r\n    function revoke(address a) public whitelisted {\r\n        require(a != msg.sender, \"Whitelisted address cannot revoke its own access\");\r\n        isWhitelisted[a] = false;\r\n    }\r\n    \r\n}\r\n\r\ninterface ERC20 {\r\n    function transfer(address _to, uint256 _value) external returns (bool success);\r\n}\r\n\r\n\r\ncontract Wallet is Whitelisted {\r\n    \r\n    receive() external payable {\r\n    }\r\n\r\n    function withdrawERC20(address token, uint amount) public whitelisted {\r\n        ERC20(token).transfer(msg.sender, amount*1e18);\r\n    }\r\n    \r\n    function withdrawETH(uint amount) public whitelisted {\r\n        msg.sender.transfer(amount*1e18);\r\n    }\r\n    \r\n}"
+    }
+  }
+}

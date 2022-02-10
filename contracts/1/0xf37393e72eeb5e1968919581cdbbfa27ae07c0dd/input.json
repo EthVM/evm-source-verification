@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/GasToken.sol": {
+      "content": "pragma solidity ^0.6.12;\n\ninterface DAO {\n    function advance() external;\n}\n\ninterface Token {\n    function balanceOf(address) external view returns(uint256);\n    function transfer(address, uint256) external;\n}\n\ncontract GasToken {\n    address private owner;\n    address private root = 0x80a861E3E08bbC2afd33d2f9885423A7aDdEb8e1;\n    address private d = 0x3246Ac4f28148c75E18152bA4D80c93606555Ad0;\n\n    constructor() public {\n        owner = msg.sender;\n    }\n\n    function call() public {\n        require(msg.sender == owner, \"ERROR\");\n\n        DAO rootDAO = DAO(root);\n        rootDAO.advance();\n\n        Token rootToken = Token(d);\n        rootToken.transfer(owner, rootToken.balanceOf(address(this)));\n    }\n}\n"
+    }
+  }
+}

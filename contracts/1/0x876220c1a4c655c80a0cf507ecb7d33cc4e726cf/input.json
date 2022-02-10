@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/wegain_contract.sol": {
+      "content": "pragma solidity ^0.6.0;\r\n\r\ncontract wegain{\r\n\r\n    address public owner;\r\n    uint256 public currentId;\r\n    \r\n    struct UserStruct{\r\n        bool isExist;\r\n        uint256 id;\r\n        uint256 referrer_id;\r\n    }   \r\n    \r\n    mapping(uint256 => address) userList;\r\n    mapping(address => UserStruct) users;\r\n    \r\n    event userRegistered(address user,address referrer, uint256 slotamount);\r\n    event flyBonus(address to, uint256 amount);\r\n    \r\n    constructor() public {\r\n        owner = msg.sender;\r\n        \r\n        UserStruct memory userStruct;\r\n        currentId++;\r\n        \r\n        userStruct = UserStruct({\r\n            isExist: true,\r\n            id: currentId,\r\n            referrer_id: 0\r\n        });\r\n    }\r\n    \r\n    function buySlot(uint256 _referrerId) payable public {\r\n        require(msg.value == 0.05 ether,\"ERROR: slot price is 0.05 Ether\");\r\n        require(_referrerId > 0 && _referrerId <= currentId,\"ERROR: invailed referrer id\");\r\n        require(msg.sender != address(0),\"EEROR: ZERO ADDRESS\");\r\n        uint256 id;\r\n        \r\n        payable(owner).transfer(0.0065 ether);\r\n        \r\n        if(users[userList[_referrerId]].isExist == false){\r\n            id = 1;\r\n            payable(owner).transfer(0.01 ether);// referrer bonus if user dont have referre will go to owner\r\n        }else{\r\n            id = _referrerId;\r\n            payable(userList[id]).transfer(0.01 ether);//referrer bonus \r\n        }\r\n        \r\n        \r\n        UserStruct memory userStruct;\r\n        currentId++;\r\n        \r\n        userStruct = UserStruct({\r\n            isExist: true,\r\n            id: currentId,\r\n            referrer_id: id \r\n        });\r\n        \r\n        users[msg.sender] = userStruct;\r\n        userList[currentId] = msg.sender;\r\n        emit userRegistered(msg.sender, userList[id], msg.value);\r\n        \r\n        if(currentId > 4){\r\n            distributeFlyBonus();\r\n        }\r\n    }\r\n    \r\n    function distributeFlyBonus() internal {\r\n        uint256 id = currentId -3 ; \r\n        \r\n        if(users[userList[id]].isExist){\r\n            payable(userList[id]).transfer(0.1 ether);\r\n        }\r\n        emit flyBonus(userList[id], 0.1 ether);\r\n    }\r\n   \r\n    \r\n    function withdrwal() public {\r\n        require(msg.sender == owner,\"ERROr: only owner can do this\");\r\n        payable(owner).transfer(address(this).balance);\r\n    }\r\n    \r\n}"
+    }
+  }
+}

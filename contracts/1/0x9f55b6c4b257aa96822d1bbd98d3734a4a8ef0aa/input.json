@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/Attack.sol": {
+      "content": "// SPDX-License-Identifier: MIT\r\npragma solidity 0.8.7;\r\n\r\ninterface Victim {\r\n    function tokenOfOwnerByIndex(address _owner, uint256 _index) external view returns (uint256);\r\n    function getIsWhale(uint256 _tokenId) external view returns (bool);\r\n}\r\n\r\ncontract Attack {\r\n    address target;\r\n    constructor(address _target) {\r\n        target = _target;\r\n    }\r\n\r\n    function wickedFunctionName(address user, uint index) view public returns(bool) {\r\n        uint tokenId = Victim(target).tokenOfOwnerByIndex(user, index);\r\n        return Victim(target).getIsWhale(tokenId);\r\n    }\r\n}\r\n"
+    }
+  }
+}

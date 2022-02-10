@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/az_curve.sol": {
+      "content": "pragma solidity ^0.6.4;\n\ncontract DSMath {\n    function add(uint x, uint y) internal pure returns (uint z) {\n        require((z = x + y) >= x, \"ds-math-add-overflow\");\n    }\n    function sub(uint x, uint y) internal pure returns (uint z) {\n        require((z = x - y) <= x, \"ds-math-sub-underflow\");\n    }\n    function mul(uint x, uint y) internal pure returns (uint z) {\n        require(y == 0 || (z = x * y) / y == x, \"ds-math-mul-overflow\");\n    }\n\n    function min(uint x, uint y) internal pure returns (uint z) {\n        return x <= y ? x : y;\n    }\n    function max(uint x, uint y) internal pure returns (uint z) {\n        return x >= y ? x : y;\n    }\n    function imin(int x, int y) internal pure returns (int z) {\n        return x <= y ? x : y;\n    }\n    function imax(int x, int y) internal pure returns (int z) {\n        return x >= y ? x : y;\n    }\n\n    uint constant WAD = 10 ** 18;\n    uint constant RAY = 10 ** 27;\n\n    function wmul(uint x, uint y) internal pure returns (uint z) {\n        z = add(mul(x, y), WAD / 2) / WAD;\n    }\n    function rmul(uint x, uint y) internal pure returns (uint z) {\n        z = add(mul(x, y), RAY / 2) / RAY;\n    }\n    function wdiv(uint x, uint y) internal pure returns (uint z) {\n        z = add(mul(x, WAD), y / 2) / y;\n    }\n    function rdiv(uint x, uint y) internal pure returns (uint z) {\n        z = add(mul(x, RAY), y / 2) / y;\n    }\n\n    function rpow(uint x, uint n) internal pure returns (uint z) {\n        z = n % 2 != 0 ? x : RAY;\n\n        for (n /= 2; n != 0; n /= 2) {\n            x = rmul(x, x);\n\n            if (n % 2 != 0) {\n                z = rmul(z, x);\n            }\n        }\n    }\n}\n\ncontract BondingCurve is DSMath {\n    uint256 public currentSupply;\n    mapping (address => uint256) public ledger;\n\n    uint256 public exponent;\n    uint256 public coefficient;\n    uint256 public reserveRatio;\n    \n    uint256 public constant precision = 1000000000000000000;\n\n    event NewPrice(uint256 buy, uint256 sell);\n\n    string internal constant INSUFFICIENT_ETH = 'Insufficient Ether';\n    string internal constant INSUFFICIENT_TOKENS = 'Request exceeds token balance';\n    string internal constant INVALID_ADDRESS = 'Wallet does not exist';\n    string internal constant ZERO_AMOUNT = \"Amount must be nonzero\";\n    string internal constant TOKENS_LOCKED = \"Vesting period for this stake has not elapsed\";\n\n    constructor()\n    public {\n        exponent = 2;\n        coefficient = 100000000;\n        reserveRatio = 1;\n        currentSupply = 1;\n\n        emit NewPrice(calcMintPrice(1), calcBurnReward(1));\n    }\n\n    function buyPriceInWei(uint256 amount)\n    public returns (uint256) {\n        uint256 price = calcMintPrice(amount);\n        return price;\n    }\n    \n    function buy(uint256 amount)\n    external payable {\n        uint256 price = calcMintPrice(amount);\n        require(msg.value >= price, INSUFFICIENT_ETH);\n        uint256 refund = msg.value - price;\n        if (refund > 0) {\n            msg.sender.transfer(refund);\n        }\n        ledger[msg.sender] = add(ledger[msg.sender], amount);\n        currentSupply = add(currentSupply, amount);\n        uint256 newBuyPrice = calcMintPrice(1);\n        uint256 newSellPrice = calcBurnReward(1);\n        emit NewPrice(newBuyPrice, newSellPrice);\n    }\n\n    function sell(uint256 amount)\n    external {\n        require(amount <= ledger[msg.sender], INSUFFICIENT_TOKENS);\n        uint256 exitValue = calcBurnReward(amount);\n        msg.sender.transfer(exitValue);\n        ledger[msg.sender] = sub(ledger[msg.sender], amount);\n        currentSupply = sub(currentSupply, amount);\n    }\n\n\n    function integrate(uint256 limitA, uint256 limitB, uint256 multiplier)\n    internal returns (uint256) {\n        uint256 raiseExp = exponent + 1;\n        uint256 _coefficient = wmul(coefficient, multiplier);\n        uint256 upper = wdiv((limitB ** raiseExp), raiseExp);\n        uint256 lower = wdiv((limitA ** raiseExp), raiseExp);\n        return wmul(_coefficient, (sub(upper, lower)));\n    }\n    \n    function calcMintPrice(uint256 amount)\n    internal returns (uint256) {\n        uint256 newSupply = add(currentSupply, amount);\n        uint256 result = integrate(currentSupply, newSupply, precision);\n        return result;\n    }\n\n    function calcBurnReward(uint256 amount)\n    internal returns (uint256) {\n        uint256 newSupply = sub(currentSupply, amount);\n        uint256 result = integrate(newSupply, currentSupply, reserveRatio);\n        return result;\n    }\n\n}"
+    }
+  }
+}

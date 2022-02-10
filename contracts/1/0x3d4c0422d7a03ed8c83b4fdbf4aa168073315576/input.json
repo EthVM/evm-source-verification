@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/RewardsWallet.sol": {
+      "content": "// SPDX-License-Identifier: UNLICENSED\r\npragma solidity ^0.6.0;\r\n\r\n// ----------------------------------------------------------------------------\r\n// ERC Token Standard #20 Interface\r\n// https://github.com/ethereum/EIPs/blob/master/EIPS/eip-20-token-standard.md\r\n// ----------------------------------------------------------------------------\r\n/**\r\n * @dev Interface of the ERC20 standard as defined in the EIP.\r\n */\r\ninterface IERC20 {\r\n\r\n    /**\r\n     * @dev Moves `amount` tokens from the caller's account to `recipient`.\r\n     *\r\n     * Returns a boolean value indicating whether the operation succeeded.\r\n     *\r\n     * Emits a {Transfer} event.\r\n     */\r\n    function transfer(address recipient, uint256 amount) external returns (bool);\r\n}\r\n\r\n// ----------------------------------------------------------------------------\r\n// Owned contract\r\n// ----------------------------------------------------------------------------\r\ncontract Owned {\r\n    address payable public owner;\r\n\r\n    event OwnershipTransferred(address indexed _from, address indexed _to);\r\n\r\n    constructor() public {\r\n        owner = msg.sender;\r\n    }\r\n\r\n    modifier onlyOwner {\r\n        require(msg.sender == owner, \"Only allowed by owner\");\r\n        _;\r\n    }\r\n\r\n    function transferOwnership(address payable _newOwner) public onlyOwner {\r\n        owner = _newOwner;\r\n        emit OwnershipTransferred(msg.sender, _newOwner);\r\n    }\r\n}\r\n\r\ncontract VanillaRewardsWallet is Owned{\r\n    \r\n    mapping(address => bool) public allowedPools;\r\n    \r\n    IERC20 public vanilla;\r\n    \r\n    constructor(address payable _owner, address _vanillaToken) public{\r\n        owner = _owner;\r\n        vanilla = IERC20(_vanillaToken);\r\n    }\r\n    \r\n    function addPool(address _poolAddress) external onlyOwner{\r\n        allowedPools[_poolAddress] = true;\r\n    }\r\n    \r\n    function removePool(address _poolAddress) external onlyOwner{\r\n        allowedPools[_poolAddress] = false;\r\n    }\r\n    \r\n    function sendRewards(address to, uint256 tokens) public{\r\n        require(allowedPools[msg.sender], \"UnAuthorized\");\r\n        \r\n        // transfer rewards tokens\r\n        require(vanilla.transfer(to, tokens));\r\n    }\r\n}"
+    }
+  }
+}

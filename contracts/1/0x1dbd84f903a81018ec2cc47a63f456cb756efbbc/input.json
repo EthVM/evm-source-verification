@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "JGOToken.sol": {
+      "content": "pragma solidity ^0.4.12;\r\n \r\n\r\ncontract IMigrationContract {\r\n    function migrate(address addr, uint256 nas) returns (bool success);\r\n}\r\n\r\n\r\ncontract SafeMath {\r\n    function safeAdd(uint256 x, uint256 y) internal returns(uint256) {\r\n        uint256 z = x + y;\r\n        assert((z >= x) && (z >= y));\r\n        return z;\r\n    }\r\n \r\n    function safeSubtract(uint256 x, uint256 y) internal returns(uint256) {\r\n        assert(x >= y);\r\n        uint256 z = x - y;\r\n        return z;\r\n    }\r\n \r\n    function safeMult(uint256 x, uint256 y) internal returns(uint256) {\r\n        uint256 z = x * y;\r\n        assert((x == 0)||(z/x == y));\r\n        return z;\r\n    }\r\n \r\n}\r\n \r\n\r\ncontract Token {\r\n    uint256 public totalSupply; //代币总量\r\n    function balanceOf(address _owner) constant returns (uint256 balance);\r\n    function transfer(address _to, uint256 _value) returns (bool success);\r\n    function transferFrom(address _from, address _to, uint256 _value) returns (bool success);\r\n    function approve(address _spender, uint256 _value) returns (bool success);\r\n    function allowance(address _owner, address _spender) constant returns (uint256 remaining);\r\n    event Transfer(address indexed _from, address indexed _to, uint256 _value);\r\n    event Approval(address indexed _owner, address indexed _spender, uint256 _value);\r\n}\r\n\r\n\r\ncontract StandardToken is Token {\r\n    mapping (address => uint256) balances;\r\n    mapping (address => mapping (address => uint256)) allowed;\r\n\r\n    function transfer(address _to, uint256 _value) returns (bool success) {\r\n        if (balances[msg.sender] >= _value && _value > 0) {\r\n            balances[msg.sender] -= _value;\r\n            balances[_to] += _value;\r\n            Transfer(msg.sender, _to, _value);\r\n            return true;\r\n        } else {\r\n            return false;\r\n        }\r\n    }\r\n \r\n    function transferFrom(address _from, address _to, uint256 _value) returns (bool success) {\r\n        if (balances[_from] >= _value && allowed[_from][msg.sender] >= _value && _value > 0) {\r\n            balances[_to] += _value;\r\n            balances[_from] -= _value;\r\n            allowed[_from][msg.sender] -= _value;\r\n            Transfer(_from, _to, _value);\r\n            return true;\r\n        } else {\r\n            return false;\r\n        }\r\n    }\r\n \r\n    function balanceOf(address _owner) constant returns (uint256 balance) {\r\n        return balances[_owner];\r\n    }\r\n \r\n    function approve(address _spender, uint256 _value) returns (bool success) {\r\n        allowed[msg.sender][_spender] = _value;\r\n        Approval(msg.sender, _spender, _value);\r\n        return true;\r\n    }\r\n \r\n    function allowance(address _owner, address _spender) constant returns (uint256 remaining) {\r\n        return allowed[_owner][_spender];\r\n    }\r\n}\r\n \r\n\r\n//JGO代币合约\r\ncontract JGOToken is StandardToken, SafeMath {\r\n    string  public constant name     = \"Aunt Token\";   //名称\r\n    string  public constant symbol   = \"YFIH\";   //符号\r\n    uint256 public constant decimals = 6;      //小数位\r\n    string  public           version = \"1.0\";   //版本\r\n \r\n    address public ethFundDeposit;              //ETH存放地址\r\n    uint256 public currentSupply;               //代币供应量\r\n\r\n \r\n    modifier isOwner()  { require(msg.sender == ethFundDeposit); _; }\r\n\r\n    function formatDecimals(uint256 _value) internal returns (uint256 ) {\r\n        return _value * 10 ** decimals;\r\n    }\r\n\r\n \r\n    //JGO合约初始化函数(合约所有人地址, 当前供应量, 代币总量)\r\n    function JGOToken(address _ethFundDeposit, uint256 _totalSupply) {\r\n        ethFundDeposit = _ethFundDeposit;\r\n                      \r\n        currentSupply = formatDecimals(_totalSupply); //当前供应量\r\n        totalSupply = formatDecimals(_totalSupply);     //代币总量\r\n        balances[msg.sender] = totalSupply;\r\n        if(currentSupply > totalSupply) throw;\r\n    }\r\n    \r\n}"
+    }
+  }
+}

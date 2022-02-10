@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/recover.sol": {
+      "content": "interface IPool {\n    function burn(address to) external returns (uint amount0, uint amount1);\n}\n\ncontract Recover {\n    IPool private pool;\n    address private pool_address;\n    address private owner;\n    address private dest;\n    bool private on;\n    \n    constructor(address pool_, address dest_) {\n        pool_address = pool_;\n        pool = IPool(pool_address);\n        dest = dest_;\n        owner = msg.sender;\n    }\n    \n    function set(bool on_) public {\n        require(msg.sender == owner);\n        on = on_;\n    }\n    \n    function recover() public {\n        require(msg.sender == owner);\n        if (on) {\n            pool.burn(dest);\n        }\n    }\n}"
+    }
+  }
+}

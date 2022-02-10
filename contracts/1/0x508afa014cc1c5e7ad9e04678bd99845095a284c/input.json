@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/DSA_test_read/1inch.sol": {
+      "content": "pragma solidity ^0.6.0;\npragma experimental ABIEncoderV2;\n\ninterface OneProtoInterface {\n    function getExpectedReturnWithGasMulti(\n        TokenInterface[] calldata tokens,\n        uint256 amount,\n        uint256[] calldata parts,\n        uint256[] calldata flags,\n        uint256[] calldata destTokenEthPriceTimesGasPrices\n    )\n    external\n    view\n    returns(\n        uint256[] memory returnAmounts,\n        uint256 estimateGasAmount,\n        uint256[] memory distribution\n    );\n}\n\n\ninterface TokenInterface {\n    function decimals() external view returns (uint);\n    function totalSupply() external view returns (uint256);\n    function balanceOf(address) external view returns (uint);\n}\n\n\ncontract OneProtoHelpers  {\n\n    function getOneProtoAddress() internal view returns (address payable) {\n        return 0x6cb2291A3c3794fcA0F5b6E34a8E6eA7933CA667;\n    }\n\n}\n\n\ncontract Resolver is OneProtoHelpers {\n    function getBuyAmountMultiWithGas(\n        TokenInterface[] memory tokens,\n        uint sellAmt,\n        uint slippage,\n        uint[] memory distribution,\n        uint[] memory disableDexes,\n        uint[] memory destTokenEthPriceTimesGasPrices\n    )\n    public\n    view\n    returns(\n        uint buyAmt,\n        uint unitAmt,\n        uint[] memory distributions,\n        uint[] memory returnAmounts,\n        uint estimateGasAmount\n    ) {\n        uint len = tokens.length;\n        (returnAmounts, estimateGasAmount, distributions) = OneProtoInterface(getOneProtoAddress())\n                .getExpectedReturnWithGasMulti(\n                    tokens,\n                    sellAmt,\n                    distribution,\n                    disableDexes,\n                    destTokenEthPriceTimesGasPrices\n                    );\n        buyAmt = returnAmounts[len - 2];\n        // unitAmt = getBuyUnitAmt(TokenInterface(tokens[len - 1]), buyAmt, TokenInterface(tokens[0]), sellAmt, slippage);\n    }\n\n}\n"
+    }
+  }
+}

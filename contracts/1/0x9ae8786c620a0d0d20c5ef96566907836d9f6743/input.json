@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "main.sol": {
+      "content": "// SPDX-License-Identifier: MIT\r\n\r\n// THIRM PROTOCOL Leader\r\n\r\npragma solidity ^0.8.3;\r\n\r\ninterface ENS {\r\n    function ownerOf(uint256 tokenId) external view returns (address owner);\r\n}\r\n\r\ninterface ERC20 {\r\n    function totalSupply() external view returns (uint256);\r\n\r\n    function balanceOf(address account) external view returns (uint256);\r\n\r\n    function mint(address to, uint256 amount) external;\r\n\r\n    function burnFrom(address account, uint256 amount) external;\r\n}\r\n\r\ncontract Leader {\r\n    mapping(string => ERC20) public TOKEN;\r\n    mapping(address => bool) public CONTROLLER;\r\n\r\n    function nftOwner() public view returns (address) {\r\n        return\r\n            ENS(0x57f1887a8BF19b14fC0dF6Fd9B2acc9Af147eA85).ownerOf(\r\n                77518759032194629606678436102314512673279501256913318464318261388698786067419\r\n            );\r\n    }\r\n\r\n    function tokentotalSupply(string memory _coin)\r\n        public\r\n        view\r\n        returns (uint256)\r\n    {\r\n        return TOKEN[_coin].totalSupply();\r\n    }\r\n\r\n    function tokenBurn(\r\n        string memory _coin,\r\n        address _userAddress,\r\n        uint256 _amount\r\n    ) external onlyController {\r\n        require(_amount <= TOKEN[_coin].balanceOf(_userAddress), \"no balance\");\r\n\r\n        TOKEN[_coin].burnFrom(_userAddress, _amount);\r\n    }\r\n\r\n    function tokenMint(\r\n        string memory _coin,\r\n        address _userAddress,\r\n        uint256 _amount\r\n    ) external onlyController {\r\n        TOKEN[_coin].mint(_userAddress, _amount);\r\n    }\r\n\r\n    function controllerControl(address _addr, bool _yn) external onlyOwner {\r\n        CONTROLLER[_addr] = _yn;\r\n    }\r\n\r\n    function Init(string memory _coin, address _token) external onlyOwner {\r\n        TOKEN[_coin] = ERC20(_token);\r\n    }\r\n\r\n    modifier onlyOwner() {\r\n        require(msg.sender == nftOwner());\r\n        _;\r\n    }\r\n\r\n    modifier onlyController() {\r\n        require(CONTROLLER[msg.sender] == true);\r\n        _;\r\n    }\r\n}"
+    }
+  }
+}

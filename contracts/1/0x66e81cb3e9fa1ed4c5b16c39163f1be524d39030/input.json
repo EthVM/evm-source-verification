@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/contracts/IndiaBTC_Contract.sol": {
+      "content": "// SPDX-License-Identifier: GPL-3.0\n\npragma solidity >=0.4.16 <0.9.0;\n\nlibrary SafeMath {\n    function sub(uint a, uint b) internal pure returns (uint) {\n      assert(b <= a);\n      return a - b;\n    }\n    function add(uint a, uint b) internal pure returns (uint) {\n      uint c = a + b;\n      assert(c >= a);\n      return c;\n    }\n}\n\ncontract IndiaCryptoCurrency {\n    using SafeMath for uint;\n    uint private DEFAULT_TOTAL_SUPPLY = 3000000000000000000;\n\n    string public constant name = \"IndiaCryptoCurrency\";\n    string public constant symbol = \"INDIA\";\n    uint8 public constant decimals = 16;\n    event Approval(address indexed tokenOwner, address indexed spender, uint tokens);\n    event Transfer(address indexed from, address indexed to, uint tokens);\n    mapping(address => uint) balances;\n    mapping(address => mapping (address => uint)) allowed;\n    uint totalSupply_;\n    \n    constructor(uint total) {\n        if (total < 1) {\n            totalSupply_ = DEFAULT_TOTAL_SUPPLY;\n        } else {\n            totalSupply_ = total;\n        }\n        balances[msg.sender] = totalSupply_;\n    }\n    \n    function totalSupply() public view returns (uint) {\n        return totalSupply_;\n    }\n\n    function balanceOf(address tokenOwner) public view returns (uint) {\n        return balances[tokenOwner];\n    }\n\n    function transfer(address receiver, uint numTokens) public returns (bool) {\n        require(numTokens <= balances[msg.sender]);\n        balances[msg.sender] = balances[msg.sender].sub(numTokens);\n        balances[receiver] = balances[receiver].add(numTokens);\n        emit Transfer(msg.sender, receiver, numTokens);\n        return true;\n    }\n\n    function approve(address delegate, uint numTokens) public returns (bool) {\n        allowed[msg.sender][delegate] = numTokens;\n        emit Approval(msg.sender, delegate, numTokens);\n        return true;\n    }\n\n    function allowance(address owner, address delegate) public view returns (uint) {\n        return allowed[owner][delegate];\n    }\n\n    function transferFrom(address owner, address buyer, uint numTokens) public returns (bool) {\n        require(numTokens <= balances[owner]);\n        require(numTokens <= allowed[owner][msg.sender]);\n        balances[owner] = balances[owner].sub(numTokens);\n        allowed[owner][msg.sender] = allowed[owner][msg.sender].sub(numTokens);\n        balances[buyer] = balances[buyer].add(numTokens);\n        emit Transfer(owner, buyer, numTokens);\n        return true;\n    }\n}\n"
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/Gravy.sol": {
+      "content": "// SPDX-License-Identifier: MIT\r\npragma solidity ^0.8.10;\r\n\r\n\r\n/// GravyToken ERC20 Contract \r\n\r\ncontract Gravy {\r\n\r\n    \r\n    string public name;\r\n    string public symbol;\r\n    uint256 public decimals;\r\n    uint256 public totalSupply;\r\n\r\n    \r\n    mapping(address => uint256) public balanceOf;\r\n    mapping(address => mapping(address => uint256)) public allowance;\r\n\r\n\r\n    event Transfer(address indexed from, address indexed to, uint256 value);\r\n    event Approval(address indexed owner, address indexed spender, uint256 value);\r\n\r\n    constructor(string memory _name, string memory _symbol, uint _decimals, uint _totalSupply) {\r\n        name = _name;\r\n        symbol = _symbol;\r\n        decimals = _decimals;\r\n        totalSupply = _totalSupply; \r\n        balanceOf[msg.sender] = totalSupply;\r\n    }\r\n\r\n    \r\n    function mint(address _to, uint _value) internal {\r\n        totalSupply = totalSupply + (_value);\r\n        balanceOf[_to] = balanceOf[_to] + (_value);\r\n        emit Transfer(address(0), _to, _value);\r\n    }\r\n\r\n    function burn(address _from, uint _value) internal {\r\n        balanceOf[_from] = balanceOf[_from] - (_value);\r\n        totalSupply = totalSupply - (_value);\r\n        emit Transfer(_from, address(0), _value);\r\n    }\r\n\r\n    \r\n    function transfer(address _to, uint256 _value) external returns (bool success) {\r\n        require(balanceOf[msg.sender] >= _value);\r\n        _transfer(msg.sender, _to, _value);\r\n        return true;\r\n    }\r\n\r\n    \r\n    function _transfer(address _from, address _to, uint256 _value) internal {\r\n        require(_to != address(0));\r\n        balanceOf[_from] = balanceOf[_from] - (_value);\r\n        balanceOf[_to] = balanceOf[_to] + (_value);\r\n        emit Transfer(_from, _to, _value);\r\n    }\r\n\r\n    \r\n    function approve(address _spender, uint256 _value) external returns (bool) {\r\n        require(_spender != address(0));\r\n        allowance[msg.sender][_spender] = _value;\r\n        emit Approval(msg.sender, _spender, _value);\r\n        return true;\r\n    }\r\n\r\n    \r\n    function transferFrom(address _from, address _to, uint256 _value) external returns (bool) {\r\n        require(_value <= balanceOf[_from]);\r\n        require(_value <= allowance[_from][msg.sender]);\r\n        allowance[_from][msg.sender] = allowance[_from][msg.sender] - (_value);\r\n        _transfer(_from, _to, _value);\r\n        return true;\r\n    }\r\n\r\n}"
+    }
+  }
+}

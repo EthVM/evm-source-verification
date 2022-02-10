@@ -1,0 +1,35 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/StandardToken.sol": {
+      "content": "pragma solidity ^0.5.1;\nimport \"./Token.sol\";\ncontract StandardToken is Token{\n    function balanceOf(address _owner)public view returns(uint256 balance){\n        return balances[_owner];\n    }\n    function allowance(address _owner,address _spender) public view returns(uint256 remaining){\n        return allowed[_owner][_spender];\n    }\n    function transfer(address _to,uint256 _value)public returns(bool success){\n        \n        require(balances[msg.sender]>=_value);\n        balances[msg.sender]-=_value;\n        balances[_to]+=_value;\n        emit Transfer(msg.sender,_to,_value);\n        return true;\n    }\n    function approve(address _spender,uint256 _value)public returns(bool success)\n    {\n        allowed[msg.sender][_spender]=_value;\n        emit Approval(msg.sender,_spender,_value);\n        return true;\n    }\n    function transferFrom(address _from,address _to,uint256 _value) public returns(bool success){\n        require(balances[_from]>=_value&&allowed[_from][msg.sender]>=_value);\n        balances[_to]+=_value;\n        balances[_from]-=_value;\n        allowed[_from][msg.sender]-=_value;\n        emit Transfer(_from,_to,_value);\n        return true;\n        \n    }\n    mapping(address=>uint256) balances;\n    mapping(address=>mapping(address=>uint256))allowed;\n}"
+    },
+    "browser/TestToken.sol": {
+      "content": "pragma solidity ^0.5.1;\nimport \"./StandardToken.sol\";\ncontract TestToken is StandardToken {\n    string public name;\n    uint8 public decimals;\n    string public symbol;\n    \n    function estToken() public{\n        balances[msg.sender]=1000000000;// 初始token数量给予消息发送者\n        totalSupply=100000000;//设置初始总量\n        name=\"HaiLoveTing\";   //全称\n        decimals=8;     //小数位数\n        symbol=\"HaiTing\";  //token 简称\n    }\n    \n}"
+    },
+    "browser/Token.sol": {
+      "content": "pragma solidity ^0.5.1;\n\ncontract Token{\n    uint256 public totalSupply;\n    function balanceOf(address _owner) public view returns (uint256 balance);\n    function allowance(address _owner,address _spender) public view returns (uint256 remaining);\n    function transfer(address _to,uint256 _value) public returns (bool success);\n    function approve(address _spender,uint256 _value) public returns(bool success);\n    function transferFrom(address _from,address _to,uint256 _value) public returns (bool success);\n    event Transfer(address indexed _from,address indexed _to,uint256 _value);\n    event Approval(address indexed _owner,address indexed _spender,uint256 _value);\n    \n}"
+    }
+  }
+}

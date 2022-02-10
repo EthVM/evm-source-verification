@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "Tool3crv.sol": {
+      "content": "// SPDX-License-Identifier: MIT\r\npragma solidity ^0.6.2;\r\n\r\n\r\ninterface IERC20 {\r\n    function balanceOf(address account) external view returns (uint256);\r\n\r\n    function transfer(address recipient, uint256 amount) external returns (bool);\r\n\r\n    function allowance(address owner, address spender) external view returns (uint256);\r\n\r\n    function approve(address spender, uint256 amount) external returns (bool);\r\n\r\n    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);\r\n}\r\n\r\ninterface USDT {\r\n    function approve(address guy, uint256 wad) external;\r\n\r\n    function transfer(address _to, uint256 _value) external;\r\n\r\n    function transferFrom(address _from, address _to, uint256 _value) external;\r\n}\r\n\r\ninterface ICurveFi_3 {\r\n    function add_liquidity(uint256[3] calldata amounts, uint256 min_mint_amount) external;\r\n}\r\n\r\ninterface IVault {\r\n    function deposit(uint256) external;\r\n}\r\n\r\nlibrary SafeMath {\r\n    function add(uint256 a, uint256 b) internal pure returns (uint256) {\r\n        uint256 c = a + b;\r\n        require(c >= a, \"SafeMath: addition overflow\");\r\n\r\n        return c;\r\n    }\r\n}\r\n\r\nlibrary Math {\r\n    function min(uint256 a, uint256 b) internal pure returns (uint256) {\r\n        return a < b ? a : b;\r\n    }\r\n}\r\n\r\ncontract Tool3crv {\r\n    using SafeMath for uint256;\r\n\r\n    address public constant curve = 0xbEbc44782C7dB0a1A60Cb6fe97d0b483032FF1C7;\r\n    address public constant want = 0x6c3F90f043a72FA612cbac8115EE7e52BDe6E490;\r\n    address public constant bToken = 0x0b99CBd081B588bB75D7388Ab07bdE31Afb018f1;\r\n\r\n    // stablecoins\r\n    address public constant dai = 0x6B175474E89094C44Da98b954EedeAC495271d0F;\r\n    address public constant usdc = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;\r\n    address public constant usdt = 0xdAC17F958D2ee523a2206206994597C13D831ec7;\r\n\r\n    event Recycled(address indexed user, uint256 sentDai, uint256 sentUsdc,\r\n        uint256 sentUsdt, uint256 sentWant, uint256 receivedBToken);\r\n\r\n    constructor() public {\r\n        IERC20(dai).approve(curve, uint256(- 1));\r\n        IERC20(usdc).approve(curve, uint256(- 1));\r\n        USDT(usdt).approve(curve, uint256(- 1));\r\n        IERC20(want).approve(bToken, uint256(- 1));\r\n    }\r\n\r\n    function recycleExactAmounts(address sender, uint256 _dai, uint256 _usdc, uint256 _usdt, uint256 _want) internal {\r\n        if (_dai > 0) {\r\n            IERC20(dai).transferFrom(sender, address(this), _dai);\r\n        }\r\n        if (_usdc > 0) {\r\n            IERC20(usdc).transferFrom(sender, address(this), _usdc);\r\n        }\r\n        if (_usdt > 0) {\r\n            USDT(usdt).transferFrom(sender, address(this), _usdt);\r\n        }\r\n        if (_want > 0) {\r\n            IERC20(want).transferFrom(sender, address(this), _want);\r\n        }\r\n\r\n        uint256[3] memory depositAmounts = [_dai, _usdc, _usdt];\r\n        if (_dai.add(_usdc).add(_usdt) > 0) {\r\n            ICurveFi_3(curve).add_liquidity(depositAmounts, 0);\r\n        }\r\n\r\n        uint256 wantBalance = IERC20(want).balanceOf(address(this));\r\n        if (wantBalance > 0) {\r\n            IVault(bToken).deposit(wantBalance);\r\n        }\r\n\r\n        uint256 _bToken = IERC20(bToken).balanceOf(address(this));\r\n        if (_bToken > 0) {\r\n            IERC20(bToken).transfer(sender, _bToken);\r\n        }\r\n\r\n        assert(IERC20(bToken).balanceOf(address(this)) == 0);\r\n\r\n        emit Recycled(sender, _dai, _usdc, _usdt, _want, _bToken);\r\n    }\r\n\r\n    function recycle() external {\r\n        uint256 _dai = Math.min(IERC20(dai).balanceOf(msg.sender), IERC20(dai).allowance(msg.sender, address(this)));\r\n        uint256 _usdc = Math.min(IERC20(usdc).balanceOf(msg.sender), IERC20(usdc).allowance(msg.sender, address(this)));\r\n        uint256 _usdt = Math.min(IERC20(usdt).balanceOf(msg.sender), IERC20(usdt).allowance(msg.sender, address(this)));\r\n        uint256 _want = Math.min(IERC20(want).balanceOf(msg.sender), IERC20(want).allowance(msg.sender, address(this)));\r\n\r\n        recycleExactAmounts(msg.sender, _dai, _usdc, _usdt, _want);\r\n    }\r\n\r\n\r\n    function recycleExact(uint256 _dai, uint256 _usdc, uint256 _usdt, uint256 _want) external {\r\n        recycleExactAmounts(msg.sender, _dai, _usdc, _usdt, _want);\r\n    }\r\n}"
+    }
+  }
+}

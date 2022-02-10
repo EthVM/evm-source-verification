@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/Contract3.sol": {
+      "content": "/**\n *Submitted for verification at Etherscan.io on 2021-06-08\n*/\n\n// SPDX-License-Identifier: MIT\n\npragma solidity ^0.8.4;\n\ninterface contract2{\n    function editData(address user, uint256 lockedRewards, uint256 firstBlock) external ;\n    function definiteStats(address user) external view returns(uint256 firstBlock, uint256 lockedRewards, uint256 totalLockedRewards);\n    function claimRewards(address user) external returns(bool);\n    function userStats(address user) external view returns(uint256 firstBlock, uint256 claimedDays, uint256 lockedRewards, uint256 claimableRewards);\n    \n}\n\ninterface IERC20{\n\n  function transfer(address recipient, uint256 amount) external returns (bool);\n\n}\n\ninterface MCHstakingInterface {\n    \n    function showBlackUser(address user) external view returns(bool) ;\n}\n\ninterface Icontract3{\n    function withdrawLockedRewards() external ;\n    event WithdrawLockedRewards(address indexed user, uint256 amount);\n}\ncontract contract3 is Icontract3{\n    \n    IERC20 MCF;\n    contract2 SC2;\n    \n    address _owner;\n\n    mapping(address => uint256) private claimedMonths;\n    mapping (address => bool) private _blackListed;\n        \n    constructor(address contract2Address, address MCFaddress){\n        _owner = msg.sender;\n        SC2 = contract2(contract2Address);\n        MCF = IERC20(MCFaddress);\n    }\n   \n        \n    function addToBlackList(address user) external {\n        require(_owner == msg.sender);\n        _blackListed[user] = true;\n    }\n    \n    function showBlackUser(address user) external view returns(bool){\n        return _blackListed[user];\n    }\n    \n    function removeFromBlackList(address user) external {\n        require(_owner == msg.sender);\n        _blackListed[user] = false;\n    } \n    \n    function claimedRewards(address user) external view returns(uint256) { \n        (, , uint256 totalLockedRewards) = SC2.definiteStats(user);\n        uint256 totalLocked = totalLockedRewards/10;\n        return claimedMonths[user] * totalLocked;\n    }\n    \n    function claimableRewards(address user) external view returns(uint256) {\n        (, , uint256 totalLockedRewards) = SC2.definiteStats(user);\n        (,,uint256 lockedRewards,) = SC2.userStats(user);\n        \n        if(lockedRewards > totalLockedRewards) {totalLockedRewards = lockedRewards;}\n        uint256 rewards;\n        uint256 month = (block.number - 12954838) / 199384;\n        uint256 _claimMonths = claimedMonths[user];\n        while(month > _claimMonths){\n        \n        if(lockedRewards == 0){break;}\n        uint256 totalLocked = totalLockedRewards/10;\n        \n        if(lockedRewards < totalLocked){rewards += lockedRewards; break;}\n        else{rewards += totalLocked; lockedRewards -=totalLocked; }\n        \n        ++_claimMonths;\n        }\n        \n        return rewards;\n    }\n    function withdrawLockedRewards() external override {\n        require(_blackListed[msg.sender] == false);\n     \n        SC2.claimRewards(msg.sender);\n        (uint256 firstBlock, uint256 lockedRewards, uint256 totalLockedRewards) = SC2.definiteStats(msg.sender);\n        require(block.number > 13154223 && lockedRewards > 0);\n        ////////////////////////12755454\n        uint256 claimedRewards;\n        uint256 month = (block.number - 12954838) / 199384;\n        uint256 total;\n        while(month > claimedMonths[msg.sender]){\n        \n        if(lockedRewards == 0){break;}\n        uint256 totalLocked = totalLockedRewards/10;\n        \n        if(lockedRewards < totalLocked){total += lockedRewards; claimedRewards += lockedRewards; lockedRewards = 0;}\n        else{total += totalLocked; claimedRewards += lockedRewards; lockedRewards -=totalLocked; }\n        \n        ++claimedMonths[msg.sender];\n        }\n        \n        MCF.transfer(msg.sender, total);\n        SC2.editData(msg.sender, lockedRewards, firstBlock);\n        \n        emit WithdrawLockedRewards(msg.sender, claimedRewards);\n    }\n    \n    function emergencyWithdraw(uint256 amount) external {\n        require(msg.sender == _owner);\n        MCF.transfer(msg.sender, amount);\n    }\n}"
+    }
+  }
+}

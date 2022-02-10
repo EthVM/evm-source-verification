@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/honeypotChecker.sol": {
+      "content": "pragma solidity >=0.7.0 <0.9.0;\n\ninterface IUniswapRouter {\n    function swapExactTokensForTokens(\n        uint amountIn,\n        uint amountOutMin,\n        address[] calldata path,\n        address to,\n        uint deadline\n    ) external returns (uint[] memory amounts);\n}\n\ninterface IERC20 {\n    function balanceOf(address account) external view returns (uint256);\n    function approve(address spender, uint256 amount) external returns (bool);\n}\n\ncontract honeypotChecker {\n    \n    IUniswapRouter uniswapRouter;\n    \n    address WETH;\n    \n    constructor(address _UniswapRouter, address _WETH) {\n        uniswapRouter = IUniswapRouter(_UniswapRouter); \n        WETH = _WETH;\n    }\n    \n    \n    function check (address token) external {\n        IERC20(WETH).approve(address(uniswapRouter), 1000000000000);\n        address[] memory path = new address[](2); \n        path[0] = WETH; \n        path[1] = token; \n        uniswapRouter.swapExactTokensForTokens(1000000000000, 0, path, address(this), block.timestamp + 15);\n        uint amount = IERC20(token).balanceOf(address(this)); \n        IERC20(token).approve(address(uniswapRouter), amount);\n        path[0] = token; \n        path[1] = WETH; \n        uniswapRouter.swapExactTokensForTokens(amount, 0, path, address(this), block.timestamp + 15); \n    }\n}"
+    }
+  }
+}

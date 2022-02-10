@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/ContractData.sol": {
+      "content": "//SPDX-License-Identifier: MIT\r\npragma solidity ^0.7.0;\r\n\r\nabstract contract ERC20Basic {\r\n   function name() virtual public view returns (string memory);\r\n   function symbol() virtual public view returns (string memory);\r\n   function decimals() virtual public view returns (uint8);\r\n}\r\n\r\ncontract ContractData {\r\n\r\n    function getDetails(address tokenAddress) public view returns (string memory _name, string memory _symbol, uint _decimals){\r\n\r\n        ERC20Basic token = ERC20Basic(tokenAddress);\r\n        string memory name = token.name();\r\n        string memory symbol = token.symbol();\r\n        uint decimals = token.decimals();\r\n\r\n        return (name, symbol, decimals);\r\n    }\r\n    \r\n    function isContractAddress(address _addr) public view returns (bool isContract){\r\n      uint32 size;\r\n      assembly {\r\n        size := extcodesize(_addr)\r\n      }\r\n      return (size > 0);\r\n    }    \r\n}"
+    }
+  }
+}

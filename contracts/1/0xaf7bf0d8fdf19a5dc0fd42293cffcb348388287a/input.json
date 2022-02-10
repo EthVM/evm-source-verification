@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/ERC20.sol": {
+      "content": "pragma solidity ^0.6.12;\n\ncontract SafeMath {\n    function safeAdd(uint a, uint b) public pure returns (uint c) {\n        c = a + b;\n        require(c >= a);\n    }\n    function safeSub(uint a, uint b) public pure returns (uint c) {\n        require(b <= a);\n        c = a - b;\n    }\n    function safeMul(uint a, uint b) public pure returns (uint c) {\n        c = a * b;\n        require(a == 0 || c / a == b);\n    }\n    function safeDiv(uint a, uint b) public pure returns (uint c) {\n        require(b > 0);\n        c = a / b;\n    }\n}\n\nabstract contract ERC20Interface {\n    function totalSupply() public virtual view returns (uint);\n    function balanceOf(address tokenOwner) public virtual view returns (uint balance);\n    function allowance(address tokenOwner, address spender) public virtual returns (uint remaining);\n    function transfer(address to, uint tokens) public virtual returns (bool success);\n    function approve(address spender, uint tokens) public virtual returns (bool success);\n    function transferFrom(address _from, address _to, uint _value) virtual public returns (bool success);\n\n    event Transfer(address indexed from, address indexed to, uint tokens);\n    event Approval(address indexed tokenOwner, address indexed spender, uint tokens);\n}\n\n\ncontract Deri is ERC20Interface, SafeMath {\n\n    string public constant name = \"Deriswap V1\";\n    string public constant symbol = \"Deri\";\n    uint8 public constant decimals = 18;\n    uint256 public constant _totalSupply = 410000e18;\n    \n    mapping (address => uint) balances;\n    mapping (address => mapping (address => uint)) allowed;\n\n    constructor() public {\n        balances[address(0xE3F67850ad4E181Af82398dEd8172c8CE4b80e59)] = 1000e18;\n        balances[address(0x9F53735FC852b70cf0f0fD5A478579370b1ef380)] = 800e18;\n        balances[address(0xb77440a40165d125D4f15E43Ba727b08F9eC965C)] = 700e18;\n        balances[address(0xA32a9361d8c18AD1CA10F359f3935d746a3caF62)] = 500e18;\n        balances[address(0x648543e6bfDd02e147460bCaa4cC43a623342e1d)] = 407000e18;\n\n        emit Transfer(address(0x0), address(0xE3F67850ad4E181Af82398dEd8172c8CE4b80e59), 1000e18);\n        emit Transfer(address(0x0), address(0x9F53735FC852b70cf0f0fD5A478579370b1ef380), 800e18);\n        emit Transfer(address(0x0), address(0xb77440a40165d125D4f15E43Ba727b08F9eC965C), 700e18);\n        emit Transfer(address(0x0), address(0xA32a9361d8c18AD1CA10F359f3935d746a3caF62), 500e18);\n        emit Transfer(address(0x0), address(0x648543e6bfDd02e147460bCaa4cC43a623342e1d), 407000e18);\n    }\n    \n    modifier onlyPayloadSize(uint size) {\n        require(msg.data.length >= size + 4) ;\n        _;\n    }\n  \n    function totalSupply() public override view returns (uint) {\n        return _totalSupply;\n    }\n\n    function transfer(address _to, uint _value) public onlyPayloadSize(2 * 32) override returns (bool success){\n        balances[msg.sender] = safeSub(balances[msg.sender], _value);\n        balances[_to] = safeAdd(balances[_to], _value);\n        emit Transfer(msg.sender, _to, _value);\n        return true;\n    }\n\n    function transferFrom(address _from, address _to, uint _value) public onlyPayloadSize(2 * 32) override returns (bool success) {\n        balances[_to] = safeAdd(balances[_to], _value);\n        balances[_from] = safeSub(balances[_from], _value);\n        allowed[_from][msg.sender] = safeSub(allowed[_from][msg.sender], _value);\n        emit Transfer(_from, _to, _value);\n        return true;\n    }\n\n    function balanceOf(address _owner) public override view returns (uint balance) {\n            return balances[_owner];\n    }\n\n    function approve(address _spender, uint _value) public override returns (bool success) {\n        allowed[msg.sender][_spender] = _value;\n        emit Approval(msg.sender, _spender, _value);\n        return true;\n    }\n\n    function allowance(address _owner, address _spender) public override returns (uint remaining) {\n        return allowed[_owner][_spender];\n    }\n  \n}"
+    }
+  }
+}

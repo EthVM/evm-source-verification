@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "amm.sol": {
+      "content": "// SPDX-License-Identifier: MIT\npragma solidity 0.8.9;\n\ninterface erc20 {\n    function approve(address, uint) external returns (bool);\n    function transfer(address, uint) external returns (bool);\n    function transferFrom(address, address, uint) external returns (bool);\n    function balanceOf(address) external view returns (uint);\n}\n\ninterface cy20 {\n    function redeemUnderlying(uint) external returns (uint);\n    function mint(uint) external returns (uint);\n    function borrow(uint) external returns (uint);\n    function repayBorrow(uint) external returns (uint);\n}\n\ninterface registry {\n    function cy(address) external view returns (address);\n    function price(address) external view returns (uint);\n}\n\ncontract ibAMM {\n    \n    erc20 constant eurs = erc20(0xdB25f211AB05b1c97D595516F45794528a807ad8);\n    erc20 constant ibeur = erc20(0x96E61422b6A9bA0e068B6c5ADd4fFaBC6a4aae27);\n    \n    cy20 constant cy_eurs = cy20(0xA8caeA564811af0e92b1E044f3eDd18Fa9a73E4F);\n    cy20 constant ib_eur = cy20(0x00e5c0774A5F065c285068170b20393925C84BF3);\n    \n    uint constant decimals = 10**(18-2);\n    \n    bool public breaker = false;\n    \n    constructor() {\n        erc20(eurs).approve(address(cy_eurs), type(uint).max);\n        erc20(ibeur).approve(address(ib_eur), type(uint).max);\n    }\n    \n    function buy(uint amount) external returns (bool) {\n        _safeTransferFrom(address(eurs), msg.sender, address(this), amount);\n        require(cy_eurs.mint(amount) == 0, \"ib: supply failed\");\n        uint _out = amount*decimals;\n        require(ib_eur.borrow(_out) == 0, 'ib: borrow failed');\n        _safeTransfer(address(ibeur), msg.sender, _out);\n        return true;\n    }\n    \n    function sell(uint amount) external returns (bool) {\n        uint _out = amount / decimals;\n        _safeTransferFrom(address(ibeur), msg.sender, address(this), amount);\n        require(cy_eurs.redeemUnderlying(_out) == 0, \"ib: supply failed\");\n        require(ib_eur.repayBorrow(amount) == 0, 'ib: repay failed');\n        _safeTransfer(address(eurs), msg.sender, _out);\n        return true;\n    }\n\n    function _safeTransfer(address token, address to, uint256 value) internal {\n        (bool success, bytes memory data) =\n            token.call(abi.encodeWithSelector(erc20.transfer.selector, to, value));\n        require(success && (data.length == 0 || abi.decode(data, (bool))));\n    }\n\n    function _safeTransferFrom(address token, address from, address to, uint256 value) internal {\n        (bool success, bytes memory data) =\n            token.call(abi.encodeWithSelector(erc20.transferFrom.selector, from, to, value));\n        require(success && (data.length == 0 || abi.decode(data, (bool))));\n    }\n}"
+    }
+  }
+}

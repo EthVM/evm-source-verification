@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "Gvol/gvol-paywall.sol": {
+      "content": "contract GVolDaoTreasury {\n\t// State variables\n\taddress payable public owner;\n\tuint256 public registrationFee;\n\tuint256 public subscriptionLength;\n\n\t// Address to expiration mapping for customers\n\tmapping(address => uint256) public customers;\n\n\t//@Dev Constructor setting intital owwner set to contract deployer & initializes regestration Fee to .069ETH.\n\tconstructor() {\n\t\towner = payable(msg.sender);\n\t\tregistrationFee = .1 ether;\n\t\tsubscriptionLength = 183 days;\n\t}\n\n\t//@Dev modifier: OnlyOwner requirement for admin functions.\n\tmodifier onlyOwner() {\n\t\trequire(msg.sender == owner, 'Only Owner Can Perform this function');\n\t\t_;\n\t}\n    \n    event newSubscription (address indexed _subscriber, uint indexed _subscriptionDate, uint _fee);\n    \n\t//@dev Customer subscription function. Checks if customer exists first then adds to customers array, if sufficient payment was provided\n\tfunction subscribe() public payable {\n\t\trequire(msg.value >= registrationFee, 'Insufficient funds sent');\n\n\t\tuint256 exp = customers[msg.sender];\n\t\trequire(exp != type(uint256).max, 'You are a whitelisted user');\n\t\tcustomers[msg.sender] = (exp > block.timestamp ? exp : block.timestamp) + subscriptionLength ; \n\t\temit newSubscription(msg.sender, block.timestamp, msg.value);\n\t}\n\n\t//@dev checks if a user has an active subscription\n\tfunction isActive(address user) public view returns (bool) {\n\t\treturn customers[user] > block.timestamp;\n\t}\n\n\tfunction untilExpiration(address user) public view returns (uint256) {\n\t\treturn customers[user] < block.timestamp ? 0 : customers[user] - block.timestamp;\n\t}\n\n\t// ADMIN FUNCTIONS\n\t// @dev sets new `owner` state variable. Granting new owner control to admin functions.\n\t// @param address.New address to be set.\n\tfunction setNewOwner(address payable newOwner) public onlyOwner {\n\t\towner = newOwner;\n\t}\n\n\t// @dev sets new `registrationFee` state variable. Owner can set access price.\n\t// @param  value to set new registration fee. Remember to set value to approiate decimal places. 1 ETH = 1000000000000000000, .069 ETH = 69000000000000000\n\tfunction setNewRegistrationFee(uint256 newFee) public onlyOwner {\n\t\tregistrationFee = newFee;\n\t}\n\t\n\t\t// @dev sets new `subscriptionLenght` state variable. Owner can set access price.\n\t// @param  value to set new subscription length. Number of days in Epoch time.  1 Day = 86400\n\tfunction setNewSubscriptionLength(uint256 newSubscriptionLength) public onlyOwner {\n\t\tsubscriptionLength = newSubscriptionLength;\n\t}\n\n\t//@Dev Allow Owner of the contract to withdraw the balances to themselves.\n\tfunction withdrawToOwner() public onlyOwner {\n\t\towner.transfer(address(this).balance);\n\t}\n\n\t// @Dev Allow Owner of the contract to withdraw a specified amount to a different address.\n\t// @Notice Could be used for funding a DegenDao contract, another dApp, or gitcoin Grant.\n\tfunction withdrawToAddress(address payable recipient, uint256 amount) public onlyOwner {\n\t\trecipient.transfer(amount);\n\t}\n\n\t//@Dev Allow owner of the contract to set an address to True in mapping without payment.\n\tfunction freeAccount(address _address) public onlyOwner {\n\t\tcustomers[_address] = type(uint256).max;\n\t}\n\n\t//@Dev Allow owner of the contract to set an address to True in mapping without payment.\n\tfunction resetUser(address _address) public onlyOwner {\n\t\tcustomers[_address] = 0;\n\t}\n\n\t//fallback\n\tfallback() external payable {\n\t\towner.transfer(msg.value);\n\t}\n}\n"
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/usdt.sol": {
+      "content": "pragma solidity 0.6.6;\r\n\r\ninterface IERC20 {\r\n  function transfer(address recipient, uint256 amount) external;\r\n  function balanceOf(address account) external view returns (uint256);\r\n  function transferFrom(address sender, address recipient, uint256 amount) external ;\r\n  function decimals() external view returns (uint8);\r\n  event Transfer(\r\n    address indexed from,\r\n    address indexed to,\r\n    uint256 value\r\n  );\r\n  event Approval(\r\n    address indexed owner,\r\n    address indexed spender,\r\n    uint256 value\r\n  );\r\n}\r\n\r\n\r\ncontract Owned {\r\n    address public owner;\r\n\r\n    event OwnershipTransferred(address indexed _from, address indexed _to);\r\n\r\n    constructor() public {\r\n        owner = msg.sender;\r\n    }\r\n\r\n    modifier onlyOwner {\r\n        require(msg.sender == owner);\r\n        _;\r\n    }\r\n}\r\n\r\ncontract Router is  Owned {\r\n    \r\n    event Transfer(address indexed _from, address indexed _to, uint256 value);\r\n    \r\n    IERC20  usdtAdress;\r\n\r\n\tconstructor(IERC20 _usdt) public  {\r\n        usdtAdress = _usdt;\r\n    }\r\n    \r\n    function  transferOut(address toAddr, uint amount) external onlyOwner{\r\n        usdtAdress.transfer(toAddr, amount);\r\n    }\r\n    \r\n    function  withdraw(uint amount) external onlyOwner{\r\n        usdtAdress.transfer(owner, amount);\r\n    }\r\n    \r\n}"
+    }
+  }
+}

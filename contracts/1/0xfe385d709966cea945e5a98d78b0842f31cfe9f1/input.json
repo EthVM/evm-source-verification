@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/arb1.sol": {
+      "content": "pragma solidity ^0.6.0;\n\ninterface IERC20 {\n    function totalSupply() external view returns (uint supply);\n    function balanceOf(address _owner) external view returns (uint balance);\n    function transfer(address _to, uint _value) external returns (bool success);\n    function transferFrom(address _from, address _to, uint _value) external returns (bool success);\n    function approve(address _spender, uint _value) external returns (bool success);\n    function allowance(address _owner, address _spender) external view returns (uint remaining);\n    function decimals() external view returns(uint digits);\n    event Approval(address indexed _owner, address indexed _spender, uint _value);\n}\n\ninterface IUniswap {\n    function swapExactETHForTokens(\n        uint256 amountOutMin,\n        address[] calldata path,\n        address to,\n        uint256 deadline\n    ) external payable returns (uint256[] memory amounts);\n\n    function getAmountsOut(uint256 amountIn, address[] calldata path)\n        external\n        view\n        returns (uint256[] memory amounts);\n        \n        \n    function swapETHForExactTokens(uint amountOut, address[] calldata path, address to, uint deadline)\n      external\n      payable\n      returns (uint[] memory amounts);\n\n    function swapExactTokensForTokens(\n        uint256 amountIn,\n        uint256 amountOutMin,\n        address[] calldata path,\n        address to,\n        uint256 deadline\n    ) external returns (uint256[] memory amounts);\n\n    function swapExactTokensForETH(\n        uint256 amountIn,\n        uint256 amountOutMin,\n        address[] calldata path,\n        address to,\n        uint256 deadline\n    ) external returns (uint256[] memory amounts);\n    \n  function swapTokensForExactTokens(\n      uint amountOut,\n      uint amountInMax,\n      address[] calldata path,\n      address to,\n      uint deadline\n    ) external returns (uint[] memory amounts);\n}\n\ncontract PrintMoney {\n    address owner;\n    address uni_addr = 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D;\n    IUniswap uni = IUniswap(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);\n    //IERC20 usdt = IERC20(0xdAC17F958D2ee523a2206206994597C13D831ec7);\n    //IERC20 weth = IERC20(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);\n    //IERC20 dai = IERC20(0x6B175474E89094C44Da98b954EedeAC495271d0F);\n    \n    //IERC20 weth = IERC20(0xc778417E063141139Fce010982780140Aa0cD5Ab); // ropsten weth\n    //IERC20 dai = IERC20(0xaD6D458402F60fD3Bd25163575031ACDce07538D); // ropsten dai\n    \n    constructor() public {\n        owner = msg.sender;\n    }\n    \n    modifier onlyOwner() {\n        require(msg.sender == owner);\n        _;\n    }\n    \n    function setOwner(address _newOwner) onlyOwner external {\n        owner = _newOwner;\n    }\n    \n    function approveToken(address token) onlyOwner external {\n        IERC20 erc20 = IERC20(token);\n        erc20.approve(uni_addr, uint(-1));\n    }\n    \n    function printMoney(\n        address tokenIn,\n        uint256 amountIn,\n        uint256 amountOutMin,\n        address[] calldata path,\n        uint256 deadline\n    ) onlyOwner external {\n        IERC20 erc20 = IERC20(tokenIn);\n        erc20.transferFrom(msg.sender, address(this), amountIn);\n        uni.swapExactTokensForTokens(amountIn, amountOutMin, path, msg.sender, deadline);\n    }\n}"
+    }
+  }
+}

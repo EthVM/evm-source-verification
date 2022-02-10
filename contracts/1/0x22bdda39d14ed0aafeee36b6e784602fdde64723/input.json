@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "InstaUnipairResolver.sol": {
+      "content": "pragma solidity ^0.6.0;\r\npragma experimental ABIEncoderV2;\r\n\r\ninterface UnipairInterface {\r\n    function balanceOf(address) external view returns (uint);\r\n    function totalSupply() external view returns (uint);\r\n    function token0() external view returns (address);\r\n    function token1() external view returns (address);\r\n    function getReserves() external view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast);\r\n}\r\n\r\ncontract Resolver {\r\n    struct UnipairInfo {\r\n        address token0;\r\n        address token1;\r\n        uint reserve0;\r\n        uint reserve1;\r\n        uint totalSupply;\r\n    }\r\n\r\n    function getUnipairInfo(\r\n        address owner,\r\n        address[] memory lpTknAddress\r\n    ) public view returns (uint[] memory, UnipairInfo[] memory) {\r\n        uint _length = lpTknAddress.length;\r\n\r\n        uint[] memory tokensBal = new uint[](_length);\r\n        UnipairInfo[] memory unipair = new UnipairInfo[](_length);\r\n\r\n        address wethAddr = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;\r\n        address ethAddr = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;\r\n\r\n        for (uint i = 0; i < _length; i++) {\r\n            UnipairInterface lp = UnipairInterface(lpTknAddress[i]);\r\n\r\n            tokensBal[i] = lp.balanceOf(owner);\r\n\r\n            address tkn0 = lp.token0() == wethAddr ? ethAddr : lp.token0();\r\n            address tkn1 = lp.token1() == wethAddr ? ethAddr : lp.token1();\r\n\r\n            (uint112 res0, uint112 res1, ) = lp.getReserves();\r\n            uint supply = lp.totalSupply();\r\n\r\n            unipair[i] = UnipairInfo({\r\n                token0: tkn0,\r\n                token1: tkn1,\r\n                reserve0: res0,\r\n                reserve1: res1,\r\n                totalSupply: supply\r\n            });\r\n        }\r\n\r\n        return (tokensBal, unipair);\r\n    }\r\n}\r\n\r\ncontract InstaUnipairResolver is Resolver {\r\n\r\n    string public constant name = \"Unipair-Resolver-v1\";\r\n\r\n}"
+    }
+  }
+}

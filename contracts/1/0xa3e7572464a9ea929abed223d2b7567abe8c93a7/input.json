@@ -1,0 +1,35 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "Owned.sol": {
+      "content": "pragma solidity >=0.4.22 <0.6.0;\n\ncontract Owned {\n    address owner;\n    address newOwner;\n\n    constructor() internal {\n        owner = msg.sender;\n    }\n\n    modifier onlyOwner() {\n        require(msg.sender == owner);\n        _;\n    }\n\n    function ChangeOwnership(address p_newOwner) external onlyOwner {\n        newOwner = p_newOwner;\n    }\n\n    function AcceptOwnership() external {\n        require(msg.sender == newOwner);\n        owner = newOwner;\n    }\n}\n"
+    },
+    "SafeMath.sol": {
+      "content": "pragma solidity >=0.4.22 <0.6.0;\n\nlibrary SafeMath {\n    function add(uint input1, uint input2) internal pure returns(uint result) {\n        result = input1 + input2;\n        require(result >= input1);\n    }\n    function sub(uint input1, uint input2) internal pure returns(uint result) {\n        require(input2 <= input1);\n        result = input1 - input2;\n    }\n    function mul(uint input1, uint input2) internal pure returns(uint result) {\n        result = input1 * input2;\n        require(input1 == 0 || result / input1 == input2);\n    }\n    function div(uint input1, uint input2) internal pure returns(uint result) {\n        require(input2 > 0);\n        result = input1 / input2;\n    }\n}\n"
+    },
+    "ZZZToken.sol": {
+      "content": "pragma solidity >=0.4.22 <0.6.0;\n\nimport \"./SafeMath.sol\";\nimport \"./Owned.sol\";\n\n\ncontract ERC20Interface {\n    function totalSupply() public view returns (uint);\n    function balanceOf(address _tokenOwner) public view returns (uint _balance);\n    function allowance(address _tokenOwner, address _spender) public view returns (uint _remaining);\n    function transfer(address _to, uint _tokens) public returns (bool _success);\n    function approve(address _spender, uint _tokens) public returns (bool _success);\n    function transferFrom(address _from, address _to, uint _tokens) public returns (bool _success);\n\n    event Transfer(address indexed _from, address indexed _to, uint _tokens);\n    event Approval(address indexed _tokenOwner, address indexed _spender, uint _tokens);\n}\n\n\ncontract ZZZToken is Owned, ERC20Interface {\n    using SafeMath for uint;\n\n    string public constant symbol = \"ZZZ\";\n    string public constant name = \"ZZZ\";\n    uint8 public constant decimals = 18;\n    uint public constant decimalFactor = 10**uint(decimals);\n    uint public constant m_totalSupply = 10000 * decimalFactor;\n\n    mapping(address => uint) balances;\n    mapping(address => mapping(address => uint)) allowed;\n\n\n    constructor () public {\n        balances[owner] = m_totalSupply;\n        emit Transfer(address(0), owner, m_totalSupply);\n    }\n\n\n    function batchTransfer(\n        address[] memory _recipients,\n        uint _tokens\n    )\n        public\n        onlyOwner\n        returns (bool)\n    {\n        require(_recipients.length > 0);\n        _tokens = _tokens * 10**uint(decimals);\n        require(_tokens <= balances[msg.sender]);\n\n        for(uint j = 0; j < _recipients.length; j++){\n\n            balances[_recipients[j]] = balances[_recipients[j]].add(_tokens);\n            balances[owner] = balances[owner].sub(_tokens);\n            emit Transfer(owner, _recipients[j], _tokens);\n        }\n        return true;\n    }\n\n\n    function totalSupply() public view returns (uint) {\n        return m_totalSupply.sub(balances[address(0)]);\n    }\n\n\n    function balanceOf(address _tokenOwner) public view returns (uint _balance) {\n        return balances[_tokenOwner];\n    }\n\n\n    function allowance(address _tokenOwner, address _spender) public view returns (uint _remaining) {\n        return allowed[_tokenOwner][_spender];\n    }\n\n\n    function transfer(address _to, uint _tokens) public returns (bool _success) {\n        require(balances[msg.sender] >= _tokens);\n\n        balances[msg.sender] = balances[msg.sender].sub(_tokens);\n        balances[_to] = balances[_to].add(_tokens);\n        emit Transfer(msg.sender, _to, _tokens);\n        return true;\n    }\n\n\n    function approve(address _spender, uint _tokens) public returns (bool _success) {\n        allowed[msg.sender][_spender] = _tokens;\n        emit Approval(msg.sender, _spender, _tokens);\n        return true;\n    }\n\n\n    function transferFrom(address _from, address _to, uint _tokens) public returns (bool _success) {\n        require(balances[_from] >= _tokens);\n        require(allowed[_from][msg.sender] >= _tokens);\n\n        balances[_from] = balances[_from].sub(_tokens);\n        balances[_to] = balances[_to].add(_tokens);\n        allowed[_from][msg.sender] = allowed[_from][msg.sender].sub(_tokens);\n        emit Transfer(_from, _to, _tokens);\n        return true;\n    }\n\n}\n"
+    }
+  }
+}

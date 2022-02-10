@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/newK2.sol": {
+      "content": "pragma solidity ^0.6.1;\r\n\r\n      contract KOG {\r\n          string  public name = \"Koinonia of Grace\";\r\n          string  public symbol = \"KOG\";\r\n          uint8 public decimals = 9;\r\n          uint256 public totalSupply;\r\n\r\n          event Transfer(address indexed _from, address indexed _to, uint256 _value);\r\n          event Approval(address indexed _owner, address indexed _spender, uint256 _value);\r\n\r\n          mapping(address => uint256) public balanceOf;\r\n          mapping(address => mapping(address => uint256)) public allowance;\r\n\r\n          constructor() public {\r\n            totalSupply = 1000000000 * 10 ** uint(decimals);\r\n            balanceOf[msg.sender] = totalSupply;\r\n          }\r\n\r\n          function balances(address _owner) public view returns (uint256 balance) {\r\n              return balanceOf[_owner];\r\n          }\r\n\r\n          function ERCME (uint256 _initialSupply) public {\r\n              balanceOf[msg.sender] = _initialSupply;\r\n              totalSupply = _initialSupply;\r\n          }\r\n\r\n          function transfer(address _to, uint256 _value) public returns (bool success) {\r\n              require(balanceOf[msg.sender] >= _value);\r\n              balanceOf[msg.sender] -= _value;\r\n              balanceOf[_to] += _value;\r\n              emit Transfer(msg.sender, _to, _value);\r\n              return true;\r\n          }\r\n\r\n          function approve(address _spender, uint256 _value) public returns (bool success) {\r\n              allowance[msg.sender][_spender] = _value;\r\n              emit Approval(msg.sender, _spender, _value);\r\n              return true;\r\n          }\r\n\r\n          function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) {\r\n              require(_value <= balanceOf[_from]);\r\n              require(_value <= allowance[_from][msg.sender]);\r\n              balanceOf[_from] -= _value;\r\n              balanceOf[_to] += _value;\r\n              allowance[_from][msg.sender] -= _value;\r\n              emit Transfer(_from, _to, _value);\r\n              return true;\r\n          }\r\n      }"
+    }
+  }
+}

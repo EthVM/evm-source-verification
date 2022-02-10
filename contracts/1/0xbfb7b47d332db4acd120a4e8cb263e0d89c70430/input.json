@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/VRGTokenSale.sol": {
+      "content": "// SPDX-License-Identifier: MIT\n\npragma solidity ^0.7.3;\n\n\ncontract Ownable {\n\n    address private owner;\n    \n    event OwnerSet(address indexed oldOwner, address indexed newOwner);\n    \n    modifier onlyOwner() {\n        require(msg.sender == owner, \"Caller is not owner\");\n        _;\n    }\n    \n    constructor() {\n        owner = msg.sender; // 'msg.sender' is sender of current call, contract deployer for a constructor\n        emit OwnerSet(address(0), owner);\n    }\n\n    function changeOwner(address newOwner) public onlyOwner {\n        emit OwnerSet(owner, newOwner);\n        owner = newOwner;\n    }\n\n    function getOwner() external view returns (address) {\n        return owner;\n    }\n}\n\nlibrary SafeMath {\n\n    function div(uint256 a, uint256 b) internal pure returns (uint256) {\n        return div(a, b, \"SafeMath: division by zero\");\n    }\n\n    function div(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {\n        require(b > 0, errorMessage);\n        uint256 c = a / b;\n        // assert(a == b * c + a % b); // There is no case in which this doesn't hold\n\n        return c;\n    }\n\n}\n\ninterface Token {\n    function tokensSold(address buyer, uint256 amount) external  returns (bool success);\n    function balanceOf(address _owner) external view returns (uint256 balance);\n    function burn(uint256 _value) external returns (bool success);\n}\n\ncontract VRGSale is Ownable{\n    \n    using SafeMath for uint256;\n    \n    uint256 public psalePrice;\n    uint256 public csalePrice;\n    uint256 public totalSold;\n    address public tokenAddress;\n    address payable public walletAddress;\n    uint256 public crowdSaleStart = 1609002000;\n    uint256 public crowdSaleEnd = 1609693200;\n    event TokensSold(address indexed to, uint256 amount);\n    \n    constructor() {\n        csalePrice = uint256(30000000000000);\n        walletAddress = 0x0296dfbfF01C81FA7E2eB4D6cE035e555ce62Fe4;\n        tokenAddress = address(0x0);\n    }\n    \n    receive() external payable {\n        buy();\n    }\n    \n    function setToken(address _tokenAddress) onlyOwner public {\n        require(tokenAddress == address(0x0), \"Token is set\");\n        tokenAddress = _tokenAddress;\n    }\n    \n    function buy() public payable {\n        require(((block.timestamp > crowdSaleStart) && (block.timestamp < crowdSaleEnd)), \"Contract is not selling tokens\");\n        uint256 weiValue = msg.value;\n        require(weiValue >= (10 ** 17));\n        require(weiValue <= 15 ether, \"Maximum amount on crowdsale is 15ETH\");\n        uint256 amount = 0;\n        amount = weiValue.div(csalePrice)  * (1 ether);\n        Token token = Token(tokenAddress);\n        require(walletAddress.send(weiValue));\n        require(token.tokensSold(msg.sender, amount));\n        totalSold += amount;\n        emit TokensSold(msg.sender, amount);\n    }\n    \n    function burnUnsold() onlyOwner public {\n        require(block.timestamp > crowdSaleEnd);\n        Token token = Token(tokenAddress);\n        uint256 amount = token.balanceOf(address(this));\n        token.burn(amount);\n    }\n    \n}\n"
+    }
+  }
+}

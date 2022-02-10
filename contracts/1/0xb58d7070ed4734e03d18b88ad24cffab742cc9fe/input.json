@@ -1,0 +1,32 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/MLMInterface.sol": {
+      "content": "pragma solidity ^0.6.10;\r\n// SPDX-License-Identifier: MIT\r\ncontract OldMLM {\r\n     function getAddress(uint _id) public view returns(address payable) {}\r\n     function isMember(address payable _address) public view returns(bool) {}\r\n     function getDirectChilds(address node) public view returns(address, address) {}\r\n}\r\n\r\ncontract NewMLM {\r\n    function initialize(address payable _parent, address payable _child) public {}\r\n    function initializeDirect(address payable _direct) public {}\r\n    function getMaintainance() public view returns(bool) {}\r\n    function getBeneficiary() public view returns(address) {}\r\n    function isMember(address payable _address) public view returns(bool) {}\r\n}\r\n"
+    },
+    "browser/Transfer.sol": {
+      "content": "pragma solidity ^0.6.1;\r\n// SPDX-License-Identifier: MIT\r\nimport \"./MLMInterface.sol\";\r\ncontract Transfer {\r\n//****************************************************************************    \r\n//* Data\r\n//****************************************************************************    \r\n//    address OldMLMAddress = 0x6CDDbab9c871FF465A8501801D271eaC7De3f921;\r\n//    address NewMLMAddress = 0xc95D253D4134A97D3bD1d7843228F039A0232Ffb;\r\n    address OldMLMAddress = 0x6CDDbab9c871FF465A8501801D271eaC7De3f921;\r\n    address NewMLMAddress = 0xc95D253D4134A97D3bD1d7843228F039A0232Ffb;\r\n    OldMLM MLM1 = OldMLM(OldMLMAddress);\r\n    NewMLM MLM2 = NewMLM(NewMLMAddress);\r\n    address payable owner;\r\n    uint max = 25;\r\n    uint count;\r\n//****************************************************************************    \r\n//* Modifiers\r\n//****************************************************************************    \r\n    modifier isOwner() {\r\n        require(msg.sender == owner);\r\n        _;\r\n    }\r\n//****************************************************************************    \r\n//* function\r\n//****************************************************************************    \r\n    \r\n    constructor() public {\r\n        owner = msg.sender;\r\n    }\r\n    \r\n    function dataTransfer() public isOwner {\r\n        require(MLM2.getMaintainance());\r\n        require(address(this) == MLM2.getBeneficiary());\r\n        count = 0;\r\n        address payable direct = MLM1.getAddress(1);\r\n        if (! MLM2.isMember(direct)) {\r\n            MLM2.initializeDirect(direct);\r\n        }\r\n        registerMember(direct);\r\n    }\r\n    \r\n    function addressToPayable(address a) internal pure returns(address payable b) {\r\n        b = address(uint160(address(a)));\r\n    }\r\n    \r\n    function setMax(uint i) public {\r\n        require(i != max);\r\n        max = i;\r\n    }\r\n    \r\n    function registerMember(address payable _member) internal {\r\n        (address a1, address a2) = MLM1.getDirectChilds(_member);\r\n        if (a1 != address(0)) {\r\n            address payable aa1 = addressToPayable(a1);\r\n            if (! MLM2.isMember(aa1)) {\r\n                count++;\r\n                MLM2.initialize(_member, aa1);\r\n            }\r\n            if (count<=max)\r\n                registerMember(aa1);\r\n        }\r\n        if (a2 != address(0)) {\r\n            address payable aa2 = addressToPayable(a2);\r\n            if (! MLM2.isMember(aa2)) {\r\n                count++;\r\n                MLM2.initialize(_member, aa2);\r\n            }\r\n            if (count<=max)\r\n                registerMember(aa2);\r\n        }\r\n    }\r\n    \r\n    receive() external payable {\r\n    }\r\n    \r\n    function withdraw() public isOwner() {\r\n        owner.transfer(address(this).balance);\r\n    }\r\n}"
+    }
+  }
+}

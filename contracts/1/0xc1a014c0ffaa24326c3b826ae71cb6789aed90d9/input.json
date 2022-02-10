@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/Birther.sol": {
+      "content": "pragma solidity ^0.6.6;\n\ncontract Birther {\n    \n    address core = 0x06012c8cf97BEaD5deAe237070F9587f8E7A266d;\n    \n    receive() external payable { }\n    \n    function birth(uint256 _kittyId) external {\n        \n        (bool success, ) = core.call.value(0)( abi.encodePacked(bytes4(keccak256(\"giveBirth(uint256)\")), _kittyId) );\n        if (success) msg.sender.transfer( address(this).balance );\n        \n    } \n    \n}"
+    }
+  }
+}

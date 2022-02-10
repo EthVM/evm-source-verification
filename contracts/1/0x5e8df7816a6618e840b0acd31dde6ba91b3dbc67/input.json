@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "Scientoken.sol": {
+      "content": "pragma solidity ^ 0.8.2;\n\nlibrary SafeMath { \n    //SPDX-License-Identifier: <SPDX-License>\n    function sub(uint a, uint b) internal pure returns (uint) {\n      assert(b <= a);\n      return a - b;\n    }\n    \n    function add(uint a, uint b) internal pure returns (uint) {\n      uint256 c = a + b;\n      assert(c >= a);\n      return c;\n    }\n}\n\ncontract ScientechToken{\n    //SPDX-License-Identifier: <SPDX-License>\n    mapping (address => uint) public balances;\n    mapping(address => mapping (address => uint))public allowed;\n    uint public totalSupply = 1000000000 * 10 ** 2;\n    string public name = \"ScienTech Token\";\n    string public symbol = \"STT\";\n    uint public decimals = 2;\n    \n    event Transfer(address indexed from, address indexed to, uint tokens);\n    event Approval(address indexed tokenOwner, address indexed spender, uint tokens);\n    \n    using SafeMath for uint;\n    \n    constructor(){\n        balances[msg.sender] = totalSupply;\n    }\n    \n    function balanceOf(address tokenOwner) public view returns (uint) {\n        return balances[tokenOwner];\n    }\n    \n    function transfer(address receiver, uint numTokens) public returns (bool) {\n    require(numTokens <= balances[msg.sender], 'Insufficient Balance');\n    balances[msg.sender] = balances[msg.sender].sub(numTokens);\n    balances[receiver] = balances[receiver].add(numTokens);\n    emit Transfer(msg.sender, receiver, numTokens);\n    return true;\n    }\n    \n    function approve(address delegate, uint numTokens) public returns (bool) {\n        allowed[msg.sender][delegate] = numTokens;\n        Approval(msg.sender, delegate, numTokens);\n        return true;\n    }\n    \n    function transferFrom(address owner, address buyer, uint numTokens) public returns (bool) {\n        require(numTokens <= balances[owner], 'Balance Too Low');    \n        require(numTokens <= allowed[owner][msg.sender],'Allowance too low');\n    \n        balances[owner] = balances[owner].sub(numTokens);\n        allowed[owner][msg.sender] = allowed[owner][msg.sender].sub(numTokens);\n        balances[buyer] = balances[buyer].add(numTokens);\n        Transfer(owner, buyer, numTokens);\n        return true;\n    }\n}"
+    }
+  }
+}

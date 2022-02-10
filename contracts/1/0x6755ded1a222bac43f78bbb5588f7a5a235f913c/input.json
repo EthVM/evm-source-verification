@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "TOKEN.sol": {
+      "content": "pragma solidity ^0.4.23;\r\n\r\ncontract IERC20 {\r\n    function totalSupply() public constant returns (uint256 supply);\r\n    function balanceOf(address _owner) public constant returns (uint256 balance);\r\n    function transfer(address _to, uint256 _value) public returns (bool success);\r\n    function transferFrom(address _from, address _to, uint256 _value) public returns (bool success);\r\n    function approve(address _spender, uint256 _value) public returns (bool success);\r\n    function allowance(address _owner, address _spender) public constant returns (uint256 remaining);\r\n    event Transfer(address indexed _from, address indexed _to, uint256 _value);\r\n    event Approval(address indexed _owner, address indexed _spender, uint256 _value);\r\n}\r\n\r\ncontract ERC20 is IERC20 {\r\n    uint256 internal _total_supply;\r\n    mapping (address => uint256) balances;\r\n    mapping (address => mapping (address => uint256)) allowed;\r\n    function transfer(address _to, uint256 _value) public returns (bool success) {\r\n        if (balances[msg.sender] >= _value && _value > 0) {\r\n            balances[msg.sender] -= _value;\r\n            balances[_to] += _value;\r\n            emit Transfer(msg.sender, _to, _value);\r\n            return true;\r\n        } else { return false; }\r\n    }\r\n    function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) {\r\n        if (balances[_from] >= _value && allowed[_from][msg.sender] >= _value && _value > 0) {\r\n            balances[_to] += _value;\r\n            balances[_from] -= _value;\r\n            allowed[_from][msg.sender] -= _value;\r\n            emit Transfer(_from, _to, _value);\r\n            return true;\r\n        } else { return false; }\r\n    }\r\n    function balanceOf(address _owner) public constant returns (uint256 balance) {\r\n        return balances[_owner];\r\n    }\r\n    function approve(address _spender, uint256 _value) public returns (bool success) {\r\n        allowed[msg.sender][_spender] = _value;\r\n        emit Approval(msg.sender, _spender, _value);\r\n        return true;\r\n    }\r\n    function allowance(address _owner, address _spender) public constant returns (uint256 remaining) {\r\n      return allowed[_owner][_spender];\r\n    }\r\n    function totalSupply() public constant returns (uint256 supply) {\r\n        return _total_supply;\r\n    }\r\n}\r\n\r\ncontract TOKEN is ERC20 {\r\n    string public name;\r\n    uint8 public decimals; \r\n    string public symbol;\r\n    uint256 public totalSupply;\r\n    address public owner;\r\n    \r\n    constructor (\r\n        uint256 _initialAmount,\r\n        string _tokenName,\r\n        uint8 _decimalUnits,\r\n        string _tokenSymbol\r\n    )\r\n        public\r\n    {\r\n        balances[msg.sender] = _initialAmount;\r\n        totalSupply = _initialAmount;\r\n        name = _tokenName;\r\n        decimals = _decimalUnits;\r\n        symbol = _tokenSymbol;\r\n        owner = msg.sender;\r\n    }\r\n    \r\n    function mint(address account, uint256 amount) public {\r\n        require(account != address(0), \"ERC20: mint to the zero address\");\r\n        require(owner == msg.sender);\r\n        \r\n        totalSupply += amount;\r\n        balances[account] += amount;\r\n        emit Transfer(address(0), account, amount);\r\n    }\r\n\t\r\n\t\r\n\t function burn(uint256 amount) public {\r\n\r\n        uint256 accountBalance = balances[msg.sender];\r\n        require(accountBalance >= amount, \"ERC20: burn amount exceeds balance\");\r\n        balances[msg.sender] = accountBalance - amount;\r\n        totalSupply -= amount;\r\n\r\n        emit Transfer(msg.sender, address(0), amount);\r\n    }\r\n\r\n}"
+    }
+  }
+}

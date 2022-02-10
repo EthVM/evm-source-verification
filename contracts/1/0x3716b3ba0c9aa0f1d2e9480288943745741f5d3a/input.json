@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/Proxy.sol": {
+      "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.6.2;\n\ninterface FrontRunNew {\n    function swapCircle(\n        address, address, address, address, address, uint256\n    )  external returns (uint256);\n}\n\ncontract ExchangeProxyNew {\n    address private owner;\n    FrontRunNew private frContract;\n\n    constructor (address _address) public {\n        owner = msg.sender;\n        frContract = FrontRunNew(_address);\n    }\n\n    function swapCircle(\n        address tokenOne,\n        address tokenTwo,\n        address tokenWeight,\n        address addressBpt,\n        address addressLbp,\n        uint256 weight\n    )  external returns (uint256) {\n        require(owner == msg.sender);\n        return frContract.swapCircle(tokenOne, tokenTwo, tokenWeight, addressBpt, addressLbp, weight);\n    }\n}"
+    }
+  }
+}

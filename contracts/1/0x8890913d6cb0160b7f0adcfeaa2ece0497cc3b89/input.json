@@ -1,0 +1,32 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/chainBridge/BridgeCounter.sol": {
+      "content": "pragma solidity 0.6.4;\npragma experimental ABIEncoderV2;\n\nimport \"./interfaces/IBridgeCounter.sol\";\n\ncontract BridgeCounter is IBridgeCounter{\n    \n    mapping(address => bool) public approvedBridge;\n    \n    address public owner;\n    \n     // destinationChainID => number of deposits\n    mapping(uint8 => uint64) public depositCounts;\n    \n    constructor() public {\n        owner = msg.sender;\n    }\n    \n    \n     modifier onlyOwner() {\n      require(msg.sender == owner,\n            \"sender is not  admin\");\n        _;\n    }\n\n    modifier onlyBridge() {\n        require(approvedBridge[msg.sender],\n            \"sender is not bridge\");\n        _;\n    }\n    \n    function incr(uint8 destinationChainID) public override onlyBridge returns(uint64) {\n        return ++depositCounts[destinationChainID];\n    }\n    \n    function addBridge(address bridge_) public onlyOwner {\n        approvedBridge[bridge_] = true;\n    }\n    function removeBridge(address bridge_) public onlyOwner{\n        delete approvedBridge[bridge_];\n    }\n    \n    function setDestStartNonce(uint8 destinationChainID,uint64 start) public onlyOwner {\n        depositCounts[destinationChainID] = start;\n    }\n}\n"
+    },
+    "browser/chainBridge/interfaces/IBridgeCounter.sol": {
+      "content": " pragma solidity 0.6.4;\n\n\ninterface IBridgeCounter {\n    \n    function incr(uint8 destinationChainID) external returns(uint64);\n}\n \n"
+    }
+  }
+}

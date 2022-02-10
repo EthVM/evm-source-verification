@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "AaveLiquidations.sol": {
+      "content": "pragma solidity ^0.5.17;\r\n\r\ninterface LendingPool {\r\n    function getUserAccountData(address _user)\r\n        external\r\n        view\r\n        returns (\r\n            uint256 totalLiquidityETH,\r\n            uint256 totalCollateralETH,\r\n            uint256 totalBorrowsETH,\r\n            uint256 totalFeesETH,\r\n            uint256 availableBorrowsETH,\r\n            uint256 currentLiquidationThreshold,\r\n            uint256 ltv,\r\n            uint256 healthFactor\r\n        );\r\n}\r\n\r\ncontract AaveLiquidations {\r\n    \r\n    function filterLiquidations(LendingPool pool, address[] calldata users) external view returns (address[] memory active) {\r\n        \r\n        address[] memory usersToLiquidate = users;\r\n        \r\n        uint liquidationsCount;\r\n        for (uint i = 0; i < usersToLiquidate.length; i++) {\r\n            (,,,,,,, uint256 healthFactor) = pool.getUserAccountData(usersToLiquidate[i]);\r\n            if (healthFactor > 1e18) {\r\n                usersToLiquidate[i] = address(0);\r\n                continue;\r\n            }\r\n            liquidationsCount++;\r\n        }\r\n        \r\n        active = new address[](liquidationsCount);\r\n        uint counter;\r\n          for (uint i = 0; i < usersToLiquidate.length; i++) {\r\n            if (usersToLiquidate[i] == address(0)) {\r\n                continue;\r\n            }\r\n            active[counter] = usersToLiquidate[i];\r\n            counter++;\r\n        }\r\n    }\r\n    \r\n}"
+    }
+  }
+}

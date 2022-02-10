@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/Gonzo/PlusOne.sol": {
+      "content": "pragma solidity ^0.6.6;\n\n// In this game, players play by depositing ether.\n// Players must deposit more ether than the last player. See the minimumDeposit variable to check how much must be deposited.\n// When the game times out, the last player can withdraw all the ether on the contract, minus a 10% fee.\n// The game times out 3 days after the last successful \"play\" call or 1 year after the beginning of the game.\ncontract PlusOne {\n    uint constant public incrementPercent = 10; // each player must play at list 10% more than the previous player\n    uint constant public feePercent = 19;\n\n    address public owner;\n    address public lastPlayer;\n    uint256 public fees;\n    uint256 public playerTimeout;\n    uint256 public gameTimeout;\n    uint256 public minimumDeposit;\n    bool public winnerFundWithdrawn;\n\n    // Builds the contract. The owner is in fact the first player.\n    constructor() public payable {\n        owner = msg.sender;\n        gameTimeout = block.number + 2102400; // approx 1 year\n        playerTimeout = gameTimeout;\n        fees = msg.value * feePercent / 100;\n        lastPlayer = msg.sender;\n        setMinimumDeposit(msg.value);\n    }\n    \n    // Plays. You need to deposit more than the minimumDeposit.\n    function play() payable public {\n        require(msg.value >= minimumDeposit, 'Send more than minimumDeposit');\n\n        setMinimumDeposit(msg.value);\n        fees += msg.value * feePercent / 100;\n\n        if (block.number < playerTimeout && block.number < gameTimeout) {\n            lastPlayer = msg.sender;\n            playerTimeout = block.number + 17280; // approx 3 days\n        }\n    }\n    \n    function setMinimumDeposit(uint256 currentDeposit) private {\n        minimumDeposit = currentDeposit * (100 + incrementPercent) / 100; // Next player will need to play with at least 10% more\n    }\n    \n    // Sends the contract balance (minus the fees) to the winner\n    function withdraw() public {\n        require(!winnerFundWithdrawn, 'Already withdrawn');\n        require(block.number >= playerTimeout || block.number >= gameTimeout);\n\n        winnerFundWithdrawn = true;\n        payable(lastPlayer).transfer(address(this).balance - fees);\n    }\n    \n    // Send the fees to the owner\n    function withdrawFees() public {\n        require(msg.sender == owner, 'Not owner');\n        \n        if (winnerFundWithdrawn) {\n            // If the winner has already withdrawn its prize, we can withdraw everything remaining\n            payable(owner).transfer(address(this).balance);\n        }\n        else {\n            fees = 0;\n            payable(owner).transfer(fees);\n        }\n    }\n    \n    receive() external payable { }\n}"
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/TokenDecimalsView.sol": {
+      "content": "/**\n *  @authors: [@mtsalenc]\n *  @reviewers: []\n *  @auditors: []\n *  @bounties: []\n *  @deployments: []\n */\n\npragma solidity 0.8.0;\n\n/** @title TokenDecimalsView\n *  Utility view contract to fetch token decimals in batches.\n */\ncontract TokenDecimalsView {\n    \n    function getTokenDecimals(address[] calldata _tokens) external view returns (uint[] memory decimals) {\n        decimals = new uint[](_tokens.length);\n        for (uint i = 0; i < _tokens.length; i++) {\n            address tokenAddress = _tokens[i];\n            // Call the contract's decimals() function without reverting when\n            // the contract does not implement it.\n            // \n            // Two things should be noted: if the contract does not implement the function\n            // and does not implement the contract fallback function, `success` will be set to\n            // false and decimals won't be set. However, in some cases (such as old contracts) \n            // the fallback function is implemented, and so staticcall will return true\n            // even though the value returned will not be correct (the number below):\n            // \n            // 22270923699561257074107342068491755213283769984150504402684791726686939079929\n            //\n            // We handle that edge case by also checking against this value.\n            uint returnedDecimals;\n            bool success;\n            bytes4 sig = bytes4(keccak256(\"decimals()\"));\n            assembly {\n                let x := mload(0x40)   // Find empty storage location using \"free memory pointer\"\n                mstore(x, sig)          // Set the signature to the first call parameter. 0x313ce567 === bytes4(keccak256(\"decimals()\")\n                success := staticcall(\n                    30000,              // 30k gas\n                    tokenAddress,       // The call target.\n                    x,                  // Inputs are stored at location x\n                    0x04,               // Input is 4 bytes long\n                    x,                  // Overwrite x with output\n                    0x20                // The output length\n                )\n                \n                returnedDecimals := mload(x)   \n            }\n            if (success && returnedDecimals != 22270923699561257074107342068491755213283769984150504402684791726686939079929) {\n                decimals[i] = returnedDecimals;\n            }\n        }\n    }\n}"
+    }
+  }
+}

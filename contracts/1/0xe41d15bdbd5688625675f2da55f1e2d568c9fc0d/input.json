@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "Token.sol": {
+      "content": "pragma solidity 0.4.25;\r\n\r\ninterface tokenRecipient { function receiveApproval(address _from, uint _value, address _token, bytes _extraData) external; }\r\n\r\nlibrary SafeMath {\r\n\r\n  function add(uint a, uint b) internal pure returns (uint) {\r\n    uint256 c = a + b;\r\n    assert(c >= a);\r\n    return c;\r\n  }\r\n\r\n  function sub(uint a, uint b) internal pure returns (uint) {\r\n    assert(b <= a);\r\n    return a - b;\r\n  }\r\n\r\n  function mul(uint a, uint b) internal pure returns (uint) {\r\n    if (a == 0) {\r\n      return 0;\r\n    }\r\n    uint256 c = a * b;\r\n    assert(c / a == b);\r\n    return c;\r\n  }\r\n\r\n  function div(uint a, uint b) internal pure returns (uint) {\r\n    uint256 c = a / b;\r\n    return c;\r\n  }\r\n\r\n}\r\n\r\n\r\n\r\ncontract Token  {\r\n\r\n    using SafeMath for uint256;\r\n\r\n    string public name;\r\n    string public symbol;\r\n    uint8 public decimals;\r\n    uint public totalSupply;\r\n\r\n    mapping (address => uint) public balances;\r\n    mapping (address => mapping (address => uint)) public allowance;\r\n  \r\n\r\n    event Transfer(address indexed from, address indexed to, uint value);\r\n    event Burn(address indexed from, uint value);\r\n\t\r\n\r\n    constructor(uint256 initialSupply, string tokenName, string tokenSymbol, uint8 tokenDecimal) public {\r\n        totalSupply = initialSupply * 10 ** uint(tokenDecimal);\r\n        balances[msg.sender] = totalSupply;\r\n        name = tokenName;\r\n        symbol = tokenSymbol;\r\n\t\tdecimals = tokenDecimal;\r\n    }\r\n\r\n    function _transfer(address _from, address _to, uint _value) internal {\r\n\t\trequire(_from != 0x0);\r\n\t\trequire(_to != 0x0);\r\n\t\trequire(balances[_from] >= _value && balances[_to] + _value > balances[_to]);\r\n\t\t\r\n      \r\n\t\tuint previousBalances = balances[_from].add(balances[_to]);\r\n\t\tbalances[_from] = balances[_from].sub(_value);\r\n\t\tbalances[_to] = balances[_to].add(_value);\r\n\t\temit Transfer(_from, _to, _value);\r\n\t\tassert(balances[_from] + balances[_to] == previousBalances);\r\n    }\r\n\t\r\n\tfunction balanceOf(address _from) public view returns (uint) {\r\n\t\treturn balances[_from];\r\n\t}\r\n\r\n    function transfer(address _to, uint _value) public returns (bool) {\r\n\t\t_transfer(msg.sender, _to, _value);\r\n\t\treturn true;\r\n    }\r\n\r\n    function transferFrom(address _from, address _to, uint _value) public returns (bool) {\r\n\t\trequire(_value <= allowance[_from][msg.sender]);\r\n        allowance[_from][msg.sender] = allowance[_from][msg.sender].sub(_value);\r\n        _transfer(_from, _to, _value);\r\n        return true;\r\n    }\r\n\r\n    function approve(address _spender, uint _value) public returns (bool) {\r\n\t\tallowance[msg.sender][_spender] = _value;\r\n        return true;\r\n    }\r\n\r\n    function approveAndCall(address _spender, uint _value, bytes _extraData) public returns (bool) {\r\n\t\ttokenRecipient spender = tokenRecipient(_spender);\r\n\t\tif (approve(_spender, _value)) {\r\n\t\t\tspender.receiveApproval(msg.sender, _value, this, _extraData);\r\n\t\t\treturn true;\r\n        }\r\n\t\treturn false;\r\n    }\r\n\r\n    function burn(uint _value) public returns (bool) {\r\n\t\trequire(balances[msg.sender] >= _value);\r\n        balances[msg.sender] = balances[msg.sender].sub(_value);\r\n        totalSupply = totalSupply.sub(_value);\r\n        emit Burn(msg.sender, _value);\r\n        return true;\r\n    }\r\n\r\n      function burnFrom(address _from, uint _value) public  returns (bool) {\r\n        require(balances[_from] >= _value);\r\n        require(_value <= allowance[_from][msg.sender]);\r\n        balances[_from] = balances[_from].sub(_value);\r\n        allowance[_from][msg.sender] = allowance[_from][msg.sender].sub(_value);\r\n        totalSupply = totalSupply.sub(_value);\r\n        emit Burn(_from, _value);\r\n        return true;\r\n    }\r\n\t\r\n\r\n      \r\n\r\n}"
+    }
+  }
+}

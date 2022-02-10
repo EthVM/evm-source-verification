@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/SpiStake.sol": {
+      "content": "pragma solidity 0.6.12;\r\n\r\ninterface IBEP20 {\r\n\r\n    function totalSupply() external view returns (uint256);\r\n\r\n    function balanceOf(address who) external view returns (uint256);\r\n\r\n    function allowance(address owner, address spender)\r\n    external view returns (uint256);\r\n\r\n    function transfer(address to, uint256 value) external returns (bool);\r\n\r\n    function approve(address spender, uint256 value)\r\n    external returns (bool);\r\n\r\n    function transferFrom(address from, address to, uint256 value)\r\n    external returns (bool);\r\n\r\n}\r\n\r\nlibrary SafeMath {\r\n    function mul(uint256 a, uint256 b) internal pure returns (uint256) {\r\n        if (a == 0) {\r\n            return 0;\r\n        }\r\n        uint256 c = a * b;\r\n        require(c / a == b);\r\n        return c;\r\n    }\r\n\r\n    function div(uint256 a, uint256 b) internal pure returns (uint256) {\r\n        uint256 c = a / b;\r\n        return c;\r\n    }\r\n\r\n    function sub(uint256 a, uint256 b) internal pure returns (uint256) {\r\n        require(b <= a);\r\n        return a - b;\r\n    }\r\n\r\n    function add(uint256 a, uint256 b) internal pure returns (uint256) {\r\n        uint256 c = a + b;\r\n        require(c >= a);\r\n        return c;\r\n    }\r\n}\r\n\r\n\r\ncontract SPIStaking {\r\n\tusing SafeMath for uint256;\r\n \taddress payable internal owner;\r\n    IBEP20 internal spi = IBEP20(address(0x9B02dD390a603Add5c07f9fd9175b7DABE8D63B7));\r\n\r\n    uint256 constant internal MAGNITUDE = 2 ** 64;\r\n    uint32 constant private DROP_RATE = 165;\r\n\r\n    mapping(address => uint256) public stakedOf;\r\n    mapping(address => int256) private payoutsTo;\r\n    mapping(address => uint256) public claimedOf;\r\n\r\n    uint256 private profitPerShare;\r\n    uint256 private totalSupply;\r\n\r\n    uint256 public lastDripTime  = now;\r\n    \r\n    modifier onlyOwner() {\r\n      require(msg.sender == owner,\"NO_AUTH\");\r\n    _;\r\n    }\r\n \r\n\tconstructor() public {\r\n\t\towner = msg.sender;\r\n    }\r\n\r\n\r\n     modifier hasDripped(){\r\n         uint256 pool = getPool();\r\n        if(pool > 0 && totalSupply > 0){ \r\n          uint256 cyclePassed = SafeMath.sub(now,lastDripTime);   \r\n         \r\n          uint256 dividends =  cyclePassed*((pool * DROP_RATE) / 100000000);\r\n\r\n          if (dividends > pool) {\r\n              dividends = pool;\r\n          }\r\n\r\n          profitPerShare = SafeMath.add(profitPerShare, (dividends * MAGNITUDE) / totalSupply);\r\n          lastDripTime = now ;\r\n        }\r\n\r\n        _;\r\n    }\r\n\r\n\r\n    function stake(uint256 amount) hasDripped  public \r\n    {\r\n        require(amount > 0);\r\n        uint256 currentBalance = spi.balanceOf(address(this));\r\n        spi.transferFrom(msg.sender, address(this), amount);\r\n        uint256 diff = spi.balanceOf(address(this)) - currentBalance;\r\n        \r\n        require(diff > 0);\r\n        \r\n        if(getPool() > 0){//START DRIPPING\r\n            lastDripTime = now;\r\n        }\r\n        \r\n        totalSupply = SafeMath.add(totalSupply,diff);\r\n        stakedOf[msg.sender] = SafeMath.add(stakedOf[msg.sender], diff);\r\n        payoutsTo[msg.sender] += (int256) (profitPerShare * diff);\r\n    }\r\n\r\n    function unstake(uint256 _amount) hasDripped public \r\n    {\r\n        require(_amount <= stakedOf[msg.sender]);\r\n        totalSupply -= _amount;\r\n        stakedOf[msg.sender]= SafeMath.sub(stakedOf[msg.sender], _amount);\r\n        payoutsTo[msg.sender] -= (int256) (profitPerShare * _amount);\r\n        spi.transfer(msg.sender,_amount);\r\n    }\r\n\r\n\r\n    function claimEarning() hasDripped public {\r\n        uint256 divs = dividendsOf(msg.sender);\r\n\r\n        require(divs > 0 , \"NO_DIV\");\r\n        payoutsTo[msg.sender] += (int256) (divs * MAGNITUDE);\r\n        claimedOf[msg.sender] += divs;\r\n        spi.transfer(msg.sender,divs);\r\n    }\r\n\r\n\r\n    function getGlobalInfo() public view returns (uint256 ,uint256){\r\n        return (getPool(),totalSupply);\r\n    }\r\n    \r\n\r\n    function estimateDividendsOf(address _customerAddress) public view returns (uint256) {\r\n        uint256 pool = getPool();\r\n        if(pool > 0 && totalSupply > 0){\r\n            uint256 _profitPerShare = profitPerShare;\r\n            uint256 cyclePassed = SafeMath.sub(now,lastDripTime);\r\n            uint256 dividends =  cyclePassed*((pool * DROP_RATE) / 100000000);\r\n    \r\n            if (dividends > pool) {\r\n                dividends = pool;\r\n            }\r\n    \r\n            _profitPerShare = SafeMath.add(profitPerShare, (dividends * MAGNITUDE) / totalSupply);\r\n    \r\n            return  (uint256) ((int256) (_profitPerShare * stakedOf[_customerAddress]) - payoutsTo[_customerAddress]) / MAGNITUDE;\r\n            \r\n        }else{\r\n            return 0;\r\n        }\r\n    }\r\n\r\n    function dividendsOf(address _customerAddress) public view returns (uint256) {\r\n        return (uint256) ((int256) (profitPerShare * stakedOf[_customerAddress]) - payoutsTo[_customerAddress]) / MAGNITUDE ;\r\n    }\r\n    \r\n    function getPool() internal view returns (uint256) {\r\n        \r\n        return   spi.balanceOf(address(this)) - totalSupply;\r\n\r\n    }\r\n}"
+    }
+  }
+}

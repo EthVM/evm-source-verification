@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "daoDeployer.sol": {
+      "content": "// SPDX-License-Identifier: GPL-3.0-or-later\r\npragma solidity ^0.8.0;\r\n\r\ninterface IMolochSummoner {\r\n    function summonMoloch(\r\n        address[] memory _summoner,\r\n        address[] memory _approvedTokens,\r\n        uint256 _periodDuration,\r\n        uint256 _votingPeriodLength,\r\n        uint256 _gracePeriodLength,\r\n        uint256 _proposalDeposit,\r\n        uint256 _dilutionBound,\r\n        uint256 _processingReward,\r\n        uint256[] memory _summonerShares\r\n    ) external returns (address);\r\n}\r\n\r\ninterface IMinionFactory {\r\n    function summonMinion(address moloch, string memory details, uint256 minQuorum) external returns (address);\r\n}\r\n\r\ninterface IRicardianLLC {\r\n    function mintLLC(address to) external payable;\r\n}\r\n\r\n/// @notice Summon a Moloch DAO v2 (daohaus.club) with Minion and optional LLC formation maintained by LexDAO (ricardian.gitbook.io).\r\ncontract MolochSummonerV2x { \r\n    IMolochSummoner constant dhMolochSummoner = IMolochSummoner(0x38064F40B20347d58b326E767791A6f79cdEddCe);\r\n    IMinionFactory constant dhMinionFactory = IMinionFactory(0x7EDfBDED3077Bc035eFcEA1835359736Fa342209);\r\n    IRicardianLLC constant ricardianLLC = IRicardianLLC(0x43B644a01d87025c9046F12eE4cdeC7E04258eBf);\r\n    \r\n    address constant dai = 0x6B175474E89094C44Da98b954EedeAC495271d0F;\r\n    address constant rai = 0x03ab458634910AaD20eF5f1C8ee96F1D6ac54919;\r\n    address constant wETH  = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;\r\n\r\n    event SummonMoloch(address indexed moloch, address indexed minion, bool mintLLC);\r\n    \r\n    function summonMoloch(\r\n        string calldata details,\r\n        bool mintLLC\r\n    ) external payable returns (address moloch, address minion) {\r\n        address[] memory _summoner = new address[](1);\r\n        _summoner[0] = msg.sender;\r\n        \r\n        address[] memory _approvedTokens = new address[](3);\r\n        _approvedTokens[0] = dai;\r\n        _approvedTokens[1] = rai;\r\n        _approvedTokens[2] = wETH;\r\n        \r\n        uint256[] memory _summonerShares = new uint256[](1);\r\n        _summonerShares[0] = 100;\r\n        \r\n        moloch = dhMolochSummoner.summonMoloch( // summon Moloch w/ std presets\r\n            _summoner,\r\n            _approvedTokens,\r\n            17280,\r\n            35,\r\n            35,\r\n            0,\r\n            3,\r\n            0,\r\n            _summonerShares);\r\n        minion = dhMinionFactory.summonMinion(moloch, details, 50); // summon 'nifty' Minion\r\n        if (mintLLC) ricardianLLC.mintLLC{value: msg.value}(minion); // form LLC for DAO and deposit registration NFT into Minion - fwd any ether to Ricardian LLC mgmt\r\n        emit SummonMoloch(moloch, minion, mintLLC);\r\n    }\r\n}"
+    }
+  }
+}

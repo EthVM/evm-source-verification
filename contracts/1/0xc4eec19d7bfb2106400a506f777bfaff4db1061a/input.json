@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "TimeLockedWallet.sol": {
+      "content": "// File: contracts/ERC20.sol\r\n\r\npragma solidity ^0.4.18;\r\n\r\n\r\n/**\r\n * @title ERC20\r\n * @dev see https://github.com/ethereum/EIPs/issues/20\r\n */\r\ncontract ERC20 {\r\n  uint256 public totalSupply;\r\n\r\n  function balanceOf(address who) public view returns (uint256);\r\n  function transfer(address to, uint256 value) public returns (bool);\r\n  function allowance(address owner, address spender) public view returns (uint256);\r\n  function transferFrom(address from, address to, uint256 value) public returns (bool);\r\n  function approve(address spender, uint256 value) public returns (bool);\r\n\r\n  event Approval(address indexed owner, address indexed spender, uint256 value);\r\n  event Transfer(address indexed from, address indexed to, uint256 value);\r\n}\r\n\r\n// File: contracts/TimeLockedWallet.sol\r\n\r\npragma solidity ^0.4.18;\r\n\r\n\r\ncontract TimeLockedWallet {\r\n\r\n    address public creator;\r\n    address public owner;\r\n    uint256 public unlockDate;\r\n    uint256 public createdAt;\r\n\r\n    modifier onlyOwner {\r\n        require(msg.sender == owner);\r\n        _;\r\n    }\r\n\r\n    function TimeLockedWallet(\r\n        address _creator,\r\n        address _owner,\r\n        uint256 _unlockDate\r\n    ) public {\r\n        creator = _creator;\r\n        owner = _owner;\r\n        unlockDate = _unlockDate;\r\n        createdAt = now;\r\n    }\r\n\r\n    // keep all the ether sent to this address\r\n    function() payable public { \r\n        Received(msg.sender, msg.value);\r\n    }\r\n\r\n    // callable by owner only, after specified time\r\n    function withdraw() onlyOwner public {\r\n       require(now >= unlockDate);\r\n       //now send all the balance\r\n       msg.sender.transfer(this.balance);\r\n       Withdrew(msg.sender, this.balance);\r\n    }\r\n\r\n    // callable by owner only, after specified time, only for Tokens implementing ERC20\r\n    function withdrawTokens(address _tokenContract) onlyOwner public {\r\n       require(now >= unlockDate);\r\n       ERC20 token = ERC20(_tokenContract);\r\n       //now send all the token balance\r\n       uint256 tokenBalance = token.balanceOf(this);\r\n       token.transfer(owner, tokenBalance);\r\n       WithdrewTokens(_tokenContract, msg.sender, tokenBalance);\r\n    }\r\n\r\n    function info() public view returns(address, address, uint256, uint256, uint256) {\r\n        return (creator, owner, unlockDate, createdAt, this.balance);\r\n    }\r\n\r\n    event Received(address from, uint256 amount);\r\n    event Withdrew(address to, uint256 amount);\r\n    event WithdrewTokens(address tokenContract, address to, uint256 amount);\r\n}"
+    }
+  }
+}

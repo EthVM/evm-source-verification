@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "distributor.sol": {
+      "content": "// SPDX-License-Identifier: GPL-2.0\npragma solidity =0.7.6;\n\nlibrary TransferHelper {\n    function safeApprove(address token, address to, uint value) internal {\n        // bytes4(keccak256(bytes('approve(address,uint256)')));\n        (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0x095ea7b3, to, value));\n        require(success && (data.length == 0 || abi.decode(data, (bool))), 'TransferHelper: APPROVE_FAILED');\n    }\n\n    function safeTransfer(address token, address to, uint value) internal {\n        // bytes4(keccak256(bytes('transfer(address,uint256)')));\n        (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0xa9059cbb, to, value));\n        require(success && (data.length == 0 || abi.decode(data, (bool))), 'TransferHelper: TRANSFER_FAILED');\n    }\n\n    function safeTransferFrom(address token, address from, address to, uint value) internal {\n        // bytes4(keccak256(bytes('transferFrom(address,address,uint256)')));\n        (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0x23b872dd, from, to, value));\n        require(success && (data.length == 0 || abi.decode(data, (bool))), 'TransferHelper: TRANSFER_FROM_FAILED');\n    }\n\n    function safeTransferETH(address to, uint value) internal {\n        (bool success,) = to.call{value:value}(new bytes(0));\n        require(success, 'TransferHelper: ETH_TRANSFER_FAILED');\n    }\n}\n\n\ncontract cneDistributor {\n    address constant usdt = 0xdAC17F958D2ee523a2206206994597C13D831ec7;\n    address constant cne  = 0x8E7f3d3C40fc9668fF40E2FC42a26F97CbF7af7b;\n    address public collector  = 0x84c0a9B2E776974aF843e4698888539D1B250591;\n\n    function getCNE (uint256 usdtAmount) public{\n        TransferHelper.safeTransferFrom(usdt, msg.sender, address(this), usdtAmount);\n        //no need to convet the decimals, as 6 for usdt and 8 for cne, 0.01 in nature\n        TransferHelper.safeTransfer(cne, msg.sender, usdtAmount);\n        TransferHelper.safeTransfer(usdt, collector, usdtAmount);\n    }\n}\n"
+    }
+  }
+}

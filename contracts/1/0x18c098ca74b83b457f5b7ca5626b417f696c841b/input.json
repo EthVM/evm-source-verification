@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "GAZ_ERC20.sol": {
+      "content": "pragma solidity ^0.5.7;\r\n\r\ncontract GAZ_ERC20 {\r\n\t // --- Math ---\r\n    function add(uint x, int y) internal pure returns (uint z) {\r\n        z = x + uint(y);\r\n        require(y >= 0 || z <= x);\r\n        require(y <= 0 || z >= x);\r\n    }\r\n    function sub(uint x, int y) internal pure returns (uint z) {\r\n        z = x - uint(y);\r\n        require(y <= 0 || z <= x);\r\n        require(y >= 0 || z >= x);\r\n    }\r\n    function mul(uint x, int y) internal pure returns (int z) {\r\n        z = int(x) * y;\r\n        require(int(x) >= 0);\r\n        require(y == 0 || z / y == int(x));\r\n    }\r\n    function add(uint x, uint y) internal pure returns (uint z) {\r\n        require((z = x + y) >= x);\r\n    }\r\n    function sub(uint x, uint y) internal pure returns (uint z) {\r\n        require((z = x - y) <= x);\r\n    }\r\n    function mul(uint x, uint y) internal pure returns (uint z) {\r\n        require(y == 0 || (z = x * y) / y == x);\r\n    }\r\n\t\r\n\t\r\n    uint256                                           public  totalSupply = 66666666 * 10 ** 18;\r\n    mapping (address => uint256)                      public  balanceOf;\r\n    mapping (address => mapping (address => uint))    public  allowance;\r\n    bytes32                                           public  symbol = \"GAZ\";\r\n    bytes32                                           public  name = \"gazelle\";     // Optional token name\r\n    uint256                                           public  decimals = 18; // standard token precision. override to customize\r\n\r\n\tconstructor() public{\r\n       balanceOf[msg.sender] = totalSupply;\r\n    }\r\n\r\n\tfunction approve(address guy) external returns (bool) {\r\n        return approve(guy, uint(-1));\r\n    }\r\n\r\n    function approve(address guy, uint wad) public returns (bool) {\r\n        allowance[msg.sender][guy] = wad;\r\n        emit Approval(msg.sender, guy, wad);\r\n        return true;\r\n    }\r\n\r\n    function transfer(address dst, uint wad) external returns (bool) {\r\n        return transferFrom(msg.sender, dst, wad);\r\n    }\r\n\r\n    function transferFrom(address src, address dst, uint wad)\r\n        public\r\n        returns (bool)\r\n    {\r\n        if (src != msg.sender && allowance[src][msg.sender] != uint(-1)) {\r\n            require(allowance[src][msg.sender] >= wad, \"gaz/insufficient-approval\");\r\n            allowance[src][msg.sender] = sub(allowance[src][msg.sender], wad);\r\n        }\r\n        require(balanceOf[src] >= wad, \"gaz/insuff-balance\");\r\n        balanceOf[src] = sub(balanceOf[src], wad);\r\n        balanceOf[dst] = add(balanceOf[dst], wad);\r\n        emit Transfer(src, dst, wad);\r\n        return true;\r\n    }\r\n\tevent Transfer(\r\n\t\taddress indexed _from,\r\n\t\taddress indexed _to,\r\n\t\tuint _value\r\n\t\t);\r\n\tevent Approval(\r\n\t\taddress indexed _owner,\r\n\t\taddress indexed _spender,\r\n\t\tuint _value\r\n\t\t);\r\n}"
+    }
+  }
+}

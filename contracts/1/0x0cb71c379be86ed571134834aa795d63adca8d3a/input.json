@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "KashiDeposit.sol": {
+      "content": "pragma solidity 0.6.12;\n\ninterface IKashiPair {\n        function addCollateral(\n        address to,\n        bool skim,\n        uint256 share\n    ) external;\n}\n\ninterface IERC20 {\n    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);\n}\n\n        \n        //TODO: right now share = amount, no interest acured so far?\n        //TODO cont: get shares from BentoBox.toShare, \n        // issue is the interfaces\n\ncontract KashiDeposit {\n    \n    function depositDai(uint amount) public {\n        address DAICRVpair = 0x15785398CF9FB677ddcbDb1133585a4D0C65c2d9;\n        IKashiPair market = IKashiPair(DAICRVpair);\n        IERC20 dai = IERC20(0x6B175474E89094C44Da98b954EedeAC495271d0F);\n        \n        dai.transferFrom(msg.sender, DAICRVpair, amount);\n        \n        uint bentoShare = amount;\n        market.addCollateral(msg.sender, true, bentoShare);\n    }\n}"
+    }
+  }
+}

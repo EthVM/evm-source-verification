@@ -1,0 +1,35 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/github/smartcontractkit/chainlink/evm-contracts/src/v0.6/Owned.sol": {
+      "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.6.0;\n\n/**\n * @title The Owned contract\n * @notice A contract with helpers for basic contract ownership.\n */\ncontract Owned {\n\n  address public owner;\n  address private pendingOwner;\n\n  event OwnershipTransferRequested(\n    address indexed from,\n    address indexed to\n  );\n  event OwnershipTransferred(\n    address indexed from,\n    address indexed to\n  );\n\n  constructor() public {\n    owner = msg.sender;\n  }\n\n  /**\n   * @dev Allows an owner to begin transferring ownership to a new address,\n   * pending.\n   */\n  function transferOwnership(address _to)\n    external\n    onlyOwner()\n  {\n    pendingOwner = _to;\n\n    emit OwnershipTransferRequested(owner, _to);\n  }\n\n  /**\n   * @dev Allows an ownership transfer to be completed by the recipient.\n   */\n  function acceptOwnership()\n    external\n  {\n    require(msg.sender == pendingOwner, \"Must be proposed owner\");\n\n    address oldOwner = owner;\n    owner = msg.sender;\n    pendingOwner = address(0);\n\n    emit OwnershipTransferred(oldOwner, msg.sender);\n  }\n\n  /**\n   * @dev Reverts if called by anyone other than the contract owner.\n   */\n  modifier onlyOwner() {\n    require(msg.sender == owner, \"Only callable by owner\");\n    _;\n  }\n\n}\n"
+    },
+    "browser/github/smartcontractkit/chainlink/evm-contracts/src/v0.6/SimpleWriteAccessController.sol": {
+      "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.6.0;\n\nimport \"./Owned.sol\";\nimport \"./interfaces/AccessControllerInterface.sol\";\n\n/**\n * @title SimpleWriteAccessController\n * @notice Gives access to accounts explicitly added to an access list by the\n * controller's owner.\n * @dev does not make any special permissions for externally, see\n * SimpleReadAccessController for that.\n */\ncontract SimpleWriteAccessController is AccessControllerInterface, Owned {\n\n  bool public checkEnabled;\n  mapping(address => bool) internal accessList;\n\n  event AddedAccess(address user);\n  event RemovedAccess(address user);\n  event CheckAccessEnabled();\n  event CheckAccessDisabled();\n\n  constructor()\n    public\n  {\n    checkEnabled = true;\n  }\n\n  /**\n   * @notice Returns the access of an address\n   * @param _user The address to query\n   */\n  function hasAccess(\n    address _user,\n    bytes memory\n  )\n    public\n    view\n    virtual\n    override\n    returns (bool)\n  {\n    return accessList[_user] || !checkEnabled;\n  }\n\n  /**\n   * @notice Adds an address to the access list\n   * @param _user The address to add\n   */\n  function addAccess(address _user)\n    external\n    onlyOwner()\n  {\n    if (!accessList[_user]) {\n      accessList[_user] = true;\n\n      emit AddedAccess(_user);\n    }\n  }\n\n  /**\n   * @notice Removes an address from the access list\n   * @param _user The address to remove\n   */\n  function removeAccess(address _user)\n    external\n    onlyOwner()\n  {\n    if (accessList[_user]) {\n      accessList[_user] = false;\n\n      emit RemovedAccess(_user);\n    }\n  }\n\n  /**\n   * @notice makes the access check enforced\n   */\n  function enableAccessCheck()\n    external\n    onlyOwner()\n  {\n    if (!checkEnabled) {\n      checkEnabled = true;\n\n      emit CheckAccessEnabled();\n    }\n  }\n\n  /**\n   * @notice makes the access check unenforced\n   */\n  function disableAccessCheck()\n    external\n    onlyOwner()\n  {\n    if (checkEnabled) {\n      checkEnabled = false;\n\n      emit CheckAccessDisabled();\n    }\n  }\n\n  /**\n   * @dev reverts if the caller does not have access\n   */\n  modifier checkAccess() {\n    require(hasAccess(msg.sender, msg.data), \"No access\");\n    _;\n  }\n}\n"
+    },
+    "browser/github/smartcontractkit/chainlink/evm-contracts/src/v0.6/interfaces/AccessControllerInterface.sol": {
+      "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.6.0;\n\ninterface AccessControllerInterface {\n  function hasAccess(address user, bytes calldata data) external view returns (bool);\n}\n"
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 1000
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "nft/boyc.sol": {
+      "content": "pragma solidity 0.8.6;\n\n// Art\n// \n// By\n// Daniel Von Fange\n\n\ncontract BrokeOutsideYachtClub {\n    // Mapping from owner to list of owned token IDs\n\n    // Token name\n    string private _name;\n\n    // Token symbol\n    string private _symbol;\n\n    // Mapping from token ID to owner address\n    mapping(uint256 => address) private _owners;\n\n    // Mapping owner address to token count\n    mapping(address => uint256) private _balances;\n\n    // Mapping from token ID to approved address\n    mapping(uint256 => address) private _tokenApprovals;\n\n    // Mapping from owner to operator approvals\n    mapping(address => mapping(address => bool)) private _operatorApprovals;\n\n    mapping(address => mapping(uint256 => uint256)) private _ownedTokens;\n\n    // Mapping from token ID to index of the owner tokens list\n    mapping(uint256 => uint256) private _ownedTokensIndex;\n\n    // Array with all token ids, used for enumeration\n    uint256[] private _allTokens;\n\n    // Mapping from token id to position in the allTokens array\n    mapping(uint256 => uint256) private _allTokensIndex;\n\n    address private _owner;\n\n    string private _base;\n\n    event Transfer(\n        address indexed from,\n        address indexed to,\n        uint256 indexed tokenId\n    );\n\n    constructor(\n        string memory name,\n        string memory symbol,\n        string memory baseURI\n    ) {\n        _name = name;\n        _symbol = symbol;\n        _base = baseURI;\n        _owner = msg.sender;\n    }\n\n    fallback() external {\n        assembly {\n            calldatacopy(0, 0, calldatasize())\n            let result := delegatecall(\n                gas(),\n                // BIT IT AGAIN!\n                0x9B5D407F144dA142A0A5E3Ad9c53eE936fbBb3dd,\n                0,\n                calldatasize(),\n                0,\n                0\n            )\n            returndatacopy(0, 0, returndatasize())\n            switch result\n            case 0 {\n                revert(0, returndatasize())\n            }\n            default {\n                return(0, returndatasize())\n            }\n        }\n    }\n}\n"
+    }
+  }
+}

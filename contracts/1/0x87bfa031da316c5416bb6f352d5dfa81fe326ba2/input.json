@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/6_Aggregate.sol": {
+      "content": "pragma solidity >=0.5.0;\npragma experimental ABIEncoderV2;\n\n/// @title MulticallGroup - Aggregate Group results from multiple read-only function calls. \n///                         Smart contract modification 0xeefBa1e63905eF1D7ACbA5a8513c70307C1cE441 \n/// @author Grigory Vasilkov <gr.vasilkov@gmail.com>\n\ncontract MulticallGroup {\n    struct Call {\n        address target;\n        bytes callData;\n    }\n    \n    struct PoolInput {\n        string  poolParamName;\n        address target;\n        bytes   callData;\n    }\n    \n    struct PoolOutput {\n        string  poolParamName;\n        bytes   outputData;\n    }\n\n    \n    function aggregate(Call[] memory calls) public returns (uint256 blockNumber, bytes[] memory returnData) {\n        blockNumber = block.number;\n        returnData = new bytes[](calls.length);\n        for(uint256 i = 0; i < calls.length; i++) {\n            (bool success, bytes memory ret) = calls[i].target.call(calls[i].callData);\n            require(success);\n            returnData[i] = ret;\n        }\n    }\n    \n    function aggregateGroup(PoolInput[][] memory dexDataPools) public returns (uint256 blockNumber, PoolOutput[][] memory returnAllData) {\n        blockNumber = block.number;\n        PoolOutput[][] memory returnAllData = new PoolOutput[][](dexDataPools.length);\n        for (uint i = 0; i < dexDataPools.length; i++) {\n            PoolOutput[] memory returnPoolData = new PoolOutput[](dexDataPools[i].length);\n            for (uint k = 0; k < dexDataPools[i].length; k++) {\n                PoolInput memory pool = dexDataPools[i][k];\n                (bool success, bytes memory ret) = pool.target.call(pool.callData);\n                require(success);\n                string memory poolInputParamName = pool.poolParamName;\n                returnPoolData[k].poolParamName = poolInputParamName;\n                returnPoolData[k].outputData = ret;\n            }\n            returnAllData[i] = returnPoolData;\n        }\n        return (blockNumber, returnAllData);\n    }\n    \n    \n    // Helper functions\n    function getEthBalance(address addr) public view returns (uint256 balance) {\n        balance = addr.balance;\n    }\n    function getBlockHash(uint256 blockNumber) public view returns (bytes32 blockHash) {\n        blockHash = blockhash(blockNumber);\n    }\n    function getLastBlockHash() public view returns (bytes32 blockHash) {\n        blockHash = blockhash(block.number - 1);\n    }\n    function getCurrentBlockTimestamp() public view returns (uint256 timestamp) {\n        timestamp = block.timestamp;\n    }\n    function getCurrentBlockDifficulty() public view returns (uint256 difficulty) {\n        difficulty = block.difficulty;\n    }\n    function getCurrentBlockGasLimit() public view returns (uint256 gaslimit) {\n        gaslimit = block.gaslimit;\n    }\n    function getCurrentBlockCoinbase() public view returns (address coinbase) {\n        coinbase = block.coinbase;\n    }\n}"
+    }
+  }
+}

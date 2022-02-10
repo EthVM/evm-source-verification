@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 20000
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "f2.sol": {
+      "content": "// SPDX-License-Identifier: UNLICENSED\npragma solidity ^0.8.0;\n\ninterface NFTContract {\n    function ownerOf(uint256 _tokenId) external view returns (address);\n}\n\ncontract F2 {\n\n    address internal immutable owner;\n\n    constructor() {\n        owner = msg.sender;\n    }\n\n    function f123(address _nftAddress, uint256 _tokenId, address _nftSeller, address payable _forwardTo, bytes calldata _forwardData) external payable returns (bool success, bytes memory message) {\n\n        require(msg.sender == owner);\n\n        if (_nftAddress != address(0)) {\n            require(NFTContract(_nftAddress).ownerOf(_tokenId) == _nftSeller, 'check1');\n        }\n\n        return _forwardTo.call{value: msg.value}(_forwardData);\n    }\n\n    // eth can get stuck here if call fails\n    function withdraw() external {\n        address sender = msg.sender;\n        require(sender == owner);\n        payable(sender).transfer(address(this).balance);\n    }\n\n}"
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/dece.sol": {
+      "content": "pragma solidity ^0.6.10;\n\n/**\n * Math operations with safety checks\n */\ncontract SafeMath {\n  function safeMul(uint256 a, uint256 b) internal returns (uint256) {\n    uint256 c = a * b;\n    require(a == 0 || c / a == b);\n    return c;\n  }\n\n  function safeDiv(uint256 a, uint256 b) internal returns (uint256) {\n    require(b > 0);\n    uint256 c = a / b;\n    require(a == b * c + a % b);\n    return c;\n  }\n\n  function safeSub(uint256 a, uint256 b) internal returns (uint256) {\n    require(b <= a);\n    return a - b;\n  }\n\n  function safeAdd(uint256 a, uint256 b) internal returns (uint256) {\n    uint256 c = a + b;\n    require(c>=a && c>=b);\n    return c;\n  }\n}\n\ncontract Ownable {\n    \n    address public owner;\n\n    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);\n\n    modifier onlyOwner() {\n        require(owner == msg.sender, \"Ownable: caller is not the owner\");\n        _;\n    }\n\n    function transferOwnership(address newOwner) public virtual onlyOwner {\n        require(newOwner != address(0), \"Ownable: new owner is the zero address\");\n        address oldOwner = owner;\n        owner = newOwner;\n        emit OwnershipTransferred(oldOwner, newOwner);\n    }\n\n}\ncontract DECE is SafeMath, Ownable {\n    string public name = \"DECE\";\n    string public symbol = \"DECE\";\n    uint8 public decimals = 18;\n    uint256 public totalSupply = 1000000000 * (10 ** 18);\n\n    /* This creates an array with all balances */\n    mapping (address => uint256) public balanceOf;\n    mapping (address => mapping (address => uint256)) public allowance;\n\n    /* This generates a public event on the blockchain that will notify clients */\n    event Transfer(address indexed from, address indexed to, uint256 value);\n    \n    /* Initializes contract with initial supply tokens to the creator of the contract */\n    constructor(address _owner) public {\n        owner =   _owner;\n        balanceOf[owner] = totalSupply;             \n    }\n    \n    /* Fix for the ERC20 short address attack.*/\n    modifier onlyPayloadSize(uint size) {\n        require(!(msg.data.length < size + 4));\n        _;\n    }\n    \n    /* Allow another contract to spend some tokens in your behalf */\n    function approve(address _spender, uint256 _value) public returns (bool success) {\n        require(_value > 0); \n        allowance[msg.sender][_spender] = _value;\n        return true;\n    }\n\n    /* Send coins */\n    function transfer(address _to, uint256 _value) public onlyPayloadSize(2 * 32) returns (bool) {\n        require(_value > 0); \n        require(balanceOf[msg.sender] >= _value);           // Check if the sender has enough\n        require(balanceOf[_to] + _value >= balanceOf[_to]); // Check for overflows\n       \n        balanceOf[msg.sender] = SafeMath.safeSub(balanceOf[msg.sender], _value);                     // Subtract from the sender\n        balanceOf[_to] = SafeMath.safeAdd(balanceOf[_to], _value);                            // Add the same to the recipient\n        emit Transfer(msg.sender, _to, _value);                   // Notify anyone listening that this transfer took place\n        return true;\n    }\n\n    /* A contract attempts to get the coins */\n    function transferFrom(address _from, address _to, uint256 _value) public onlyPayloadSize(3 * 32) returns  (bool) {\n        require(_value > 0); \n        require(balanceOf[_from] >= _value);                 // Check if the sender has enough\n        require(balanceOf[_to] + _value >= balanceOf[_to]);  // Check for overflows\n        require(_value <= allowance[_from][msg.sender]);     // Check allowance\n        \n        balanceOf[_from] = SafeMath.safeSub(balanceOf[_from], _value);                           // Subtract from the sender\n        balanceOf[_to] = SafeMath.safeAdd(balanceOf[_to], _value);                             // Add the same to the recipient\n        allowance[_from][msg.sender] = SafeMath.safeSub(allowance[_from][msg.sender], _value);\n        emit Transfer(_from, _to, _value);\n        return true;\n    }\n}"
+    }
+  }
+}

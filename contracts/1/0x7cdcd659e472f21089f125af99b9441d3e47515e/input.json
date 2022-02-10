@@ -1,0 +1,35 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "@uniswap/lib/contracts/libraries/TransferHelper.sol": {
+      "content": "// SPDX-License-Identifier: GPL-3.0-or-later\n\npragma solidity >=0.6.0;\n\n// helper methods for interacting with ERC20 tokens and sending ETH that do not consistently return true/false\nlibrary TransferHelper {\n    function safeApprove(\n        address token,\n        address to,\n        uint256 value\n    ) internal {\n        // bytes4(keccak256(bytes('approve(address,uint256)')));\n        (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0x095ea7b3, to, value));\n        require(\n            success && (data.length == 0 || abi.decode(data, (bool))),\n            'TransferHelper::safeApprove: approve failed'\n        );\n    }\n\n    function safeTransfer(\n        address token,\n        address to,\n        uint256 value\n    ) internal {\n        // bytes4(keccak256(bytes('transfer(address,uint256)')));\n        (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0xa9059cbb, to, value));\n        require(\n            success && (data.length == 0 || abi.decode(data, (bool))),\n            'TransferHelper::safeTransfer: transfer failed'\n        );\n    }\n\n    function safeTransferFrom(\n        address token,\n        address from,\n        address to,\n        uint256 value\n    ) internal {\n        // bytes4(keccak256(bytes('transferFrom(address,address,uint256)')));\n        (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0x23b872dd, from, to, value));\n        require(\n            success && (data.length == 0 || abi.decode(data, (bool))),\n            'TransferHelper::transferFrom: transferFrom failed'\n        );\n    }\n\n    function safeTransferETH(address to, uint256 value) internal {\n        (bool success, ) = to.call{value: value}(new bytes(0));\n        require(success, 'TransferHelper::safeTransferETH: ETH transfer failed');\n    }\n}\n"
+    },
+    "contracts/ERC20Interface.sol": {
+      "content": "// SPDX-License-Identifier: UNLICENSED\npragma solidity 0.7.5;\n\n/**\n * Contract that exposes the needed erc20 token functions\n */\n\nabstract contract ERC20Interface {\n  // Send _value amount of tokens to address _to\n  function transfer(address _to, uint256 _value)\n    public\n    virtual\n    returns (bool success);\n\n  // Get the account balance of another account with address _owner\n  function balanceOf(address _owner)\n    public\n    virtual\n    view\n    returns (uint256 balance);\n}\n"
+    },
+    "contracts/Forwarder.sol": {
+      "content": "// SPDX-License-Identifier: Apache-2.0\npragma solidity 0.7.5;\nimport '@uniswap/lib/contracts/libraries/TransferHelper.sol';\nimport './ERC20Interface.sol';\n\n/**\n * Contract that will forward any incoming Ether to the creator of the contract\n *\n */\ncontract Forwarder {\n  // Address to which any funds sent to this contract will be forwarded\n  address public parentAddress;\n  event ForwarderDeposited(address from, uint256 value, bytes data);\n\n  /**\n   * Initialize the contract, and sets the destination address to that of the creator\n   */\n  function init(address _parentAddress) external onlyUninitialized {\n    parentAddress = _parentAddress;\n    uint256 value = address(this).balance;\n\n    if (value == 0) {\n      return;\n    }\n\n    (bool success, ) = parentAddress.call{ value: value }('');\n    require(success, 'Flush failed');\n    // NOTE: since we are forwarding on initialization,\n    // we don't have the context of the original sender.\n    // We still emit an event about the forwarding but set\n    // the sender to the forwarder itself\n    emit ForwarderDeposited(address(this), value, msg.data);\n  }\n\n  /**\n   * Modifier that will execute internal code block only if the sender is the parent address\n   */\n  modifier onlyParent {\n    require(msg.sender == parentAddress, 'Only Parent');\n    _;\n  }\n\n  /**\n   * Modifier that will execute internal code block only if the contract has not been initialized yet\n   */\n  modifier onlyUninitialized {\n    require(parentAddress == address(0x0), 'Already initialized');\n    _;\n  }\n\n  /**\n   * Default function; Gets called when data is sent but does not match any other function\n   */\n  fallback() external payable {\n    flush();\n  }\n\n  /**\n   * Default function; Gets called when Ether is deposited with no data, and forwards it to the parent address\n   */\n  receive() external payable {\n    flush();\n  }\n\n  /**\n   * Execute a token transfer of the full balance from the forwarder token to the parent address\n   * @param tokenContractAddress the address of the erc20 token contract\n   */\n  function flushTokens(address tokenContractAddress) external onlyParent {\n    ERC20Interface instance = ERC20Interface(tokenContractAddress);\n    address forwarderAddress = address(this);\n    uint256 forwarderBalance = instance.balanceOf(forwarderAddress);\n    if (forwarderBalance == 0) {\n      return;\n    }\n\n    TransferHelper.safeTransfer(\n      tokenContractAddress,\n      parentAddress,\n      forwarderBalance\n    );\n  }\n\n  /**\n   * Flush the entire balance of the contract to the parent address.\n   */\n  function flush() public {\n    uint256 value = address(this).balance;\n\n    if (value == 0) {\n      return;\n    }\n\n    (bool success, ) = parentAddress.call{ value: value }('');\n    require(success, 'Flush failed');\n    emit ForwarderDeposited(msg.sender, value, msg.data);\n  }\n}\n"
+    }
+  }
+}

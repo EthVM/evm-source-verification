@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/tokenlock.sol": {
+      "content": "// SPDX-License-Identifier: MIT\r\n\r\npragma solidity ^0.6.12;\r\n\r\ninterface IERC20 {\r\n    function totalSupply() external view returns (uint256);\r\n    function balanceOf(address account) external view returns (uint256);\r\n    function transfer(address recipient, uint256 amount) external returns (bool);\r\n    function allowance(address owner, address spender) external view returns (uint256);\r\n    function approve(address spender, uint256 amount) external returns (bool);\r\n    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);\r\n    event Transfer(address indexed from, address indexed to, uint256 value);\r\n    event Approval(address indexed owner, address indexed spender, uint256 value);\r\n}\r\n\r\ncontract TokenLock {\r\n    address public lockedToken;\r\n    address public withdrawAddress = 0x831226F8bFcB9d74553f1d020554Defd61908df3;\r\n    uint public releaseTime = 1604931944 + 5 minutes;\r\n    \r\n    constructor() public {\r\n        lockedToken = 0xE1c94F1dF9f1A06252da006C623E07982787ceE4;\r\n        \r\n    }\r\n\r\n    function lockedTokens() public view returns (uint256) {\r\n        IERC20 token = IERC20(lockedToken);\r\n        return token.balanceOf(address(this));\r\n    }\r\n\r\n    function withdrawTokens()  public  {\r\n        require(block.timestamp>releaseTime);\r\n        require(msg.sender == withdrawAddress);\r\n        IERC20 token = IERC20(lockedToken);\r\n        uint256 balancetransfer =  lockedTokens();\r\n        \r\n        token.transfer(address(msg.sender), balancetransfer);\r\n    }\r\n    \r\n}"
+    }
+  }
+}

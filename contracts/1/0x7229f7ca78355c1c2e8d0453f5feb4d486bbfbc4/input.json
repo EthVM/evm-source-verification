@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/1Untitled.sol": {
+      "content": "pragma solidity ^0.6.0;\n  // SPDX-License-Identifier: MIT \n  library SafeMath {//安全函数--合约安全性\n    function sub(uint256 a, uint256 b) internal pure returns (uint256) {\n      assert(b <= a);\n      return a - b;\n    }\n    function add(uint256 a, uint256 b) internal pure returns (uint256) {\n      uint256 c = a + b;\n      assert(c >= a);\n      return c;\n    }\n  }\n  \n  contract Neotoken {\n    using SafeMath for uint256; // 让uint256 都可以使用 SafeMath library\n    string public constant name = \"TUSDTEST\";  // 代币的名称\n    string public constant symbol = \"USDT\"; // 代币的简称\n    uint256 public constant decimals = 6; // 代币的位数，Tai是18位，这个是6位，也就是1000000 这个值表示1个USDT\n    uint256 public constant totalSupply = 1000000000000 * 10**uint(decimals); // 表示总数量\n    \n    mapping (address => uint256) private balances; //这个就是存储用户token的账本\n    mapping (address => mapping (address => uint256)) private allowed; //这个是用来存储allowed数量的地址\n    event Transfer(address indexed _from, address indexed _to, uint256 _value); // 这是发送的EVENT\n    event Approval(address indexed _owner, address indexed _spender, uint256 _value); // approval方法是允许别人转token\n    constructor() public { //构造函数\n      balances[msg.sender] = totalSupply;\n    }\n    // 查询余额的方法\n    function balanceOf(address _owner) public view returns (uint256 balance) {\n      return balances[_owner];\n    }\n    //转账方法\n    function transfer(address _to, uint256 _value) public returns (bool success) {\n     // require (_to != 0x0, \"\");\n      require((balances[msg.sender] >= _value), \"\");\n      balances[msg.sender] = balances[msg.sender].sub(_value);\n      balances[_to] = balances[_to].add(_value);\n      emit Transfer(msg.sender, _to, _value);\n      return true;\n    }\n    // 转别人的token方法，前提别人必须先approval\n    function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) {\n      require (_to != address(0), \"\"); \n      require(balances[_from] >= _value && allowed[_from][msg.sender] >= _value, \"not eng aaa\");\n      allowed[_from][msg.sender] = allowed[_from][msg.sender].sub(_value);\n      balances[_from] = balances[_from].sub(_value);\n      balances[_to] = balances[_to].add(_value);\n      emit Transfer(_from, _to, _value);\n      return true;\n    }\n    // 允许别人转账方法\n    function approve(address _spender, uint256 _value) public returns (bool success) {\n      allowed[msg.sender][_spender] = _value;\n      emit Approval(msg.sender, _spender, _value);\n      return true;\n    }\n    // 查看允许别人转账的金额\n    function allowance(address _owner, address _spender) public view returns (uint256 remaining) {\n      return allowed[_owner][_spender];\n    }\n  }\n"
+    }
+  }
+}

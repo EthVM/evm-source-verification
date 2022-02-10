@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/MultiSender.sol": {
+      "content": "// SPDX-License-Identifier: GPL-2.0-or-later\n\npragma solidity =0.7.6;\n\ninterface IERC20Minimal {\n    \n    function balanceOf(address account) external view returns (uint256);\n\n  \n    function transfer(address recipient, uint256 amount) external returns (bool);\n\n    \n    function allowance(address owner, address spender) external view returns (uint256);\n\n \n    function approve(address spender, uint256 amount) external returns (bool);\n\n    \n    function transferFrom(\n        address sender,\n        address recipient,\n        uint256 amount\n    ) external returns (bool);\n\n    \n    event Transfer(address indexed from, address indexed to, uint256 value);\n\n    \n    event Approval(address indexed owner, address indexed spender, uint256 value);\n}\n\nlibrary TransferHelper {\n\n    function safeTransferFrom(\n        address token,\n        address from,\n        address to,\n        uint256 value\n    ) internal {\n        (bool success, bytes memory data) =\n            token.call(abi.encodeWithSelector(IERC20Minimal.transferFrom.selector, from, to, value));\n        require(success && (data.length == 0 || abi.decode(data, (bool))), 'STF');\n    }\n\n   \n    function safeTransfer(\n        address token,\n        address to,\n        uint256 value\n    ) internal {\n        (bool success, bytes memory data) = token.call(abi.encodeWithSelector(IERC20Minimal.transfer.selector, to, value));\n        require(success && (data.length == 0 || abi.decode(data, (bool))), 'ST');\n    }\n\n    \n    function safeApprove(\n        address token,\n        address to,\n        uint256 value\n    ) internal {\n        (bool success, bytes memory data) = token.call(abi.encodeWithSelector(IERC20Minimal.approve.selector, to, value));\n        require(success && (data.length == 0 || abi.decode(data, (bool))), 'SA');\n    }\n\n    \n    function safeTransferETH(address to, uint256 value) internal {\n        (bool success, ) = to.call{value: value}(new bytes(0));\n        require(success, 'STE');\n    }\n}\ncontract Owned {\n\n    // The owner\n    address public owner;\n\n    event OwnerChanged(address indexed _newOwner);\n\n    /**\n     * @notice Throws if the sender is not the owner.\n     */\n    modifier onlyOwner {\n        require(msg.sender == owner, \"Must be owner\");\n        _;\n    }\n\n    constructor() public {\n        owner = msg.sender;\n    }\n\n    /**\n     * @notice Lets the owner transfer ownership of the contract to a new owner.\n     * @param _newOwner The new owner.\n     */\n    function changeOwner(address _newOwner) external onlyOwner {\n        require(_newOwner != address(0), \"Address must not be null\");\n        owner = _newOwner;\n        emit OwnerChanged(_newOwner);\n    }\n}\n\ncontract MultiSender is Owned{\n\n\n    function mutiSendETHWithDifferentValue( address[] memory _to,  uint[] memory _value) payable public {\n        require(_to.length == _value.length);\n        for (uint8 i = 0; i < _to.length; i++) {\n\t\t\t TransferHelper.safeTransferETH(_to[i], _value[i]);\n\t\t}\n\t}\n\n    function mutiSendTokenWithDifferentValue(address token, address[] memory _to,  uint[] memory _value) public {\n        require(_to.length == _value.length);\n        for (uint8 i = 0; i < _to.length; i++) {\n\t\t\t TransferHelper.safeTransferFrom(token,msg.sender,_to[i], _value[i]);\n\t\t}\n\t}\n\n    function withdrawETH() public onlyOwner{\n        TransferHelper.safeTransferETH( msg.sender, address(this).balance);\n    }\n\n    function withdrawToken(address addr) public onlyOwner{\n        TransferHelper.safeTransfer(addr, msg.sender,IERC20Minimal(addr).balanceOf(address(this)));\n    }\n\n}"
+    }
+  }
+}

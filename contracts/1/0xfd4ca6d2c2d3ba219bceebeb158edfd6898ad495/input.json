@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 10000
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/RandomOracle.sol": {
+      "content": "// SPDX-License-Identifier: MIT\r\n\r\npragma solidity ^0.7.1;\r\n\r\ncontract RandomOracle {\r\n    function getNumber(uint256 min, uint256 max) public view returns (uint256) {\r\n        if (min == max) {\r\n            return min;\r\n        }\r\n\r\n        if (min == 0) {\r\n            min++;\r\n        }\r\n\r\n        uint256 result = uint256(keccak256(abi.encodePacked(\r\n                block.timestamp % block.number,\r\n                block.difficulty % max,\r\n                blockhash(block.number),\r\n                msg.sender\r\n            ))) % max;\r\n\r\n        if (result < min) {\r\n            result = min;\r\n        }\r\n\r\n        return result;\r\n    }\r\n}\r\n"
+    }
+  }
+}

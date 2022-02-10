@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "ProxyFactoryInitializable.sol": {
+      "content": "// SPDX-License-Identifier: AGPL-3.0\r\npragma solidity 0.6.12;\r\n\r\ncontract ProxyFactoryInitializable {\r\n  \r\n    event ProxyCreated(address indexed proxy, bytes returnData);\r\n\r\n    function deployMinimal(address _logic, bytes memory _data) external returns (address proxy, bytes memory returnData) {\r\n        // Adapted from https://github.com/optionality/clone-factory/blob/32782f82dfc5a00d103a7e61a17a5dedbd1e8e9d/contracts/CloneFactory.sol\r\n        bytes20 targetBytes = bytes20(_logic);\r\n        assembly {\r\n        let clone := mload(0x40)\r\n        mstore(clone, 0x3d602d80600a3d3981f3363d3d373d3d3d363d73000000000000000000000000)\r\n        mstore(add(clone, 0x14), targetBytes)\r\n        mstore(add(clone, 0x28), 0x5af43d82803e903d91602b57fd5bf30000000000000000000000000000000000)\r\n        proxy := create(0, clone, 0x37)\r\n        }\r\n        \r\n        if(_data.length > 0) {\r\n        bool success = false;\r\n        (success, returnData) = proxy.call(_data);\r\n        if (!success) {\r\n            string memory _revertMsg = _getRevertMsg(returnData);\r\n            revert(_revertMsg);\r\n        }\r\n        }\r\n\r\n        emit ProxyCreated(address(proxy), returnData);\r\n    }\r\n\r\n    /// @dev Get the revert message from a call\r\n    /// @notice This is needed in order to get the human-readable revert message from a call\r\n    /// @param _res Response of the call\r\n    /// @return Revert message string\r\n    function _getRevertMsg(bytes memory _res) internal pure returns (string memory) {\r\n        // If the _res length is less than 68, then the transaction failed silently (without a revert message)\r\n        if (_res.length < 68) return 'Transaction reverted silently';\r\n        bytes memory revertData = slice(_res, 4, _res.length - 4); // Remove the selector which is the first 4 bytes\r\n        return abi.decode(revertData, (string)); // All that remains is the revert string\r\n    }\r\n\r\n    function slice(\r\n        bytes memory _bytes,\r\n        uint256 _start,\r\n        uint256 _length\r\n    )\r\n        internal\r\n        pure\r\n        returns (bytes memory)\r\n    {\r\n        require(_length + 31 >= _length, \"slice_overflow\");\r\n        require(_start + _length >= _start, \"slice_overflow\");\r\n        require(_bytes.length >= _start + _length, \"slice_outOfBounds\");\r\n\r\n        bytes memory tempBytes;\r\n\r\n        assembly {\r\n            switch iszero(_length)\r\n            case 0 {\r\n                // Get a location of some free memory and store it in tempBytes as\r\n                // Solidity does for memory variables.\r\n                tempBytes := mload(0x40)\r\n\r\n                // The first word of the slice result is potentially a partial\r\n                // word read from the original array. To read it, we calculate\r\n                // the length of that partial word and start copying that many\r\n                // bytes into the array. The first word we copy will start with\r\n                // data we don't care about, but the last `lengthmod` bytes will\r\n                // land at the beginning of the contents of the new array. When\r\n                // we're done copying, we overwrite the full first word with\r\n                // the actual length of the slice.\r\n                let lengthmod := and(_length, 31)\r\n\r\n                // The multiplication in the next line is necessary\r\n                // because when slicing multiples of 32 bytes (lengthmod == 0)\r\n                // the following copy loop was copying the origin's length\r\n                // and then ending prematurely not copying everything it should.\r\n                let mc := add(add(tempBytes, lengthmod), mul(0x20, iszero(lengthmod)))\r\n                let end := add(mc, _length)\r\n\r\n                for {\r\n                    // The multiplication in the next line has the same exact purpose\r\n                    // as the one above.\r\n                    let cc := add(add(add(_bytes, lengthmod), mul(0x20, iszero(lengthmod))), _start)\r\n                } lt(mc, end) {\r\n                    mc := add(mc, 0x20)\r\n                    cc := add(cc, 0x20)\r\n                } {\r\n                    mstore(mc, mload(cc))\r\n                }\r\n\r\n                mstore(tempBytes, _length)\r\n\r\n                //update free-memory pointer\r\n                //allocating the array padded to 32 bytes like the compiler does now\r\n                mstore(0x40, and(add(mc, 31), not(31)))\r\n            }\r\n            //if we want a zero-length slice let's just return a zero-length array\r\n            default {\r\n                tempBytes := mload(0x40)\r\n\r\n                mstore(0x40, add(tempBytes, 0x20))\r\n            }\r\n        }\r\n\r\n        return tempBytes;\r\n    }\r\n}"
+    }
+  }
+}

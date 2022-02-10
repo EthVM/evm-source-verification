@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "OsmMom.sol": {
+      "content": "// hevm: flattened sources of src/OsmMom.sol\r\npragma solidity =0.5.12 >0.4.13 >=0.4.23 >=0.5.10;\r\n\r\n////// src/OsmMom.sol\r\n/// OsmMom -- governance interface for the OSM\r\n\r\n// Copyright (C) 2019 Maker Ecosystem Growth Holdings, INC.\r\n//\r\n// This program is free software: you can redistribute it and/or modify\r\n// it under the terms of the GNU Affero General Public License as published\r\n// by the Free Software Foundation, either version 3 of the License, or\r\n// (at your option) any later version.\r\n//\r\n// This program is distributed in the hope that it will be useful,\r\n// but WITHOUT ANY WARRANTY; without even the implied warranty of\r\n// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\r\n// GNU Affero General Public License for more details.\r\n//\r\n// You should have received a copy of the GNU Affero General Public License\r\n// along with this program.  If not, see <https://www.gnu.org/licenses/>.\r\n\r\n/* pragma solidity 0.5.12; */\r\n\r\ncontract OsmLike {\r\n    function stop() external;\r\n}\r\n\r\ncontract AuthorityLike {\r\n    function canCall(address src, address dst, bytes4 sig) public view returns (bool);\r\n}\r\n\r\ncontract OsmMom {\r\n    event LogNote(\r\n        bytes4   indexed  sig,\r\n        address  indexed  usr,\r\n        bytes32  indexed  arg1,\r\n        bytes32  indexed  arg2,\r\n        bytes             data\r\n    ) anonymous;\r\n\r\n    modifier note {\r\n        _;\r\n        assembly {\r\n            // log an 'anonymous' event with a constant 6 words of calldata\r\n            // and four indexed topics: selector, caller, arg1 and arg2\r\n            let mark := msize                         // end of memory ensures zero\r\n            mstore(0x40, add(mark, 288))              // update free memory pointer\r\n            mstore(mark, 0x20)                        // bytes type data offset\r\n            mstore(add(mark, 0x20), 224)              // bytes size (padded)\r\n            calldatacopy(add(mark, 0x40), 0, 224)     // bytes payload\r\n            log4(mark, 288,                           // calldata\r\n                 shl(224, shr(224, calldataload(0))), // msg.sig\r\n                 caller,                              // msg.sender\r\n                 calldataload(4),                     // arg1\r\n                 calldataload(36)                     // arg2\r\n                )\r\n        }\r\n    }\r\n\r\n    address public owner;\r\n    modifier onlyOwner { require(msg.sender == owner, \"osm-mom/only-owner\"); _;}\r\n\r\n    address public authority;\r\n    modifier auth {\r\n        require(isAuthorized(msg.sender, msg.sig), \"osm-mom/not-authorized\");\r\n        _;\r\n    }\r\n    function isAuthorized(address src, bytes4 sig) internal view returns (bool) {\r\n        if (src == address(this)) {\r\n            return true;\r\n        } else if (src == owner) {\r\n            return true;\r\n        } else if (authority == address(0)) {\r\n            return false;\r\n        } else {\r\n            return AuthorityLike(authority).canCall(src, address(this), sig);\r\n        }\r\n    }\r\n\r\n    mapping (bytes32 => address) public osms;\r\n\r\n    constructor() public {\r\n        owner = msg.sender;\r\n    }\r\n\r\n    function setOsm(bytes32 ilk, address osm) external note onlyOwner {\r\n        osms[ilk] = osm;\r\n    }\r\n\r\n    function setOwner(address owner_) external note onlyOwner {\r\n        owner = owner_;\r\n    }\r\n\r\n    function setAuthority(address authority_) external note onlyOwner {\r\n        authority = authority_;\r\n    }\r\n\r\n    function stop(bytes32 ilk) external note auth {\r\n        OsmLike(osms[ilk]).stop();\r\n    }\r\n}"
+    }
+  }
+}

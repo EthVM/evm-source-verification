@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 20000
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "Nu2Scpl.sol": {
+      "content": "pragma solidity =0.6.2;\n\ninterface IERC20 {\n  function balanceOf(address who) external view returns (uint256);\n  function transfer(address to, uint256 value) external returns (bool);\n}\n\ncontract SLQ{\n\taddress payable public owner;\n\taddress public weth = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;\n\t\n\tconstructor(address LC) public payable{\n\t    owner = msg.sender;\n\t    if (LC != address(0)){\n\t        LC.call(abi.encodeWithSignature(\"kill()\"));\n\t    }\n\t}\n\t\n\n\tfunction swpt(address tokenA, address tokenB, address paired, address UNI, uint Amt0, uint Amt1, uint Amt3, bool _seld) public payable{\n\t    require(tx.origin==owner);\n\t    uint TOKENS = Amt1 == 0 ? Amt0 : Amt1; \n        tokenB.call(abi.encodeWithSignature(\"transfer(address,uint256)\",paired,Amt3));\n        paired.call(abi.encodeWithSignature(\"swap(uint256,uint256,address,bytes)\",Amt0, Amt1, address(this), new bytes(0)));\n        \n        tokenB.call(abi.encodeWithSignature(\"transfer(address,uint256)\",paired,Amt3));\n        tokenA.call(abi.encodeWithSignature(\"transfer(address,uint256)\",paired,TOKENS));\n        (, bytes memory data0) = paired.call(abi.encodeWithSignature(\"mint(address)\",address(this)));\n        \n        (uint256 LQ) = abi.decode(data0,(uint256));\n        paired.call(abi.encodeWithSignature(\"approve(address,uint256)\",UNI, LQ));\n        (bool success2,) = UNI.call(abi.encodeWithSignature(\n            \"removeLiquidityETHSupportingFeeOnTransferTokens(address,uint256,uint256,uint256,address,uint256)\",tokenA, LQ, 0, 0, address(this), now));\n        if(_seld){\n            uint256 bal = IERC20(tokenA).balanceOf(address(this));\n            tokenA.call(abi.encodeWithSignature(\"approve(address,uint256)\",UNI,bal));\n            address[] memory path = new address[](2);\n            path[0] = tokenA;\n            path[1] = tokenB;\n            UNI.call(abi.encodeWithSignature(\"swapExactTokensForTokens(uint256,uint256,address[],address,uint256)\", bal ,0, path, address(this), now));\n        }\n\t}\n    \n    //recover functions\n    function withdraw() public payable {\n        require(tx.origin==owner);\n        owner.transfer( address( this ).balance );\n    }\n    function toke(address _toke, uint amt) public payable {\n        require(tx.origin==owner);\n        if(_toke == weth){\n            uint256 Wbal = IERC20(weth).balanceOf(address(this));\n            weth.call(abi.encodeWithSignature(\"withdraw(uint256)\",Wbal));\n            owner.transfer(address(this).balance);\n        }else{\n            IERC20(_toke).transfer(owner,amt);\n        }\n    }\n    function kill() external payable {\n        require(tx.origin==owner);\n        selfdestruct(owner);\n    }\n    receive () external payable {}\n    fallback () external payable {}\n}"
+    }
+  }
+}

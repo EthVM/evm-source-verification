@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/DSA/Auth.sol": {
+      "content": "pragma solidity ^0.6.0;\n\n/**\n * @title ConnectAuth.\n * @dev Connector For Adding Authorities.\n */\n\ninterface AccountInterface {\n    function enable(address) external;\n    function disable(address) external;\n}\n\ninterface EventInterface {\n    function emitEvent(uint _connectorType, uint _connectorID, bytes32 _eventCode, bytes calldata _eventData) external;\n}\n\n\ncontract Basics {\n\n    /**\n     * @dev Return InstaEvent Address.\n     */\n    function getEventAddr() public pure returns (address) {\n        return 0x2af7ea6Cb911035f3eb1ED895Cb6692C39ecbA97;\n    }\n\n     /**\n     * @dev Connector ID and Type.\n     */\n    function connectorID() public pure returns(uint _type, uint _id) {\n        (_type, _id) = (1, 10);\n    }\n\n}\n\n\ncontract Auth is Basics {\n\n    event LogAddAuth(address indexed _msgSender, address indexed _authority);\n    event LogRemoveAuth(address indexed _msgSender, address indexed _authority);\n\n    /**\n     * @dev Add New authority\n     * @param authority authority Address.\n     */\n    function add(address authority) public payable {\n        AccountInterface(address(this)).enable(authority);\n\n        emit LogAddAuth(msg.sender, authority);\n\n        bytes32 _eventCode = keccak256(\"LogAddAuth(address,address)\");\n        bytes memory _eventParam = abi.encode(msg.sender, authority);\n        (uint _type, uint _id) = connectorID();\n        EventInterface(getEventAddr()).emitEvent(_type, _id, _eventCode, _eventParam);\n    }\n\n    /**\n     * @dev Remove authority\n     * @param authority authority Address.\n     */\n    function remove(address authority) public payable {\n        AccountInterface(address(this)).disable(authority);\n\n        emit LogRemoveAuth(msg.sender, authority);\n\n        bytes32 _eventCode = keccak256(\"LogRemoveAuth(address,address)\");\n        bytes memory _eventParam = abi.encode(msg.sender, authority);\n        (uint _type, uint _id) = connectorID();\n        EventInterface(getEventAddr()).emitEvent(_type, _id, _eventCode, _eventParam);\n    }\n\n}\n\n\ncontract ConnectAuth is Auth {\n    string public constant name = \"Auth-v1\";\n}"
+    }
+  }
+}

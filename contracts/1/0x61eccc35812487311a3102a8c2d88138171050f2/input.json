@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "LogOfClaimedMEVBlocks.sol": {
+      "content": "pragma solidity >=0.7.0 <0.8.0;\r\n\r\n// IN THE FIRST VERSION, CLAIMED BLOCK NONCE IS NOT VERIFIED\r\n// THIS CONTRACT ASSUMES THAT MEV PRODUCER COMPLETELY TRUSTS POOL OPERATOR THAT:\r\n// (1) PROVIDED NONCE IS VALID\r\n// (2) PROVIDED NONCE WAS BROADCASTED WITHOUT DELAY TO MEV PRODUCER/MEMPOOL\r\n// In the next version we're planning to introduce trustless approach to verify submited nonce onchain(see smartpool) and verify delay in seconds for share submission(with oracles)\r\ncontract LogOfClaimedMEVBlocks {\r\n    mapping (address => uint) public timestampOfPossibleExit;\r\n    mapping (address => uint) public depositedEther;\r\n    mapping (bytes32 => uint) public claimedBlockNonce;\r\n    mapping (bytes32 => uint) public claimedBlockCost;\r\n    \r\n    event Deposit(address user, uint amount);\r\n    event Withdraw(address user, uint amount);\r\n    event BlockClaimed(bytes32 blockHeader, bytes32 seedHash, bytes32 target, uint blockNumber, uint blockPayment, address poolOperator, uint blockNonce, address mevProducer);\r\n    \r\n    fallback () payable external {\r\n        this.depositAndLock(msg.value, 24 * 60 * 60);\r\n    }\r\n    function depositAndLock(uint depositAmount, uint depositDuration) payable external {\r\n        require(depositAmount == msg.value);\r\n        // Enforcing min and max lockup durations\r\n        require(depositDuration >= 24 * 60 * 60 && depositDuration < 365 * 24 * 60 * 60);\r\n        timestampOfPossibleExit[msg.sender] = block.timestamp + depositDuration;\r\n        if (msg.value > 0) {\r\n            depositedEther[msg.sender] += msg.value;\r\n        }\r\n        emit Deposit(msg.sender, msg.value);\r\n    }\r\n    \r\n    function withdrawUpTo(uint etherAmount) external {\r\n        // User previously deposited into contract\r\n        require(depositedEther[msg.sender] > 0);\r\n        // Full 1 day passed after last deposit\r\n        require(block.timestamp > timestampOfPossibleExit[msg.sender]);\r\n        if (depositedEther[msg.sender] < etherAmount)\r\n            etherAmount = depositedEther[msg.sender];\r\n        require(address(this).balance >= etherAmount);\r\n        depositedEther[msg.sender] -= etherAmount;\r\n        msg.sender.transfer(etherAmount);\r\n        emit Withdraw(msg.sender, etherAmount);\r\n    }\r\n\r\n    function submitClaim(\r\n        bytes32 blockHeader,\r\n        bytes32 seedHash,\r\n        bytes32 target,\r\n        uint blockNumber,\r\n        uint blockPayment,\r\n        address poolOperator,\r\n        uint blockNonce,\r\n        address mevProducer,\r\n        uint8 v,\r\n        bytes32 r,\r\n        bytes32 s\r\n    ) public {\r\n        require(msg.sender == poolOperator);\r\n        bytes32 hash = sha256(abi.encode(blockHeader, seedHash, target, blockNumber, blockPayment, poolOperator));\r\n        if (claimedBlockCost[hash] == 0) {\r\n            if (ecrecover(keccak256(abi.encode(\"\\x19Ethereum Signed Message:\\n32\", hash)),v,r,s) == mevProducer) {\r\n                require(depositedEther[mevProducer] >= blockPayment);\r\n                claimedBlockCost[hash] = blockPayment;\r\n                claimedBlockNonce[hash] = blockNonce;\r\n                depositedEther[mevProducer] -= blockPayment;\r\n                depositedEther[poolOperator] += blockPayment;\r\n                emit BlockClaimed(blockHeader, seedHash, target, blockNumber, blockPayment, poolOperator, blockNonce, mevProducer);\r\n            }\r\n        }\r\n    }\r\n    \r\n    function remainingDurationForWorkClaim(\r\n        bytes32 blockHeader,\r\n        bytes32 seedHash,\r\n        bytes32 target,\r\n        uint blockNumber,\r\n        uint blockPayment,\r\n        address poolOperator,\r\n        address mevProducer,\r\n        uint8 v,\r\n        bytes32 r,\r\n        bytes32 s\r\n    ) public view returns (uint) {\r\n        bytes32 hash = sha256(abi.encode(blockHeader, seedHash, target, blockNumber, blockPayment, poolOperator));\r\n        if (claimedBlockCost[hash] != 0) return 0;\r\n        if (ecrecover(keccak256(abi.encode(\"\\x19Ethereum Signed Message:\\n32\", hash)),v,r,s) != mevProducer) return 0;\r\n        if (depositedEther[mevProducer] < blockPayment) return 0;\r\n        if (block.timestamp >= timestampOfPossibleExit[mevProducer]) return 0;\r\n        return timestampOfPossibleExit[mevProducer] - block.timestamp;\r\n    }\r\n}"
+    }
+  }
+}

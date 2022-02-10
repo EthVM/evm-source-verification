@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "Isolde.sol": {
+      "content": "pragma solidity ^0.8.9;\r\n\r\n// SPDX-License-Identifier: Apache-2.0\r\n// Isolde Payment Gateway V3.0\r\n\r\ncontract Isolde {\r\n    \r\n    modifier onlyOwner {\r\n        require(msg.sender == _owner, \"caller is not the owner\");\r\n        _;\r\n    }\r\n    \r\n    // tier struct\r\n    struct Tier {\r\n        string name;\r\n        uint8 level;\r\n        uint256 price;\r\n    }\r\n    \r\n    // events\r\n    event Subscribed(address wallet, uint8 level, uint256 time);\r\n    event Transfer(uint256 revenueAmount, uint256 sharedAmount);\r\n    event Beacon(uint256 timestamp);\r\n    \r\n    // addresses & allocation\r\n    uint public revenueAllocation = 90;\r\n    uint public sharedAllocation = 10;\r\n    address payable public shared;\r\n    address payable public treasury;\r\n    address private _owner;\r\n    \r\n    // tiers\r\n    Tier[] private _tiers;\r\n\r\n    \r\n    constructor (address payable sharedAddress, address payable treasuryAddress) {\r\n        _owner = msg.sender;\r\n        \r\n        shared = sharedAddress;\r\n        treasury = treasuryAddress;\r\n    }\r\n    \r\n    function setTiers(Tier[] memory tiers) external onlyOwner {\r\n        delete _tiers;\r\n        \r\n        for (uint i = 0; i < tiers.length; ++i) {\r\n            Tier memory tier = tiers[i];\r\n            _tiers.push(Tier(tier.name, tier.level, tier.price));\r\n        }\r\n    }\r\n\r\n    function getTiers() external view returns (Tier[] memory) {\r\n        return _tiers;\r\n    }\r\n    \r\n    function viewTier(uint level) external view returns (string memory, uint, uint) {\r\n        require(level > 0 && level <= _tiers.length, 'wrong tier');\r\n        Tier memory tier = _tiers[level - 1];\r\n        return (tier.name, tier.level, tier.price);\r\n    }\r\n    \r\n    function subscribe(address who, uint8 level) external payable { // since who isn't msg.sender someone can possibly gift a subscribtion\r\n        require(level > 0 && level <= _tiers.length, 'wrong tier');\r\n        require(msg.value == _tiers[level - 1].price, 'sent ether is different from tier price');\r\n\r\n        emit Subscribed(who, level, 30);\r\n    }\r\n    \r\n    function _sendEthTo(address payable wallet, uint256 amount) private {\r\n        wallet.transfer(amount);\r\n    }\r\n    \r\n    function transfer(uint256 ethAmount) external onlyOwner {\r\n        require(address(this).balance >= ethAmount, 'low balance');\r\n        require(shared != address(0), 'shared address not set');\r\n        require(treasury != address(0), 'treasury address not set');\r\n\r\n        uint256 treasuryAmount = ethAmount * revenueAllocation / 100;\r\n        uint256 sharedAmount = ethAmount * sharedAllocation / 100;\r\n\r\n        _sendEthTo(treasury, treasuryAmount);\r\n        _sendEthTo(shared, sharedAmount);\r\n\r\n        emit Transfer(treasuryAmount, sharedAmount);\r\n    }\r\n    \r\n    function sendBeacon() external onlyOwner {\r\n        emit Beacon(block.timestamp);\r\n    }\r\n    \r\n    function setShared(address payable newShared) external onlyOwner {\r\n        shared = newShared;\r\n    }\r\n\r\n    function setTreasury(address payable newTreasury) external onlyOwner {\r\n        treasury = newTreasury;\r\n    }\r\n    \r\n    function setAllocations(uint newRevenueAllocation, uint newSharedAllocation) external onlyOwner {\r\n        require(newRevenueAllocation + newSharedAllocation == 100, 'allocation sum must equal 100');\r\n        require(newRevenueAllocation <= 95, 'maximum revenue allocation exceeded');\r\n        revenueAllocation = newRevenueAllocation;\r\n        sharedAllocation = newSharedAllocation;\r\n    }\r\n    \r\n    receive() external payable {}\r\n}"
+    }
+  }
+}

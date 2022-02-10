@@ -1,0 +1,35 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/CryptographKYCProxiedV1.sol": {
+      "content": "// © Copyright 2020. Patent pending. All rights reserved. Perpetual Altruism Ltd.\npragma solidity 0.6.6;\n\nimport \"./VCProxy.sol\";\nimport \"./CryptographKYCV1.sol\";\n\n/// @author Guillaume Gonnaud 2020\n/// @title  Cryptograph KYC Proxy Smart Contract\n/// @notice The proxied KYC : this is the contract that will be instancied on the blockchain. Cast this as the logic contract to interact with it.\ncontract CryptographKYCProxiedV1 is VCProxy, CryptographKYCHeaderV1, CryptographKYCStorageInternalV1  {\n\n    constructor(uint256 _version, address _vc)  public\n    VCProxy(_version, _vc) //Calls the VC proxy constructor so that we know where our logic code is\n    {\n        //Self intialize (nothing)\n    }\n\n\n    //No other logic code as it is all proxied\n\n}\n\n\n\n"
+    },
+    "browser/CryptographKYCV1.sol": {
+      "content": "// © Copyright 2020. Patent pending. All rights reserved. Perpetual Altruism Ltd.\npragma solidity 0.6.6;\n\n\n/// @author Guillaume Gonnaud 2020\n/// @title Cryptograph KYC header\n/// @notice Contain all the events emitted by the Cryptograph KYC\ncontract CryptographKYCHeaderV1 {\n\n    /// @dev Event fired whenever a wallet address is added or removed from the list of KYCED wallet\n    event KYCed(address indexed _user, bool indexed _isValid);\n\n    /// @dev Event fired whenever a new price (in wei) is set for the KYC limit\n    event PriceLimit(uint256 indexed _newPrice);\n}\n\n\n\n/// @author Guillaume Gonnaud 2020\n/// @title Cryptograph KYC  Storage Internal\n/// @notice Contain all the storage of the Cryptograph KYC  declared in a way that don't generate getters for Proxy use\ncontract CryptographKYCStorageInternalV1 {\n\n    //Perpetual Altruism, the creator of this smart contract\n    address internal perpetualAltruism;\n\n    //The list of wallets that can publish a new price limit  & add/remove wallets from the kyc\n    mapping(address => bool) internal authorizedOperators;\n\n    //The price in wei above which a transaction need a KYC. set to 0 to refuse all transactions, to UINT256MAX to allow all.\n    uint256 internal priceLimit;\n\n    //The mapping of KYCED users\n    mapping(address => bool) internal kycUsers;\n\n}\n\n/// @author Guillaume Gonnaud 2020\n/// @title Cryptograph KYC  Storage Internal\n/// @notice Contain all the storage of the Cryptograph KYC  declared in a way that don't generate getters for Proxy use\ncontract CryptographKYCStoragePublicV1 {\n\n    //Perpetual Altruism, the creator of this smart contract\n    address public perpetualAltruism;\n\n    //The list of wallets that can publish a new price limit  & add/remove wallets from the kyc\n    mapping(address => bool) public authorizedOperators;\n\n    //The price in wei above which a transaction need a KYC. set to 0 to refuse all transactions, to UINT256MAX to allow all.\n    uint256 public priceLimit;\n\n    //The mapping of KYCED users\n    mapping(address => bool) public kycUsers;\n}"
+    },
+    "browser/VCProxy.sol": {
+      "content": "// © Copyright 2020. Patent pending. All rights reserved. Perpetual Altruism Ltd.\npragma solidity 0.6.6;\n\n/* Based on a variation of https://blog.gnosis.pm/solidity-delegateproxy-contracts-e09957d0f201\nThis generic proxy is gonna ask a version control smart contract for its logic code instead\nof storing the remote address himself\n*/\n\n/*\nSmart contract only containing a public array named the same as VC so that the compiler call the proper\nfunction signature in our generic proxy\n*/\ncontract VersionControlStoragePublic {\n    address[] public code;\n}\n\n\n/*\nStorage stack of a proxy contract. VCproxy inherit this, as well as ALL logic contracts associated to a proxy for storage alignment reasons.\n*/\ncontract VCProxyData {\n    address internal vc; //Version Control Smart Contract Address\n    uint256 internal version; //The index of our logic code in the Version Control array.\n}\n\n\n/*\nLogic of a proxy contract. EVERY proxied contract inherit this\n*/\ncontract VCProxy is VCProxyData {\n    constructor(uint256 _version, address _vc) public {\n        version = _version;\n        vc = _vc;\n    }\n\n    fallback () virtual external payable {\n\n        address addr = VersionControlStoragePublic(vc).code(version);\n        assembly {\n            let freememstart := mload(0x40)\n            calldatacopy(freememstart, 0, calldatasize())\n            let success := delegatecall(not(0), addr, freememstart, calldatasize(), freememstart, 0)\n            returndatacopy(freememstart, 0, returndatasize())\n            switch success\n            case 0 { revert(freememstart, returndatasize()) }\n            default { return(freememstart, returndatasize()) }\n        }\n    }\n\n    \n    /// @notice Generic catch-all function that refuse payments to prevent accidental Eth burn.\n    receive() virtual external payable{\n       require(false, \"Do not send me Eth without a reason\");\n    }\n}"
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/Ormecash/OrmeCashAdminProxy.sol": {
+      "content": "pragma solidity ^0.6.0;\r\n\r\n//SPDX-License-Identifier: MIT\r\n\r\ncontract Owned {\r\n    address payable public owner;\r\n    address payable public newOwner;\r\n\r\n    constructor() public {\r\n        owner = msg.sender;\r\n    }\r\n\r\n    modifier onlyOwner {\r\n        \r\n        assert(msg.sender == owner);\r\n        _;\r\n    }\r\n\r\n    function transferOwnership(address payable _newOwner) public onlyOwner {\r\n        require(_newOwner != owner);\r\n        newOwner = _newOwner;\r\n    }\r\n\r\n    function acceptOwnership() public {\r\n        require(msg.sender == newOwner);\r\n        emit OwnerUpdate(owner, newOwner);\r\n        owner = newOwner;\r\n        newOwner = address(0x0);\r\n    }\r\n\r\n    event OwnerUpdate(address _prevOwner, address _newOwner);\r\n}\r\n\r\ncontract OrmeCashInterface {\r\n    function mintTokens(address _to, uint256 _amount) public {}\r\n    function freezeTransfersUntil(uint256 _frozenUntilBlock) public {}  \r\n    function editRestrictedAddress(address _newRestrictedAddress) public {}\r\n    function transferOwnership(address newOwner) public {}\r\n}\r\n\r\ncontract OrmeCashAdminProxy is Owned{\r\n    \r\n    /* Token connection data*/\r\n    address public tokenAddress;\r\n    OrmeCashInterface tokenInstance;\r\n    \r\n    /* Address of the minter */\r\n    address public adminAddress;\r\n    \r\n    /* Fees data */\r\n    uint feeAmount;\r\n    address fee1Address;\r\n    address fee2Address;\r\n    \r\n    modifier onlyAdmin {\r\n\t\trequire(msg.sender == owner || msg.sender == adminAddress);\r\n\t\t_;\r\n\t}\r\n    \r\n    constructor(address _tokenAddress) public {\r\n        tokenAddress = _tokenAddress;\r\n        tokenInstance = OrmeCashInterface(_tokenAddress);\r\n    }\r\n    \r\n    /* Admin avaliable methods */\r\n    function mintTokens(address _to, uint256 _amount) onlyAdmin public {\r\n        tokenInstance.mintTokens(_to, _amount);\r\n        uint exactFee = (_amount * feeAmount) / (100 * 1000);\r\n        tokenInstance.mintTokens(fee1Address, exactFee);\r\n        tokenInstance.mintTokens(fee2Address, exactFee);\r\n    }\r\n    \r\n    function freezeTransfersUntil(uint256 _frozenUntilBlock) onlyAdmin public {\r\n        tokenInstance.freezeTransfersUntil(_frozenUntilBlock);\r\n    }\r\n    \r\n    function editRestrictedAddress(address _newRestrictedAddress) onlyAdmin public {\r\n        tokenInstance.editRestrictedAddress(_newRestrictedAddress);\r\n    }\r\n    \r\n    /* Owner avaliable controls */\r\n    function transferOwnershipOfToken(address _newOwner) onlyOwner public {\r\n\t\ttokenInstance.transferOwnership(_newOwner);\r\n\t}\r\n    \r\n    function setAdmin(address _minterAddress) onlyOwner public  {\r\n        adminAddress = _minterAddress;\r\n    }\r\n    \r\n    /* Fee is a percent of total mint x2, where 1000 is 1 %*/\r\n    function setFeeAmount(uint _feeAmount) onlyOwner public {\r\n        feeAmount = _feeAmount;\r\n    }\r\n    \r\n    function setFeeAddress1(address _feeAddress1) onlyOwner public  {\r\n        fee1Address = _feeAddress1;\r\n    }\r\n    \r\n    function setFeeAddress2(address _feeAddress2) onlyOwner public  {\r\n        fee2Address = _feeAddress2;\r\n    }\r\n}"
+    }
+  }
+}

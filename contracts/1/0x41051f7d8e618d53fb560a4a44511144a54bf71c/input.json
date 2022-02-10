@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "Deriswap.sol": {
+      "content": "pragma solidity 0.5.7;\r\n\r\ncontract Deriswap {\r\n    // https://andrecronje.medium.com/deriswap-capital-efficient-swaps-futures-options-and-loans-ea424b24a41c\r\n    mapping (address => uint256) public balanceOf;\r\n\r\n    // Modify this section\r\n    string public name = \"DSWAP\";\r\n    string public symbol = \"DERISWAP\";\r\n    uint8 public decimals = 18;\r\n    uint256 public totalSupply = 1000000 * (uint256(10) ** decimals);\r\n\r\n    event Transfer(address indexed from, address indexed to, uint256 value);\r\n\r\n    constructor() public {\r\n        // Initially assign all tokens to the contract's creator.\r\n        balanceOf[msg.sender] = totalSupply;\r\n        emit Transfer(address(0), msg.sender, totalSupply);\r\n    }\r\n\r\n    function transfer(address to, uint256 value) public returns (bool success) {\r\n        require(balanceOf[msg.sender] >= value);\r\n\r\n        balanceOf[msg.sender] -= value;  // deduct from sender's balance\r\n        balanceOf[to] += value;          // add to recipient's balance\r\n        emit Transfer(msg.sender, to, value);\r\n        return true;\r\n    }\r\n\r\n    event Approval(address indexed owner, address indexed spender, uint256 value);\r\n\r\n    mapping(address => mapping(address => uint256)) public allowance;\r\n\r\n    function approve(address spender, uint256 value)\r\n        public\r\n        returns (bool success)\r\n    {\r\n        allowance[msg.sender][spender] = value;\r\n        emit Approval(msg.sender, spender, value);\r\n        return true;\r\n    }\r\n\r\n    function transferFrom(address from, address to, uint256 value)\r\n        public\r\n        returns (bool success)\r\n    {\r\n        require(value <= balanceOf[from]);\r\n        require(value <= allowance[from][msg.sender]);\r\n\r\n        balanceOf[from] -= value;\r\n        balanceOf[to] += value;\r\n        allowance[from][msg.sender] -= value;\r\n        emit Transfer(from, to, value);\r\n        return true;\r\n    }\r\n}"
+    }
+  }
+}

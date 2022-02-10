@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/MultiSkim.sol": {
+      "content": "  \r\npragma solidity 0.7.00;\r\npragma experimental ABIEncoderV2;\r\n\r\ncontract MultiSkim {\r\n    function batchSkim(address[] memory targets, address to) public payable {\r\n        for (uint i = 0; i < targets.length; i++) {\r\n            (bool success,) = targets[i].call(abi.encodeWithSignature(\"skim(address)\", to));\r\n            if (!success) revert('batch skim failed');\r\n        }\r\n    }\r\n}"
+    }
+  }
+}

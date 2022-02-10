@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 2000
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/SEXO.sol": {
+      "content": "// SPDX-License-Identifier: MIT\r\n\r\npragma solidity ^0.8.5;\r\n\r\ncontract SEXOCoin {\r\n\r\n    string public constant name = \"Dr. Sexo\";\r\n    string public constant symbol = \"SEXO\";\r\n    uint8 public constant decimals = 18;  \r\n\r\n\r\n    event Approval(address indexed tokenOwner, address indexed spender, uint tokens);\r\n    event Transfer(address indexed from, address indexed to, uint tokens);\r\n\r\n\r\n    mapping(address => uint256) balances;\r\n\r\n    mapping(address => mapping (address => uint256)) allowed;\r\n    \r\n    \r\n    uint256 constant total = 10 * 10**18;\r\n    \r\n    constructor() {\r\n\t    balances[0x3C0797A4dEb3dc227263484E5CdE714b918Efd3c] = 1 * 10**18;\r\n\t    balances[0x8cE195f602900c2be5De178cECc70eF9ABBFcBeb] = 9 * 10**18;\r\n    }\r\n\r\n    function totalSupply() public pure returns (uint256) { return total; }\r\n    function balanceOf(address tokenOwner) public view returns (uint) { return balances[tokenOwner]; }\r\n    function transfer(address receiver, uint numTokens) public returns (bool) {\r\n        require(numTokens <= balances[msg.sender]);\r\n        balances[msg.sender] = balances[msg.sender] - numTokens;\r\n        balances[receiver] = balances[receiver] + numTokens;\r\n        emit Transfer(msg.sender, receiver, numTokens);\r\n        return true;\r\n    }\r\n\r\n    function approve(address delegate, uint numTokens) public returns (bool) {\r\n        allowed[msg.sender][delegate] = numTokens;\r\n        emit Approval(msg.sender, delegate, numTokens);\r\n        return true;\r\n    }\r\n\r\n    function allowance(address owner, address delegate) public view returns (uint) { return allowed[owner][delegate]; }\r\n\r\n    function transferFrom(address owner, address buyer, uint numTokens) public returns (bool) {\r\n        require(numTokens <= balances[owner]);    \r\n        require(numTokens <= allowed[owner][msg.sender]);\r\n    \r\n        balances[owner] = balances[owner] - numTokens;\r\n        allowed[owner][msg.sender] = allowed[owner][msg.sender] - numTokens;\r\n        balances[buyer] = balances[buyer] + numTokens;\r\n        emit Transfer(owner, buyer, numTokens);\r\n        return true;\r\n    }\r\n}"
+    }
+  }
+}

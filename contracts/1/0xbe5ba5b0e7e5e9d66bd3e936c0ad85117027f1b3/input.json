@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/ETHRelayer.sol": {
+      "content": "// SPDX-License-Identifier: AGPL-3.0\npragma solidity ^0.7.6;\n\n/**\n * @title ETHRelayer\n * @dev Ether relayer used to relay all ether received in this contract to the receiver address.\n * Receives ETH via legacy .transfer function using defualt 23000 gas limit and relay it using 100k gas limit to \n * contracts that have enabled the fallback payable funciton.\n */\ncontract ETHRelayer{\n\n    address payable public receiver;\n\n    constructor(address payable _receiver) public {\n        receiver = _receiver;\n    }\n\n    receive() external payable {}\n\n    function relay() public {\n      (bool success,) = receiver.call{gas: 100000, value: address(this).balance}(\"\");\n      require(success, \"ETHRelayer: Relay transfer failed\");\n    }\n\n}"
+    }
+  }
+}

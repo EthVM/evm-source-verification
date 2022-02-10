@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "ASEANcoin.sol": {
+      "content": "pragma solidity ^0.8.0;\n\ncontract ASEAN {\n    string public constant name = 'ASEANcoin';\n    string public constant symbol = 'ASE';\n\n    uint256 _totalSupply = 100000000000000;\n    uint256 _currentSupply = 0;\n    uint256 public constant RATE = 10000;\n    uint256 public constant decimals = 8;\n    address public owner;\n\n    mapping(address => uint256) balances;\n    mapping(address => mapping(address => uint256)) allowed;\n\n\n    receive() external payable {\n        createTokens(msg.sender);\n    }\n\n    constructor() {\n        owner = msg.sender;\n        balances[owner] = _totalSupply;\n    }\n\n    function createTokens(address addr) public payable {\n        require(msg.value > 0);\n        uint256 tokens = msg.value * RATE * (10 ** decimals) / (1 ether);\n\n        require(tokens + _currentSupply <= _totalSupply);\n        balances[owner] = balances[owner] - tokens;\n        balances[addr] = balances[addr] + tokens;\n        emit Transfer(owner, addr, tokens);\n\n        payable(owner).transfer(msg.value);\n        _currentSupply = _currentSupply + tokens;\n\n    }\n\n    function totalSupply() public view returns (uint256 supply) {\n        return _totalSupply;\n    }\n\n    function balanceOf(address _owner) public view returns (uint256 balance) {\n        return balances[_owner];\n    }\n\n    function transfer(address _to, uint256 _value) public returns (bool success) {\n        require(\n            balances[msg.sender] >= _value\n            && _value > 0\n        );\n        balances[msg.sender] = balances[msg.sender] - _value;\n        balances[_to] = balances[_to] + _value;\n        emit Transfer(msg.sender, _to, _value);\n        return true;\n    }\n\n    function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) {\n        require(\n            balances[_from] >= _value\n            && allowed[_from][msg.sender] >= _value\n            && _value > 0\n        );\n        balances[_from] = balances[_from] - _value;\n        allowed[_from][msg.sender] = allowed[_from][msg.sender] - _value;\n        balances[_to] = balances[_to] + _value;\n        emit Transfer(_from, _to, _value);\n        return true;\n\n    }\n\n    function approve(address _spender, uint256 _value) public returns (bool success) {\n        allowed[msg.sender][_spender] = _value;\n        emit Approval(msg.sender, _spender, _value);\n        return true;\n    }\n\n    function allowance(address _owner, address _spender) public view returns (uint remaining) {\n        return allowed[_owner][_spender];\n    }\n\n    event Transfer(address indexed _from, address indexed _to, uint256 _value);\n    event Approval(address indexed _owner, address indexed _spender, uint256 _value);\n\n}"
+    }
+  }
+}

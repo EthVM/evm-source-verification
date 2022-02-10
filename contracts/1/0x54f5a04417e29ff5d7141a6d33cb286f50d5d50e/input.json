@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 999999
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/AnyswapCREATE2Deployer.sol": {
+      "content": "// SPDX-License-Identifier: MIT\npragma solidity 0.8.2;\n\ncontract AnyswapCreate2Deployer {\n  event Deployed(address addr, uint256 salt);\n\n  function deploy(bytes memory code, uint256 salt) public {\n    address addr;\n    assembly {\n      addr := create2(0, add(code, 0x20), mload(code), salt)\n      if iszero(extcodesize(addr)) {\n        revert(0, 0)\n      }\n    }\n\n    emit Deployed(addr, salt);\n  }\n}"
+    }
+  }
+}

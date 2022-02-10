@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "converter.sol": {
+      "content": "pragma solidity ^ 0.6.0;\n\ncontract Ownable {\n    address public owner;\n    constructor()public {\n        owner = msg.sender;\n    }\n    modifier onlyOwner() {\n        require(msg.sender == owner, \"You is not owner\");\n        _;\n    }\n    function transferOwnership(address newOwner)public onlyOwner {\n        require(newOwner != address(0));\n        owner = newOwner;\n    }\n}\n\ninterface ERC20 {\n    function balanceOf(address account)external returns(uint256);\n    function allowance(address owner, address spender)external returns(uint256);\n    function approve(address spender, uint256 amount)external returns(bool);\n    function transfer(address recipient, uint256 amount)external returns(bool);\n    function transferFrom(address sender, address recipient, uint256 amount)external returns(bool);\n}\n\ncontract Converter is Ownable {\n    address converterWallet;\n    function convert (address userAddress, address addressTokenFrom, address addressTokenTo, uint amountFrom, uint amountTo) public {\n        require(msg.sender == converterWallet, \"Error converter wallet\");\n        ERC20 tokenFrom = ERC20(addressTokenFrom);\n        ERC20 tokenTo = ERC20(addressTokenTo);\n        tokenFrom.transferFrom(userAddress, converterWallet, amountFrom);\n        tokenTo.transferFrom(converterWallet, userAddress, amountTo);\n    }\n    \n    function returnErc20(address tokenAddress) public onlyOwner {\n        ERC20 token = ERC20(tokenAddress);\n        token.transfer(owner, token.balanceOf(address(this)));\n    }\n    \n    function setConverterWallet(address _addr) public onlyOwner {\n        converterWallet = _addr;\n    }\n}\n"
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/Lighthouse.sol": {
+      "content": "pragma solidity >=0.4.22 <0.8.0;\n\ncontract Lighthouse  {\n    address owner = msg.sender;\n\n    struct Content {\n        string cid;\n        string config;\n        uint fileCost;\n    }\n\n    event StorageRequest(address uploader, string cid, string config, uint fileCost);\n\n    mapping(address => mapping(string => Content)) public requests;\n\n    function store(string calldata cid, string calldata config)\n        external\n        payable\n    {\n        uint fileCost = msg.value;\n        requests[msg.sender][cid] = Content(cid, config, fileCost);\n        emit StorageRequest(msg.sender, cid, config, msg.value);\n    }\n\n    function getPaid(uint amount, address payable recipient)\n        external\n    {\n        require(msg.sender == owner);\n        recipient.transfer(amount);\n    }\n    \n    fallback () external payable  {}\n}\n"
+    }
+  }
+}

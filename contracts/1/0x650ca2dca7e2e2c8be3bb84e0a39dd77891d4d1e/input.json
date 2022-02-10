@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/WithdrawalReader.sol": {
+      "content": "pragma solidity 0.6.10;\n\n// DeversiFi 2020\n\ninterface StarkContractInterface {\n    function getWithdrawalBalance(uint256 starkKey, uint256 tokenId )\n        external view\n        returns (uint256);\n}\n\ncontract WithdrawalBalanceReader {\n    StarkContractInterface instance;\n    \n    constructor (address _starkContract) public {\n        instance = StarkContractInterface(_starkContract);\n    }\n    \n    function allWithdrawalBalances(uint256[] calldata _tokenIds, uint256 _whoKey) public view returns (uint256[] memory balances) {\n        balances = new uint256[](_tokenIds.length);\n        for (uint i = 0; i < _tokenIds.length; i++) {\n            balances[i] = instance.getWithdrawalBalance(_whoKey, _tokenIds[i]);\n        }\n    }\n    \n}"
+    }
+  }
+}

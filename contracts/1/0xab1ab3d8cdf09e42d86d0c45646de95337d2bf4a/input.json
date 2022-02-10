@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "StabilizeGovernanceCalculator.sol": {
+      "content": "// This governance contract calculcates total STBZ held by a particular address\r\n// It first gets the STBZ tokens held in wallet\r\n// Then STBZ held in staking pool\r\n// Then LP tokens held in wallet to calculate STBZ held by user\r\n// Finally LP tokens held in operator contract pool\r\n\r\npragma solidity ^0.6.6;\r\n\r\ninterface Operator {\r\n    function poolBalance(uint256, address) external view returns (uint256);\r\n}\r\n\r\ninterface StakingPool {\r\n    function poolBalance(address) external view returns (uint256);\r\n}\r\n\r\ninterface IERC20 {\r\n    function totalSupply() external view returns (uint256);\r\n    function balanceOf(address account) external view returns (uint256);\r\n}\r\n\r\ncontract StabilizeGovernanceCalculator {\r\n    \r\n    address constant operatorAddress = address(0xEe9156C93ebB836513968F92B4A67721f3cEa08a);\r\n    address constant stbzAddress = address(0xB987D48Ed8f2C468D52D6405624EADBa5e76d723);\r\n    address constant uniLpAddress = address(0xDB28312a8d26D59978D9B86cA185707B1A26725b);\r\n    address constant stakingAddress = address(0x8c17bE13e034f7fa2a6496bC83B6010be6305204);\r\n    \r\n    function calculateTotalSTBZ(address _address) external view returns (uint256) {\r\n        IERC20 stbz = IERC20(stbzAddress);\r\n        uint256 mySTBZ = stbz.balanceOf(_address); // First get the token balance of STBZ in the wallet\r\n        mySTBZ = mySTBZ + StakingPool(stakingAddress).poolBalance(_address); // Get STBZ being staked\r\n        IERC20 lp = IERC20(uniLpAddress);\r\n        uint256 myLP = lp.balanceOf(_address); // Get amount of LP in wallet\r\n        myLP = myLP + Operator(operatorAddress).poolBalance(0, _address);\r\n        // Now we have our LP balance and must calculate how much STBZ we have in it\r\n        uint256 stbzInLP = stbz.balanceOf(uniLpAddress);\r\n        stbzInLP = stbzInLP * myLP / lp.totalSupply();\r\n        return mySTBZ + stbzInLP;\r\n    }\r\n\r\n}"
+    }
+  }
+}

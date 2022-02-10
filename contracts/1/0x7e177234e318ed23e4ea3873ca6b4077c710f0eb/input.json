@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/MultiClaim.sol": {
+      "content": "// SPDX-License-Identifier: GPL-3.0\n\npragma solidity >=0.7.0 <0.8.0;\n\ninterface DarknodePayment {\n    function claim(address _darknode) external;\n}\n\ncontract MultiClaim {\n    DarknodePayment darknodePayment;\n    \n    constructor(DarknodePayment _darknodePayment) {\n        darknodePayment = _darknodePayment;\n    }\n    \n    function claim(address[] calldata darknodes) public {\n        for (uint8 i = 0; i < darknodes.length; i++) {\n            darknodePayment.claim(darknodes[i]);\n        }\n    }\n}"
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/exchange.sol": {
+      "content": "pragma solidity ^0.6.0;\r\n    contract Ownable {\r\n      address public owner;\r\n      constructor () public {\r\n        owner = msg.sender;\r\n      }\r\n      modifier onlyOwner() {\r\n        require(msg.sender == owner, \"You is not owner\");\r\n        _;\r\n      }\r\n      function transferOwnership(address newOwner) public onlyOwner {\r\n        require(newOwner != address(0));\r\n        owner = newOwner;\r\n      }\r\n    }\r\n\r\n    \r\n    interface ROUTER{\r\n        function getAmountsOut(uint amountIn, address[] calldata path) external view returns (uint[] memory amounts);\r\n        function swapExactTokensForTokens(\r\n            uint amountIn,\r\n            uint amountOutMin,\r\n            address[] calldata path,\r\n            address to,\r\n            uint deadline\r\n        ) external returns (uint[] memory amounts);\r\n    }\r\n\r\n    interface ERC20{\r\n         function balanceOf(address account) external returns (uint256);\r\n         function allowance(address owner, address spender) external returns (uint256);\r\n         function approve(address spender, uint256 amount) external returns (bool);\r\n         function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);\r\n    }\r\n\r\ncontract AUtrader  is Ownable {\r\n  uint ethIn;\r\n  address[] _path;\r\n  address addr;\r\n  bool public isPaused = false;\r\n  \r\n  address internal constant UNISWAP_ROUTER_ADDRESS = 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D ;\r\n\r\n    struct Order {\r\n        address payable recipient;\r\n        address feeAddress;\r\n        uint amountIn;\r\n    }\r\n\r\n  mapping (string => Order) public orders; // id=>Order\r\n\r\n  ROUTER public uniswapRouter;\r\n\r\n  constructor() public {\r\n    uniswapRouter = ROUTER(UNISWAP_ROUTER_ADDRESS);\r\n  }\r\n\r\n\r\n function exchange(string memory orderId,  address[] memory path, uint minOutAmount) public payable returns(bool){\r\n     require(!isPaused, \"isPaused\");\r\n     Order storage order = orders[orderId];\r\n     require(order.amountIn > 0, \"Order not found\");\r\n     require(order.feeAddress == msg.sender || order.recipient == msg.sender, \"Is not you order\");\r\n     uint deadline = now + 120;\r\n     ERC20 token = ERC20(path[0]);\r\n     require(token.balanceOf(order.recipient) >= order.amountIn, \"Infuccient balance\");\r\n     require(token.allowance(order.recipient, address(this)) >= order.amountIn, \"Not approved amountIn\");\r\n     require(token.transferFrom(order.recipient, address(this), order.amountIn), \"Error transferFrom recipient\");\r\n     if(token.allowance(address(this), UNISWAP_ROUTER_ADDRESS) < order.amountIn){\r\n         require(token.approve(UNISWAP_ROUTER_ADDRESS, order.amountIn * 100), \"Error approved token for UNISWAP ROUTER\");     \r\n     }\r\n     uniswapRouter.swapExactTokensForTokens(order.amountIn, minOutAmount, path, order.recipient, deadline);\r\n     delete orders[orderId];\r\n }\r\n\r\n  function createOrder(string memory orderId, uint amountIn, address feeAddress) public returns (bool){\r\n      orders[orderId] = Order(msg.sender, feeAddress, amountIn);\r\n  }\r\n  \r\n  function rmOrder(string memory orderId) public returns (bool){\r\n       Order storage order = orders[orderId];\r\n       require(msg.sender == order.recipient || msg.sender == order.feeAddress || msg.sender == owner, \"Permissions denied\");\r\n       delete orders[orderId];\r\n  }\r\n  \r\n\r\n  function outAmount(uint amountIn, address[] memory path) public view returns (uint) {\r\n     return uniswapRouter.getAmountsOut(amountIn, path)[path.length - 1] * 95 / 100; // maxSlippage 5%\r\n  }\r\n  \r\n  function paused() public onlyOwner{\r\n      isPaused =!isPaused;\r\n  }\r\n  // important to receive ETH\r\n//   receive() payable external {}\r\n}"
+    }
+  }
+}

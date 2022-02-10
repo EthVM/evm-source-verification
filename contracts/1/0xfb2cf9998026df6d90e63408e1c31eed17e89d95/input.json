@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/multi.sol": {
+      "content": "// SPDX-License-Identifier: MIT\r\n\r\npragma solidity >=0.7.0 <0.9.0;\r\n\r\ncontract MultiSend {\r\n    \r\n    // to save the owner of the contract in construction\r\n    address private owner;\r\n    \r\n    // to save the amount of ethers in the smart-contract\r\n    uint total_value;\r\n    \r\n    \r\n    // event for EVM logging\r\n    event OwnerSet(address indexed oldOwner, address indexed newOwner);\r\n    \r\n    \r\n    // modifier to check if the caller is owner\r\n    modifier isOwner() {\r\n        // If the first argument of 'require' evaluates to 'false', execution terminates and all\r\n        // changes to the state and to Ether balances are reverted.\r\n        // This used to consume all gas in old EVM versions, but not anymore.\r\n        // It is often a good idea to use 'require' to check if functions are called correctly.\r\n        // As a second argument, you can also provide an explanation about what went wrong.\r\n        require(msg.sender == owner, \"Caller is not owner\");\r\n        _;\r\n    }\r\n    \r\n    /**\r\n     * @dev Set contract deployer as owner\r\n     */\r\n    constructor() payable{\r\n        owner = msg.sender; // 'msg.sender' is sender of current call, contract deployer for a constructor\r\n        emit OwnerSet(address(0), owner);\r\n        \r\n        total_value = msg.value;  // msg.value is the ethers of the transaction\r\n    }\r\n    \r\n    // the owner of the smart-contract can chage its owner to whoever \r\n    // he/she wants\r\n    function changeOwner(address newOwner) public isOwner {\r\n        emit OwnerSet(owner, newOwner);\r\n        owner = newOwner; \r\n    }\r\n    \r\n    /**\r\n     * @dev Return owner address \r\n     * @return address of owner\r\n     */\r\n    function getOwner() external view returns (address) {\r\n        return owner;\r\n    }\r\n    \r\n    // charge enable the owner to store ether in the smart-contract\r\n    function charge() payable public isOwner {\r\n        // adding the message value to the smart contract\r\n        total_value += msg.value;\r\n    }\r\n    \r\n    // sum adds the different elements of the array and return its sum\r\n    function sum(uint[] memory amounts) private returns (uint retVal) {\r\n        // the value of message should be exact of total amounts\r\n        uint totalAmnt = 0;\r\n        \r\n        for (uint i=0; i < amounts.length; i++) {\r\n            totalAmnt += amounts[i];\r\n        }\r\n        \r\n        return totalAmnt;\r\n    }\r\n    \r\n    // withdraw perform the transfering of ethers\r\n    function withdraw(address payable receiverAddr, uint receiverAmnt) private {\r\n        receiverAddr.transfer(receiverAmnt);\r\n    }\r\n    \r\n    // withdrawls enable to multiple withdraws to different accounts\r\n    // at one call, and decrease the network fee\r\n    function withdrawls(address payable[] memory addrs, uint[] memory amnts) payable public isOwner {\r\n        \r\n        // first of all, add the value of the transaction to the total_value \r\n        // of the smart-contract\r\n        total_value += msg.value;\r\n        \r\n        // the addresses and amounts should be same in length\r\n        require(addrs.length == amnts.length, \"The length of two array should be the same\");\r\n        \r\n        // the value of the message in addition to sotred value should be more than total amounts\r\n        uint totalAmnt = sum(amnts);\r\n        \r\n        require(total_value >= totalAmnt, \"The value is not sufficient or exceed\");\r\n        \r\n        \r\n        for (uint i=0; i < addrs.length; i++) {\r\n            // first subtract the transferring amount from the total_value\r\n            // of the smart-contract then send it to the receiver\r\n            total_value -= amnts[i];\r\n            \r\n            // send the specified amount to the recipient\r\n            withdraw(addrs[i], amnts[i]);\r\n        }\r\n    }\r\n    \r\n}"
+    }
+  }
+}

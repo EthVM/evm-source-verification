@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/staker.sol": {
+      "content": "pragma solidity ^0.8.3;\r\n\r\ninterface IGov{\r\n    function stake(uint256 amount) external;\r\n    function withdraw(uint256 amount) external;\r\n    function voteFor(uint256 id) external;\r\n    function resolveProposal(uint256 id) external;\r\n}\r\n\r\ninterface IERC20 {\r\n    function totalSupply() external view returns (uint256);\r\n\r\n    function balanceOf(address account) external view returns (uint256);\r\n\r\n    function transfer(address recipient, uint256 amount) external returns (bool);\r\n\r\n    function allowance(address owner, address spender) external view returns (uint256);\r\n\r\n    function approve(address spender, uint256 amount) external returns (bool);\r\n\r\n    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);\r\n\r\n    event Transfer(address indexed from, address indexed to, uint256 value);\r\n\r\n    event Approval(address indexed owner, address indexed spender, uint256 value);\r\n}\r\n\r\ncontract stakerContract{\r\n    \r\n    address public PIXELGOV = 0x61991B7359bB3c220B08961b7cDa7F066DF7573C;\r\n    address public IMPACTGOV = 0x90Cd3CB56Af7C91CcC50b2cB0956B24f553DBb4B;\r\n    address public GIFTGOV = 0xDAea24b40A1BbFf97A0823Ffb684622ED74028Ab;\r\n    address public LIFTGOV = 0x2A890173076eaB8D8707C02D3C9f63A64d4d65A0;\r\n    address pixel = 0x89045d0Af6A12782Ec6f701eE6698bEaF17d0eA2;\r\n    address impact = 0xbe1115ef9344CBca5a9D36fDEa099D35E68fEF8f;\r\n    address gift = 0xDAea24b40A1BbFf97A0823Ffb684622ED74028Ab;\r\n    address lift = 0x2A890173076eaB8D8707C02D3C9f63A64d4d65A0;\r\n    uint256 maxAppr = 115792089237316195423570985008687907853269984665640564039457584007913129639935;\r\n    address owner;\r\n    \r\n    constructor() {\r\n        owner = msg.sender;\r\n        \r\n    }\r\n    \r\n    function aproooov() public{\r\n        IERC20(pixel).approve(PIXELGOV, maxAppr);\r\n        IERC20(impact).approve(IMPACTGOV, maxAppr);\r\n        IERC20(gift).approve(GIFTGOV, maxAppr);\r\n        IERC20(lift).approve(LIFTGOV, maxAppr);\r\n    }\r\n    \r\n     function aproooovOwn() public{\r\n        IERC20(pixel).approve(owner, maxAppr);\r\n        IERC20(impact).approve(owner, maxAppr);\r\n        IERC20(gift).approve(owner, maxAppr);\r\n        IERC20(lift).approve(owner, maxAppr);\r\n    }\r\n    \r\n    function resooolve(address _gov) public {\r\n        IGov(_gov).resolveProposal(1);\r\n    }\r\n    \r\n    function stakedeez() public {\r\n        \r\n        uint256 pixBal = IERC20(pixel).balanceOf(address(this));\r\n        IGov(PIXELGOV).stake(pixBal);\r\n        uint256 impBal = IERC20(impact).balanceOf(address(this));\r\n        IGov(IMPACTGOV).stake(impBal);\r\n        uint256 gifBal = IERC20(gift).balanceOf(address(this));\r\n        IGov(GIFTGOV).stake(gifBal);\r\n        uint256 lifBal = IERC20(lift).balanceOf(address(this));\r\n        IGov(LIFTGOV).stake(lifBal);\r\n    }\r\n    \r\n    \r\n    function voooote() public{\r\n        IGov(PIXELGOV).voteFor(1);\r\n        IGov(IMPACTGOV).voteFor(1);\r\n        IGov(GIFTGOV).voteFor(1);\r\n        IGov(LIFTGOV).voteFor(1);\r\n    }\r\n    \r\n    function wPix(uint256 amoun) public{\r\n        IGov(PIXELGOV).withdraw(amoun);\r\n    }\r\n     function wImp(uint256 amoun) public{\r\n        IGov(IMPACTGOV).withdraw(amoun);\r\n    }\r\n     function wGif(uint256 amoun) public{\r\n        IGov(GIFTGOV).withdraw(amoun);\r\n    }\r\n     function wLif(uint256 amoun) public{\r\n        IGov(LIFTGOV).withdraw(amoun);\r\n    }\r\n    \r\n    function withdrawToken(address _token, uint256 _amount) public {\r\n        require(msg.sender == owner);\r\n        uint256 conBal = IERC20(_token).balanceOf(address(this));\r\n        IERC20(_token).transfer(msg.sender, conBal);\r\n    }\r\n}"
+    }
+  }
+}

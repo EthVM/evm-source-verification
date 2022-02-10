@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/splitter.sol": {
+      "content": "pragma solidity ^0.7.0;\r\npragma experimental ABIEncoderV2;\r\n//SPDX-License-Identifier: UNLICENSED\r\ncontract Splitter {\r\n    address owner = msg.sender;\r\n    \r\n    modifier isOwner() {\r\n        require(msg.sender == owner, \"Forbidden.\");\r\n        _;\r\n    }\r\n    \r\n    function getEther(uint amount) isOwner external {\r\n       msg.sender.transfer(amount);\r\n    }\r\n    \r\n    function splitEther(address payable[] memory EOAs) external payable {\r\n        uint Count = EOAs.length;\r\n        uint Split = SafeMath.div(msg.value, Count);\r\n        uint Check = SafeMath.mul(Split, Count);\r\n        uint Miettes;\r\n        if (Check < msg.value) {\r\n            Miettes = SafeMath.sub(msg.value, Check);\r\n        }\r\n        for (uint i=0; i<Count; i++) {\r\n            address payable CurrentAddress = EOAs[i];\r\n            if (Miettes > 0 && i == 0) {\r\n                CurrentAddress.transfer(SafeMath.add(Split, Miettes));\r\n            } else {\r\n                CurrentAddress.transfer(Split);\r\n            }\r\n        }\r\n    }\r\n}\r\nlibrary SafeMath {\r\n    function add(uint a, uint b) internal pure returns (uint c) {\r\n        c = a + b;\r\n        require(c >= a); // dev: overflow\r\n    }\r\n    function sub(uint a, uint b) internal pure returns (uint c) {\r\n        require(b <= a); // dev: underflow\r\n        c = a - b;\r\n    }\r\n    function mul(uint a, uint b) internal pure returns (uint c) {\r\n        c = a * b;\r\n        require(a == 0 || c / a == b); // dev: overflow\r\n    }\r\n    function div(uint a, uint b) internal pure returns (uint c) {\r\n        require(b > 0); // dev: divide by zero\r\n        c = a / b;\r\n    }\r\n}"
+    }
+  }
+}

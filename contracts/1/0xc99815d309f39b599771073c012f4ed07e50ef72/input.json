@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "TokenBuyBack.sol": {
+      "content": "// SPDX-License-Identifier: MIT\r\npragma solidity >=0.7.0 <0.8.0;\r\n\r\nabstract contract Context {\r\n    function _msgSender() internal view virtual returns (address) {\r\n        return msg.sender;\r\n    }\r\n}\r\n\r\ncontract Ownable is Context {\r\n    address internal _owner;\r\n\r\n    constructor() {\r\n        address msgSender = _msgSender();\r\n        _owner = msgSender;\r\n    }\r\n\r\n    function owner() public view returns (address) {\r\n        return _owner;\r\n    }\r\n\r\n    modifier onlyOwner() {\r\n        require(_owner == _msgSender(), \"Ownable: caller is not the owner\");\r\n        _;\r\n    }\r\n}\r\n\r\ninterface IUniswapV2Router02 {\r\n    function swapExactETHForTokensSupportingFeeOnTransferTokens(\r\n        uint amountOutMin,\r\n        address[] calldata path,\r\n        address to,\r\n        uint deadline\r\n    ) external payable;\r\n    function WETH() external pure returns (address);\r\n}\r\n\r\ncontract TokenBuyBackBurn is Ownable {\r\n\r\n    IUniswapV2Router02 private uniswapV2Router;\r\n    address private baseDev;\r\n    address private eViral = 0x7CeC018CEEF82339ee583Fd95446334f2685d24f;\r\n    address private kyubi = 0x6777d4E4D86DF506887dBeB62f63Ad532Ac11ad7;\r\n    address private burnAddress = 0x000000000000000000000000000000000000dEaD;\r\n    mapping(address => bool) authorized;    \r\n    \r\n    modifier onlyAuthorized() {\r\n        require(authorized[address(msg.sender)], \"Not Authroized\");\r\n        _;\r\n    }\r\n\r\n    constructor () {\r\n        IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);\r\n        uniswapV2Router = _uniswapV2Router;\r\n        authorized[address(_owner)] = true;\r\n    }\r\n\r\n    function setbaseDev(address _baseDev) external onlyOwner {\r\n        baseDev = _baseDev;\r\n    }\r\n\r\n    function setAuthorized(address _address, bool _bool) external onlyOwner {\r\n        authorized[address(_address)] = _bool;\r\n    }\r\n\r\n    function buyBackAndBurn() external onlyAuthorized {\r\n        uint ethBalance = address(this).balance;\r\n        swapETHForBaseDev(ethBalance/2);        \r\n        swapETHForEViral(ethBalance/4);        \r\n        swapETHForKyubi(ethBalance/4);\r\n    }\r\n    \r\n    function swapETHForBaseDev(uint ethAmount) private {\r\n        address[] memory path = new address[](2);\r\n        path[0] = uniswapV2Router.WETH();\r\n        path[1] = address(baseDev);\r\n        uniswapV2Router.swapExactETHForTokensSupportingFeeOnTransferTokens{value: ethAmount}(ethAmount,path,address(burnAddress),block.timestamp);\r\n    }\r\n    \r\n    function swapETHForEViral(uint ethAmount) private {\r\n        address[] memory path = new address[](2);\r\n        path[0] = uniswapV2Router.WETH();\r\n        path[1] = address(eViral);\r\n        uniswapV2Router.swapExactETHForTokensSupportingFeeOnTransferTokens{value: ethAmount}(ethAmount,path,address(burnAddress),block.timestamp);\r\n    }\r\n    \r\n    function swapETHForKyubi(uint ethAmount) private {\r\n        address[] memory path = new address[](2);\r\n        path[0] = uniswapV2Router.WETH();\r\n        path[1] = address(kyubi);\r\n        uniswapV2Router.swapExactETHForTokensSupportingFeeOnTransferTokens{value: ethAmount}(ethAmount,path,address(burnAddress),block.timestamp);\r\n    }\r\n\r\n    receive() external payable {}\r\n}"
+    }
+  }
+}

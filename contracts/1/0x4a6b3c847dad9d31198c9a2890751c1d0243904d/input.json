@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/SendMoneyExample.sol": {
+      "content": "// SPDX-License-Identifier: GPL-3.0\n\npragma solidity ^0.8.1;\n\ncontract SendMoneyExample {\n\n    uint public balanceReceived;\n\n    function receiveMoney() public payable {\n        balanceReceived += msg.value;\n    }\n\n    function getBalance() public view returns(uint) {\n        return address(this).balance;\n    }\n\n    function withdrawMoney() public {\n        address payable to = payable(msg.sender);\n        to.transfer(getBalance());\n    }\n\n    function withdrawMoneyTo(address payable _to) public {\n        _to.transfer(getBalance());\n    }\n}"
+    }
+  }
+}

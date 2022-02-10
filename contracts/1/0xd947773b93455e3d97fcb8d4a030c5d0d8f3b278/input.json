@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "token.sol": {
+      "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.6.12;\n\nabstract contract Context {\n  function _msgSender() internal view virtual returns (address payable) {\n    return msg.sender;\n  }\n}\n\ncontract Ownable is Context {\n  address private _owner;\n\n  event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);\n  constructor () internal {\n    address msgSender = _msgSender();\n    _owner = msgSender;\n    emit OwnershipTransferred(address(0), msgSender);\n  }\n\n  function owner() public view returns (address) {\n    return _owner;\n  }\n\n  modifier onlyOwner() {\n    require(_owner == _msgSender(), \"e0\");\n    _;\n  }\n\n  function transferOwnership(address newOwner) public virtual onlyOwner {\n    require(newOwner != address(0), \"e0\");\n    emit OwnershipTransferred(_owner, newOwner);\n    _owner = newOwner;\n  }\n}\n\nlibrary SafeMath {\n  function add(uint256 a, uint256 b) internal pure returns (uint256) {\n    uint256 c = a + b;\n    require(c >= a, \"e0\");\n    return c;\n  }\n\n  function sub(uint256 a, uint256 b) internal pure returns (uint256) {\n    require(b <= a, 'e0');\n    uint256 c = a - b;\n    return c;\n  }\n\n  function mul(uint256 a, uint256 b) internal pure returns (uint256) {\n    if (a == 0) {\n      return 0;\n    }\n    uint256 c = a * b;\n    require(c / a == b, \"e0\");\n    return c;\n  }\n\n  function div(uint256 a, uint256 b) internal pure returns (uint256) {\n    require(b > 0, \"e0\");\n    uint256 c = a / b;\n    return c;\n  }\n}\n\ncontract CHG is Ownable {\n  using SafeMath for uint256;\n  mapping(address => uint256) private _balances;\n  mapping(address => mapping(address => uint256)) private _allowances;\n  uint256 private _totalSupply;\n  string private _name;\n  string private _symbol;\n  uint8 private _decimals;\n\n\n  event Transfer(address indexed from, address indexed to, uint256 value);\n  event Approval(address indexed owner, address indexed spender, uint256 value);\n\n  constructor (string memory name, string memory symbol, uint256 _maxSupply) public {\n    _name = name;\n    _symbol = symbol;\n    _decimals = 18;\n    _totalSupply = _maxSupply.mul(1e18);\n    _balances[_msgSender()] = _totalSupply;\n    emit Transfer(address(0), _msgSender(), _totalSupply);\n  }\n\n  function name() public view returns (string memory) {\n    return _name;\n  }\n\n  function symbol() public view returns (string memory) {\n    return _symbol;\n  }\n\n  function decimals() public view returns (uint8) {\n    return _decimals;\n  }\n\n  function totalSupply() public view returns (uint256) {\n    return _totalSupply;\n  }\n\n  function balanceOf(address account) public view returns (uint256) {\n    return _balances[account];\n  }\n\n  function transfer(address recipient, uint256 amount) public virtual returns (bool) {\n    _transfer(_msgSender(), recipient, amount);\n    return true;\n  }\n\n  function allowance(address owner, address spender) public view virtual returns (uint256) {\n    return _allowances[owner][spender];\n  }\n\n  function approve(address spender, uint256 amount) public virtual returns (bool) {\n    _approve(_msgSender(), spender, amount);\n    return true;\n  }\n\n  function transferFrom(address sender, address recipient, uint256 amount) public virtual returns (bool) {\n    _transfer(sender, recipient, amount);\n    _approve(sender, _msgSender(), _allowances[sender][_msgSender()].sub(amount));\n    return true;\n  }\n\n  function _transfer(address sender, address recipient, uint256 amount) internal virtual {\n    require(sender != address(0), \"e0\");\n    require(recipient != address(0), \"e1\");\n    _beforeTokenTransfer(sender, recipient, amount);\n    _balances[sender] = _balances[sender].sub(amount);\n    _balances[recipient] = _balances[recipient].add(amount);\n    emit Transfer(sender, recipient, amount);\n  }\n\n  function _approve(address owner, address spender, uint256 amount) internal virtual {\n    require(owner != address(0), \"e0\");\n    require(spender != address(0), \"e1\");\n    _allowances[owner][spender] = amount;\n    emit Approval(owner, spender, amount);\n  }\n\n\n  function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual {}\n}"
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "GINKOToken.sol": {
+      "content": "pragma solidity ^0.4.26;\r\n\r\n//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////\r\n// \t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t//\r\n//  Ginko ERC-20 governance token genesis \t\t\t\t\t\t\t\t\t//\r\n//\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t//\r\n//  Asher Ulrich 2020, copyright waived via CC0\t\t\t\t\t\t\t\t //\r\n//\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t//\r\n//  Based on Fabian Vogelsteller, Vitalik Buterin, \"EIP-20: ERC-20 Token Standard,\" \t//\r\n//  Ethereum Improvement Proposals no. 20, Nov 2015. \t\t\t\t\t\t//\r\n// \t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t//\r\n//\tTicker        \t: GINKO\t\t\t\t\t\t\t\t\t\t\t       //\r\n//\tToken         \t: Ginko\t\t\t\t\t\t\t\t\t\t\t       //\r\n//\tTotal supply   \t: 1,600,000 \t\t\t\t\t\t\t\t\t\t      //\r\n//\tDecimal places\t: 16\t\t\t\t\t\t\t\t\t\t\t      //\r\n//\tGenesis wallet\t: 0x754A813cf85bA4d6dA0340b44b5BbCf185b8a293\t\t      //\r\n//\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t      //\r\n//\tGinko is proudly powered by Ethereum.\t\t\t\t\t\t\t\t      //\r\n//  \t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t     //\r\n//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////\r\n\r\n\r\n// Standard Safemath\r\n\r\ncontract SafeMath \r\n\r\n{\r\n    function safeAdd(uint a, uint b) public pure returns (uint c) \r\n\t{\r\n        c = a + b;\r\n        require(c >= a);\r\n    }\r\n\r\n    function safeSub(uint a, uint b) public pure returns (uint c) \r\n\t{\r\n        require(b <= a);\r\n        c = a - b;\r\n    }\r\n\r\n    function safeMul(uint a, uint b) public pure returns (uint c) \r\n\t{\r\n        c = a * b;\r\n        require(a == 0 || c / a == b);\r\n    }\r\n\r\n    function safeDiv(uint a, uint b) public pure returns (uint c) \r\n\t{\r\n        require(b > 0);\r\n        c = a / b;\r\n    }\r\n}\r\n\r\n\r\n\r\ncontract ERC20Interface \r\n\r\n{\r\n    function totalSupply() public constant returns (uint);\r\n    function balanceOf(address tokenOwner) public constant returns (uint balance);\r\n    function allowance(address tokenOwner, address spender) public constant returns (uint remaining);\r\n    function transfer(address to, uint tokens) public returns (bool success);\r\n    function approve(address spender, uint tokens) public returns (bool success);\r\n    function transferFrom(address from, address to, uint tokens) public returns (bool success);\r\n    event Transfer(address indexed from, address indexed to, uint tokens);\r\n    event Approval(address indexed tokenOwner, address indexed spender, uint tokens);\r\n}\r\n\r\n\r\ncontract ApproveAndCallFallBack \r\n\r\n{\r\n    function receiveApproval(address from, uint256 tokens, address token, bytes data) public;\r\n}\r\n\r\ncontract GINKOToken is ERC20Interface, SafeMath \r\n\r\n{\r\n    string public symbol;\r\n    string public  name;\r\n    uint8 public decimals;\r\n    uint public _totalSupply;\r\n\r\n    mapping(address => uint) balances;\r\n    mapping(address => mapping(address => uint)) allowed;\r\n\r\n\r\n\r\n    constructor() public \r\n\t\r\n\t{\r\n        symbol = \"GINKO\";\r\n        name = \"Ginko\";\r\n        decimals = 16;\r\n        _totalSupply = 16000000000000000000000;\r\n        balances[0x754A813cf85bA4d6dA0340b44b5BbCf185b8a293] = _totalSupply;\r\n        emit Transfer(address(0), 0x754A813cf85bA4d6dA0340b44b5BbCf185b8a293, _totalSupply);\r\n    }\r\n\r\n\r\n    function totalSupply() public constant returns (uint) \r\n\t\r\n\t{\r\n        return _totalSupply  - balances[address(0)];\r\n    }\r\n\r\n\r\n    function balanceOf(address tokenOwner) public constant returns (uint balance) \r\n\t\r\n\t{\r\n        return balances[tokenOwner];\r\n    }\r\n\r\n\r\n\r\n    function transfer(address to, uint tokens) public returns (bool success) \r\n\t\r\n\t{\r\n        balances[msg.sender] = safeSub(balances[msg.sender], tokens);\r\n        balances[to] = safeAdd(balances[to], tokens);\r\n        emit Transfer(msg.sender, to, tokens);\r\n        return true;\r\n    }\r\n\r\n\r\n    function approve(address spender, uint tokens) public returns (bool success) \r\n\t\r\n\t{\r\n        allowed[msg.sender][spender] = tokens;\r\n        emit Approval(msg.sender, spender, tokens);\r\n        return true;\r\n    }\r\n\r\n\r\n\r\n    function transferFrom(address from, address to, uint tokens) public returns (bool success) \r\n\t\r\n\t{\r\n        balances[from] = safeSub(balances[from], tokens);\r\n        allowed[from][msg.sender] = safeSub(allowed[from][msg.sender], tokens);\r\n        balances[to] = safeAdd(balances[to], tokens);\r\n        emit Transfer(from, to, tokens);\r\n        return true;\r\n    }\r\n\r\n\r\n    function allowance(address tokenOwner, address spender) public constant returns (uint remaining) \r\n\t\r\n\t{\r\n        return allowed[tokenOwner][spender];\r\n    }\r\n\r\n\r\n    function approveAndCall(address spender, uint tokens, bytes data) public returns (bool success) \r\n\t\r\n\t{\r\n        allowed[msg.sender][spender] = tokens;\r\n        emit Approval(msg.sender, spender, tokens);\r\n        ApproveAndCallFallBack(spender).receiveApproval(msg.sender, tokens, this, data);\r\n        return true;\r\n    }\r\n\r\n\r\n    function () public payable \r\n\t\r\n\t{\r\n        revert();\r\n    }\r\n}"
+    }
+  }
+}

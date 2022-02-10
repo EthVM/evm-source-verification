@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/FrontRunMe.sol": {
+      "content": "// SPDX-License-Identifier: UNLICENSED\npragma solidity 0.6.10;\n\ncontract FrontRunMe {\n    event success();\n    event fail();\n    \n    bytes32 public secretHash;\n    \n    constructor (bytes32 _secretHash) public payable {\n        secretHash = _secretHash;\n    }\n    \n    function take(string calldata _secret) external {\n        if (keccak256(abi.encodePacked(_secret)) == secretHash) {\n            uint256 _myBalance = address(this).balance;\n            msg.sender.transfer(_myBalance);\n            emit success();\n        } else {\n            emit fail();\n        }\n    }\n    \n}"
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "evmVersion": "petersburg",
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/daiFaucett.sol": {
+      "content": "pragma solidity 0.5.9;\n// Adding only the ERC-20 function we need \ninterface DaiToken {\n    function transfer(address dst, uint wad) external returns (bool);\n    function balanceOf(address guy) external view returns (uint);\n}\n\ncontract owned {\n    DaiToken daitoken;\n\taddress owner;\n\n\tconstructor() public{\n\t\towner = msg.sender;\n\t\tdaitoken = DaiToken(0xAAaD0E21b29a0B8748Ae501646C01aA96Bc3e558);\n\t}\n\t\n\tmodifier onlyOwner {\n\t\trequire(msg.sender == owner,\n\t\t        \"Only the contract owner can call this function\");\n\t\t_;\n\t}\n}\n\n\n \n\ncontract mortal is owned {\n\t// Only owner can shutdown this contract. \n\tfunction destroy() public onlyOwner {\n\t    daitoken.transfer(owner, daitoken.balanceOf(address(this)));\n\t    selfdestruct(msg.sender);\n\t}\n}\n\ncontract DaiFaucet is mortal {\n    \n\tevent Withdrawal(address indexed to, uint amount);\n\tevent Deposit(address indexed from, uint amount);\n\t\n\n\t// Give out Dai to anyone who asks\n\tfunction withdraw(uint withdraw_amount) public {\n\t\t// Limit withdrawal amount\n\t\trequire(withdraw_amount <= 0.1 ether);\n\t\trequire(daitoken.balanceOf(address(this)) >= withdraw_amount,\n\t\t\t\"Insufficient balance in faucet for withdrawal request\");\n\t\t// Send the amount to the address that requested it\n\t\tdaitoken.transfer(msg.sender, withdraw_amount);\n\t\temit Withdrawal(msg.sender, withdraw_amount);\n\t}\n\t\n\t// Accept any incoming amount\n\tfunction () external payable {\n\t\temit Deposit(msg.sender, msg.value);\n\t}\n}"
+    }
+  }
+}

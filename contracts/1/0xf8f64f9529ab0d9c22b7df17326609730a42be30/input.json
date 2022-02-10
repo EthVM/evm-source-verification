@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/power_resolver/curve.sol": {
+      "content": "pragma solidity ^0.6.0;\npragma experimental ABIEncoderV2;\n\ninterface ICurve {\n    function get_virtual_price() external view returns (uint256 out);\n    function underlying_coins(int128 tokenId) external view returns (address token);\n    function calc_token_amount(uint256[4] calldata amounts, bool deposit) external view returns (uint256 amount);\n    function get_dy(int128 sellTokenId, int128 buyTokenId, uint256 sellTokenAmt) external view returns (uint256 buyTokenAmt);\n}\n\ninterface TokenInterface {\n    function balanceOf(address) external view returns (uint);\n}\n\ninterface IStakingRewards {\n  function balanceOf(address) external view returns (uint256);\n  function earned(address) external view returns (uint256);\n}\n\ncontract Resolver {\n    function getPosition(\n        address user,\n        TokenInterface curveToken,\n        IStakingRewards stakingPool,\n        TokenInterface rewardToken\n    ) public view returns (\n        uint userBal,\n        uint rewardsEarned,\n        uint stakedBal,\n        uint rewardBal\n    ) {\n        userBal = curveToken.balanceOf(user);\n        // Staking Details.\n        (stakedBal, rewardsEarned, rewardBal) = getStakingPosition(user, stakingPool, rewardToken);\n    }\n\n    function getStakingPosition(address user, IStakingRewards stakingPool, TokenInterface rewardToken) public view returns (\n        uint stakedBal,\n        uint rewardsEarned,\n        uint rewardBal\n    ) {\n        stakedBal = stakingPool.balanceOf(user);\n        rewardsEarned = stakingPool.earned(user);\n        rewardBal = rewardToken.balanceOf(user);\n    }\n\n    struct StatsData {\n        uint userBal;\n        uint rewardsEarned;\n        uint stakedBal;\n        uint rewardBal;\n    }\n    function getPositions(\n        address[] memory users,\n        TokenInterface curveToken,\n        IStakingRewards stakingPool,\n        TokenInterface rewardToken\n    ) public view returns (StatsData[] memory) {\n        StatsData[] memory data = new StatsData[](users.length);\n        for (uint i = 0; i < users.length; i++) {\n            (\n                uint userBal,\n                uint rewardsEarned,\n                uint stakedBal,\n                uint rewardBal\n            ) = getPosition(users[i], curveToken, stakingPool, rewardToken);\n            data[i] = StatsData(\n                userBal,\n                rewardsEarned,\n                stakedBal,\n                rewardBal\n            );\n        }\n        return data;\n    }\n\n    function getPrice(ICurve curvePool) public view returns(uint price) {\n        return curvePool.get_virtual_price();\n    }\n}"
+    }
+  }
+}

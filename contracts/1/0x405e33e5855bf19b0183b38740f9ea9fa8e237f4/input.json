@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/1_Storage.sol": {
+      "content": "\n// SPDX-License-Identifier: AGPL-3.0-or-later\npragma solidity 0.7.5;\n\ninterface IERC20 {\n  function totalSupply() external view returns (uint256);\n\n  function balanceOf(address account) external view returns (uint256);\n\n  function transfer(address recipient, uint256 amount) external returns (bool);\n\n  function allowance(address owner, address spender)\n    external\n    view\n    returns (uint256);\n\n  function approve(address spender, uint256 amount) external returns (bool);\n\n  function transferFrom(\n    address sender,\n    address recipient,\n    uint256 amount\n  ) external returns (bool);\n\n  event Transfer(address indexed from, address indexed to, uint256 value);\n\n  event Approval(address indexed owner, address indexed spender, uint256 value);\n}\n\ncontract batchTransfer {\n  function transfer(uint256 amount, address payable[] memory receiver, address token) external {\n    IERC20(token).transferFrom(msg.sender, address(this), amount);\n\n    uint amount_single = amount / receiver.length;\n\n    for (uint i = 0; i < receiver.length; i++) {\n        IERC20(token).transfer(receiver[i], amount_single);\n    }\n  }\n}"
+    }
+  }
+}

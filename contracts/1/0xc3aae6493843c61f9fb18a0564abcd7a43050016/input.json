@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "PresidentialElections.sol": {
+      "content": "// SPDX-License-Identifier: GPL-3.0\n\npragma solidity >=0.7.0 <0.9.0;\n \ncontract PresidentialElections {\n    struct StateResult {\n        string[] parties;\n        uint32[] votes;\n    }\n    \n    mapping (uint16 => mapping(string => StateResult)) results;\n    \n    function sendResult(uint16 year, string calldata state, string[] calldata parties, uint32[] calldata votes) public {\n        require(\n            (msg.sender == address(0x48c4412306d11d8011ccBA1DfB9925DB00A395E6)) ||\n            (msg.sender == address(0xfe7B4fc83c6586D2017B33F132C91CF00C881068))\n        );\n        results[year][state] = StateResult(parties, votes);\n    }\n    \n    function sendResults(uint16 year, string[] calldata states, string[][] calldata parties, uint32[][] calldata votes) public {\n        require(\n            (msg.sender == address(0x48c4412306d11d8011ccBA1DfB9925DB00A395E6)) ||\n            (msg.sender == address(0xfe7B4fc83c6586D2017B33F132C91CF00C881068))\n        );\n        for (uint256 i = 0; i < states.length; i++) {\n            results[year][states[i]] = StateResult(parties[i], votes[i]);\n        }\n    }\n    \n    function getResult(uint16 year, string calldata state) public view returns (StateResult memory result) {\n        return results[year][state];\n    }\n}\n\n\n"
+    }
+  }
+}

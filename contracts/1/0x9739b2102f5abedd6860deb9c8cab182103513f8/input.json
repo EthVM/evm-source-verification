@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/contracts/DillianzAgro.sol": {
+      "content": "// SPDX-License-Identifier: GPL-3.0\n\npragma solidity ^0.6.0;\n\ninterface IERC20 {\n\n    function totalSupply() external view returns (uint256);\n    function balanceOf(address account) external view returns (uint256);\n    function allowance(address sender, address spender) external view returns (uint256);\n\n    function transfer(address recipient, uint256 amount) external returns (bool);\n    function approve(address spender, uint256 amount) external returns (bool);\n    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);\n\n\n    event Transfer(address indexed from, address indexed to, uint256 value);\n    event Approval(address indexed sender, address indexed spender, uint256 value);\n}\n\n\ncontract DillianzAgro is IERC20 {\n\n    string public constant name = \"DillianzAgro\";\n    string public constant symbol = \"DLZ\";\n    uint8 public constant decimals = 18;\n\n\n    event Approval(address indexed tokenOwner, address indexed spender, uint tokens);\n    event Transfer(address indexed from, address indexed to, uint tokens);\n    event Mine(address indexed to, uint tokens);\n\n\n    mapping(address => uint256) balances;\n    mapping(address => mapping (address => uint256)) allowed;\n\n    uint256 totalSupply_;\n    address owner_;\n\n    using SafeMath for uint256;\n\n    constructor(uint256 totalSupply) public {\n        totalSupply_ = totalSupply * (10 ** uint256(decimals));\n        owner_ = msg.sender;\n        balances[owner_] = totalSupply_;\n    }\n    \n    function changeOwner(address newOwner) public returns (bool) {\n        require(msg.sender == owner_, \"Apenas o dono do contrato pode realizar a alteração.\");\n        require(owner_ != newOwner, \"Dono é o mesmo.\");\n\n        address oldOwner = owner_;\n        owner_ = newOwner;\n\n        return _transfer(oldOwner, newOwner, balances[oldOwner]);\n    }\n\n    function mine(uint256 amount) public returns (bool) {\n        require(msg.sender == owner_, \"Apenas o dono do contrato pode realizar a mineração.\");\n\n        balances[owner_] = balances[owner_] + (amount * (10 ** uint256(decimals)));\n        totalSupply_ = totalSupply_ + (amount * (10 ** uint256(decimals)));\n        \n        return true;\n    }\n\n    function owner() public view returns (address) {\n        return owner_;\n    }\n\n    function totalSupply() public override view returns (uint256) {\n        return totalSupply_;\n    }\n\n    function balanceOf(address tokenOwner) public override view returns (uint256) {\n        return balances[tokenOwner];\n    }\n\n    function transfer(address receiver, uint256 numTokens) public override returns (bool) {\n        return _transfer(msg.sender, receiver, numTokens);\n    }\n    \n    function transferFrom(address sender, address buyer, uint256 numTokens) public override returns (bool) {\n        require(numTokens <= balances[sender]);\n        require(numTokens <= allowed[sender][msg.sender]);\n\n        balances[sender] = balances[sender].sub(numTokens);\n        allowed[sender][msg.sender] = allowed[sender][msg.sender].sub(numTokens);\n        balances[buyer] = balances[buyer].add(numTokens);\n        emit Transfer(sender, buyer, numTokens);\n        return true;\n    }\n\n    function approve(address delegate, uint256 numTokens) public override returns (bool) {\n        allowed[msg.sender][delegate] = numTokens;\n        emit Approval(msg.sender, delegate, numTokens);\n        return true;\n    }\n\n    function allowance(address sender, address delegate) public override view returns (uint) {\n        return allowed[sender][delegate];\n    }\n    \n    function _transfer(address from, address to, uint256 amount) private returns (bool) {\n        require(amount <= balances[from]);\n        balances[from] = balances[from].sub(amount);\n        balances[to] = balances[to].add(amount);\n        emit Transfer(from, to, amount);\n        return true;\n    }\n}\n\nlibrary SafeMath {\n    function sub(uint256 a, uint256 b) internal pure returns (uint256) {\n      assert(b <= a);\n      return a - b;\n    }\n\n    function add(uint256 a, uint256 b) internal pure returns (uint256) {\n      uint256 c = a + b;\n      assert(c >= a);\n      return c;\n    }\n}\n"
+    }
+  }
+}

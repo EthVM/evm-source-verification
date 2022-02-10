@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/GasUsage.sol": {
+      "content": "pragma solidity ^0.6.12;\n\ncontract GasUsed {\n    function getUsedGas(\n        address target,\n        bytes calldata data\n    )  external returns (uint256) {\n        \n        uint256 initialGas = gasleft();\n        (bool success,) = target.call(data);\n        uint256 endGas = gasleft();\n        if (!success) {\n            revert(\"Inner call failed\");\n        }\n        return initialGas - endGas;\n    }\n}"
+    }
+  }
+}

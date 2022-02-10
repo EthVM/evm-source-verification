@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "Withdrawer.sol": {
+      "content": "/**\n *Submitted for verification at Etherscan.io on 2021-06-20\n*/\n\n// SPDX-License-Identifier: MIXED\n\n// File @boringcrypto/boring-solidity/contracts/libraries/BoringMath.sol@v1.2.2\n// License-Identifier: MIT\npragma solidity 0.8.4;\n\n// Audit on 5-Jan-2021 by Keno and BoringCrypto\n// Source: https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/access/Ownable.sol + Claimable.sol\n// Edited by BoringCrypto\n\ncontract BoringOwnableData {\n    address public owner;\n    address public pendingOwner;\n}\n\ncontract BoringOwnable is BoringOwnableData {\n    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);\n\n    /// @notice `owner` defaults to msg.sender on construction.\n    constructor() {\n        owner = msg.sender;\n        emit OwnershipTransferred(address(0), msg.sender);\n    }\n\n    /// @notice Transfers ownership to `newOwner`. Either directly or claimable by the new pending owner.\n    /// Can only be invoked by the current `owner`.\n    /// @param newOwner Address of the new owner.\n    /// @param direct True if `newOwner` should be set immediately. False if `newOwner` needs to use `claimOwnership`.\n    /// @param renounce Allows the `newOwner` to be `address(0)` if `direct` and `renounce` is True. Has no effect otherwise.\n    function transferOwnership(\n        address newOwner,\n        bool direct,\n        bool renounce\n    ) public onlyOwner {\n        if (direct) {\n            // Checks\n            require(newOwner != address(0) || renounce, \"Ownable: zero address\");\n\n            // Effects\n            emit OwnershipTransferred(owner, newOwner);\n            owner = newOwner;\n            pendingOwner = address(0);\n        } else {\n            // Effects\n            pendingOwner = newOwner;\n        }\n    }\n\n    /// @notice Needs to be called by `pendingOwner` to claim ownership.\n    function claimOwnership() public {\n        address _pendingOwner = pendingOwner;\n\n        // Checks\n        require(msg.sender == _pendingOwner, \"Ownable: caller != pending owner\");\n\n        // Effects\n        emit OwnershipTransferred(owner, _pendingOwner);\n        owner = _pendingOwner;\n        pendingOwner = address(0);\n    }\n\n    /// @notice Only allows the `owner` to execute the function.\n    modifier onlyOwner() {\n        require(msg.sender == owner, \"Ownable: caller is not the owner\");\n        _;\n    }\n}\n\n// License-Identifier: MIT\n\ninterface Cauldron {\n    function accrue() external;\n    function withdrawFees() external;\n}\n\ncontract SimpleWithdrawer is BoringOwnable {\n    \n    Cauldron[] public cauldrons;\n    \n    event LogNotEnoughFunds(Cauldron indexed cauldron);\n    \n    constructor(Cauldron[] memory pools) {\n        cauldrons = pools;\n    }\n    \n    function withdraw() external {\n        for(uint256 i = 0; i < cauldrons.length; i++) {\n            cauldrons[i].accrue();\n            try cauldrons[i].withdrawFees() {\n                \n            } catch {\n                emit LogNotEnoughFunds(cauldrons[i]);\n            }\n        }\n        \n    }\n    \n    function addPool(Cauldron pool) external onlyOwner {\n        cauldrons.push(pool);\n    }\n    \n    function addPools(Cauldron[] memory pools) external onlyOwner {\n        for(uint256 i = 0; i < pools.length; i++) {\n            cauldrons.push(pools[i]);\n        }\n    }\n    \n}"
+    }
+  }
+}

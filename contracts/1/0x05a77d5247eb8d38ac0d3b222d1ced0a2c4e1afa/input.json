@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/scritp.sol": {
+      "content": "//Generic Algorithmic Stablecoin Rebase Bot. Can be used on any rebase token that has `advance` function.\n//e.g.: ZAI, RDS\npragma solidity ^0.6.0;\npragma experimental ABIEncoderV2;\n \ninterface EIP20Interface {\n    function transfer(address _to, uint256 _value)\n        external\n        returns (bool success);\n \n    function balanceOf(address _owner) external view returns (uint256 balance);\n}\n \ninterface IFreeFromUpTo {\n    function freeFromUpTo(address from, uint256 value)\n        external\n        returns (uint256 freed);\n}\n \ncontract ChiGasSaver {\n    modifier saveGas(address payable sponsor) {\n        uint256 gasStart = gasleft();\n        _;\n        uint256 gasSpent = 21000 + gasStart - gasleft() + 16 * msg.data.length;\n        IFreeFromUpTo chi =\n            IFreeFromUpTo(0x0000000000004946c0e9F43F4Dee607b0eF1fA1c);\n        chi.freeFromUpTo(sponsor, (gasSpent + 14154) / 41947);\n    }\n}\n \ninterface StakeToken {\n    function balanceOfCoupons(address account, uint256 epoch)\n        external\n        view\n        returns (uint256);\n \n    function totalRedeemable() external view returns (uint256);\n \n    function advance() external;\n \n    function epoch() external view returns (uint256);\n \n    function epochTime() external view returns (uint256);\n \n    function commit(address candidate) external;\n}\n \ncontract Rebase is ChiGasSaver {\n    address public _owner;\n \n    //Stake contract address. Default: ZAI stake contract.\n    address public stakeContract = 0xda4A90c4d06E2384148a2e67E44a504A8F555f54;\n \n    //ERC20 contract address. Default: ZAI token contract.\n    address public tokenContract = 0x5cf9242493bE1411b93d064CA2e468961BBb5924;\n    \n    //Replace with your own address. Default: my address\n    address payable public  recipient = 0xFeAD04E9b311eebDc5F1E963b7472aF15b21430D;\n \n    constructor() public {\n        address msgSender = _msgSender();\n        _owner = msgSender;\n    }\n \n    modifier onlyOwner() {\n        require(_owner == _msgSender(), 'Ownable: caller is not the owner');\n        _;\n    }\n \n    function _msgSender() internal view virtual returns (address payable) {\n        return msg.sender;\n    }\n \n    //change the config to rebase on another token\n    function config(\n        address stake,\n        address token,\n        address payable recip\n    ) public virtual onlyOwner {\n        stakeContract = stake;\n        tokenContract = token;\n        recipient = recip;\n    }\n \n    function changeOwner(address newOwner) public virtual onlyOwner {\n        require(newOwner != address(0), 'Ownable: new owner is the zero address');\n        _owner = newOwner;\n    }\n \n    function rebase() external saveGas(recipient) {\n        StakeToken stake = StakeToken(stakeContract);\n        uint256 epoch = stake.epochTime();\n        if (epoch > stake.epoch()) {\n            stake.advance();\n            withdraw(tokenContract);\n        }\n    }\n    fallback() external payable {}\n \n    receive() external payable {}\n \n    function withdraw(address token) private {\n        EIP20Interface erc20 = EIP20Interface(token);\n        uint256 amount = erc20.balanceOf(address(this));\n        erc20.transfer(recipient, amount);\n    }\n}"
+    }
+  }
+}

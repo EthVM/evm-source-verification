@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/Hello.sol": {
+      "content": "// SPDX-License-Identifier: MIT\r\npragma solidity ^0.6.8;\r\npragma experimental ABIEncoderV2;\r\n\r\ninterface RegistryInterface {\r\n    function getBestPools(address fromToken, address destToken) external view returns(address[] memory);\r\n    function getPoolsWithLimit(address fromToken, address destToken, uint256 offset, uint256 limit) external view returns(address[] memory);\r\n}\r\n\r\ninterface BPool {\r\n    function getSpotPrice(address tokenIn, address tokenOut) external view returns (uint256);\r\n}\r\n\r\ncontract BalancerOracle {\r\n    // address public constant BALANCER_REGISTRY = 0xC5570FC7C828A8400605e9843106aBD675006093; // Kovan\r\n    address public constant BALANCER_REGISTRY = 0x7226DaaF09B3972320Db05f5aB81FF38417Dd687; // Mainnet\r\n\r\n    function getSpotPrice(address quote, address base) public view returns (uint256 price) {\r\n        RegistryInterface reg = RegistryInterface(BALANCER_REGISTRY);\r\n        address[] memory pools = reg.getBestPools(quote, base);\r\n        uint256 _length = pools.length;\r\n\r\n        if (_length == 0) {\r\n            pools = reg.getPoolsWithLimit(quote, base, 0, 32);\r\n            _length = pools.length;\r\n            if (_length == 0) {\r\n                return 0;\r\n            }\r\n        }\r\n        \r\n        uint256 _price = 0;\r\n\r\n        for (uint i = 0; i < _length; i++) {\r\n            _price += BPool(pools[i]).getSpotPrice(quote, base);\r\n        }\r\n\r\n        price = _price / _length;\r\n    }\r\n}"
+    }
+  }
+}

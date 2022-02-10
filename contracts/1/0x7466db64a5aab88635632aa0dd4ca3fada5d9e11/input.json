@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/Governance/VoteBox.sol": {
+      "content": "pragma solidity ^0.5.16;\n\ncontract VoteBox {\n\n    event NewAdmin(address indexed newAdmin);\n    event Success();\n    event Reset();\n\n    address public admin;\n\n    bool public success = false;\n\n    constructor(address admin_) public {\n        admin = admin_;\n    }\n\n    function setAdmin(address admin_) public {\n        require(msg.sender == admin, \"VoteBox::setAdmin: Call must come from admin.\");\n        admin = admin_;\n\n        emit NewAdmin(admin);\n    }\n\n    function setSuccess() public {\n        require(msg.sender == admin, \"VoteBox::setAdmin: Call must come from admin.\");\n        success = true;\n\n        emit Success();\n    }\n\n    function reset() public {\n        require(msg.sender == admin, \"VoteBox::setAdmin: Call must come from admin.\");\n        success = false;\n\n        emit Reset();\n    }\n}"
+    }
+  }
+}

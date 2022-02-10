@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/LQDHVN.sol": {
+      "content": "pragma solidity ^0.6.1;\n\n// ----------------------------------------------------------------------------\n// ERC Token Standard #20 Interface\n//\n// ----------------------------------------------------------------------------\ninterface ERC20Interface  { \nfunction totalSupply()  external view returns (uint);\nfunction balanceOf(address tokenOwner)  external view returns (uint balance);\nfunction allowance(address tokenOwner, address spender)  external view returns (uint remaining);\nfunction transfer(address to, uint tokens)  external returns (bool success);\nfunction approve(address spender, uint tokens)  external returns (bool success);\nfunction transferFrom(address from, address to, uint tokens)  external returns (bool success);\n\nevent Transfer(address indexed from, address indexed to, uint tokens);\nevent Approval(address indexed tokenOwner, address indexed spender, uint tokens);\n}\n\n// ----------------------------------------------------------------------------\n// Safe Math Library\n// ----------------------------------------------------------------------------\ncontract SafeMath {\nfunction safeAdd(uint a, uint b) public pure returns (uint c) {\nc = a + b;\nrequire(c >= a);\n}\nfunction safeSub(uint a, uint b) public pure returns (uint c) {\nrequire(b <= a); c = a - b; } function safeMul(uint a, uint b) public pure returns (uint c) { c = a * b; require(a == 0 || c / a == b); } function safeDiv(uint a, uint b) public pure returns (uint c) { require(b > 0);\nc = a / b;\n}\n}\n\n\ncontract LQDHVN is ERC20Interface, SafeMath {\nstring public name;\nstring public symbol;\nuint8 public decimals; // 18 decimals is the strongly suggested default, avoid changing it\nuint256 public _totalSupply;\nmapping(address => uint) balances;\nmapping(address => mapping(address => uint)) allowed;\n/**\n* Constrctor function\n*\n* Initializes contract with initial supply tokens to the creator of the contract\n*/\nconstructor() public {\nname = \"LQDHVN\";\nsymbol = \"LQDHVN\";\ndecimals = 18;\n_totalSupply = 21000000000000000000000000;\nbalances[msg.sender] = _totalSupply;\nemit Transfer(address(0), msg.sender, _totalSupply);\n}\nfunction totalSupply() override public view returns (uint) {\nreturn _totalSupply  - balances[address(0)];\n}\nfunction balanceOf(address tokenOwner) override public view returns (uint balance) {\nreturn balances[tokenOwner];\n}\nfunction allowance(address tokenOwner, address spender) override public view returns (uint remaining) {\nreturn allowed[tokenOwner][spender];\n}\nfunction approve(address spender, uint tokens) override public returns (bool success) {\nallowed[msg.sender][spender] = tokens;\nemit Approval(msg.sender, spender, tokens);\nreturn true;\n}\nfunction transfer(address to, uint tokens) override public returns (bool success) {\nbalances[msg.sender] = safeSub(balances[msg.sender], tokens);\nbalances[to] = safeAdd(balances[to], tokens);\nemit Transfer(msg.sender, to, tokens);\nreturn true;\n}\nfunction transferFrom(address from, address to, uint tokens) override public returns (bool success) {\nbalances[from] = safeSub(balances[from], tokens);\nallowed[from][msg.sender] = safeSub(allowed[from][msg.sender], tokens);\nbalances[to] = safeAdd(balances[to], tokens);\nemit Transfer(from, to, tokens);\nreturn true;\n}\n}"
+    }
+  }
+}

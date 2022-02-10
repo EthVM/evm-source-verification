@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/McdInfo.sol": {
+      "content": "pragma solidity ^0.6.0;\n\ncontract Vat {\n    struct Ilk {\n        uint256 Art;   // Total Normalised Debt     [wad]\n        uint256 rate;  // Accumulated Rates         [ray]\n        uint256 spot;  // Price with Safety Margin  [ray]\n        uint256 line;  // Debt Ceiling              [rad]\n        uint256 dust;  // Urn Debt Floor            [rad]\n    }\n    \n    mapping (bytes32 => Ilk) public ilks;\n}\n\ncontract McdInfo {\n    address public constant VAT_ADDRESS = 0x35D1b3F3D7966A1DFe207aa4514C12a259A0492B;\n    \n    function getCeiling(bytes32[] memory _ilks) public view returns (uint[] memory ceilings) {\n        ceilings = new uint[](_ilks.length);\n        \n        \n        for(uint i = 0; i < _ilks.length; ++i) {\n            (,,, ceilings[i],) = Vat(VAT_ADDRESS).ilks(_ilks[i]);\n        }\n    }\n}"
+    }
+  }
+}

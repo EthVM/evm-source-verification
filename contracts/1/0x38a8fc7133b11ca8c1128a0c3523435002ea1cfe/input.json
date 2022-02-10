@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "Client.sol": {
+      "content": "pragma solidity ^0.6.12;\r\n\r\n// describe the interface\r\n\r\ncontract Service{\r\n    function swapExactETHForTokens(uint256 amountOutMin, address[] calldata path, address to, uint256 deadline) public payable{}\r\n    function swapTokensForExactETH(uint256 amountOut, uint256 amountInMax, address[] calldata path, address to, uint256 deadline) public payable{}\r\n    function swapExactTokensForTokens(uint256 amountIn, uint256 amountOutMin, address[] calldata path, address to, uint256 deadline) public payable {}\r\n}\r\n\r\ncontract ERC20 {\r\n    function balanceOf(address tokenOwner) public view returns (uint balance) {}\r\n    function transfer(address to, uint tokens) public returns (bool success){}\r\n    function approve(address useder, uint tokens) public returns (bool success){}\r\n}\r\n\r\ncontract Client {\r\n\r\n    Service _s;\r\n\r\n    address payable public manager;\r\n\r\n    address[] public path;\r\n    \r\n    bool public ready = false;\r\n\r\n    uint public price;\r\n\r\n    uint public baseDecimal;\r\n\r\n    uint public quoteDecimal;\r\n\r\n    constructor() public {\r\n        _s = Service(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D); \r\n        manager = msg.sender;\r\n    }\r\n\r\n    modifier restricted {\r\n        require(msg.sender == manager);\r\n        _;\r\n    }\r\n    \r\n    function transferManager(address payable addr) public restricted{\r\n        manager = addr;\r\n    }\r\n\r\n    function deposit() public payable {}\r\n\r\n    function withdraw() public restricted {\r\n        manager.transfer(address(this).balance);\r\n    }\r\n    \r\n    function withdraw_t(address _token) public restricted {\r\n        ERC20(_token).transfer(manager, ERC20(_token).balanceOf(address(this)));\r\n    }\r\n\r\n    function config(address _baseAddr, uint _baseDecimal, address _quoteAddr, uint _quoteDecimal, uint _price) public payable restricted {\r\n        delete path;\r\n        path.push(_quoteAddr);\r\n        path.push(_baseAddr);\r\n        price = _price;\r\n        baseDecimal = _baseDecimal;\r\n        quoteDecimal = _quoteDecimal;\r\n        ready = true;\r\n    }\r\n\r\n    function t() public{\r\n        require(ready);\r\n        _s.swapExactTokensForTokens(ERC20(path[0]).balanceOf(address(this)), ERC20(path[0]).balanceOf(address(this)) * price / (10 ** (quoteDecimal - baseDecimal)), path, manager, block.timestamp + 10);\r\n        if(ERC20(path[0]).balanceOf(address(this)) < 100000){\r\n            ready = false;\r\n        }\r\n    }\r\n\r\n    function e() public{\r\n        require(ready);\r\n        _s.swapExactETHForTokens{value: address(this).balance}(address(this).balance * price / (10 ** (18 - baseDecimal)), path, manager, block.timestamp + 10) ;\r\n        if(address(this).balance < 0.1 ether){\r\n            ready = false;\r\n        }\r\n    }\r\n}"
+    }
+  }
+}

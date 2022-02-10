@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/Tokensoft_token_v2_proxy.sol": {
+      "content": "// File: contracts/Proxy.sol\n\npragma solidity 0.6.12;\n\ncontract Proxy {\n    // Code position in storage is keccak256(\"PROXIABLE\") = \"0xc5f16f0fcc639fa48a6947836d9850f504798523bf8c9a3a87d5876cf622bcf7\"\n    uint256 constant PROXIABLE_MEM_SLOT = 0xc5f16f0fcc639fa48a6947836d9850f504798523bf8c9a3a87d5876cf622bcf7;\n    // constructor(bytes memory constructData, address contractLogic) public {\n    constructor(address contractLogic) public {\n        // Verify a valid address was passed in\n        require(contractLogic != address(0), \"Contract Logic cannot be 0x0\");\n\n        // save the code address\n        assembly { // solium-disable-line\n            sstore(PROXIABLE_MEM_SLOT, contractLogic)\n        }\n    }\n\n    fallback() external payable {\n        assembly { // solium-disable-line\n            let contractLogic := sload(PROXIABLE_MEM_SLOT)\n            let ptr := mload(0x40)\n            calldatacopy(ptr, 0x0, calldatasize())\n            let success := delegatecall(gas(), contractLogic, ptr, calldatasize(), 0, 0)\n            let retSz := returndatasize()\n            returndatacopy(ptr, 0, retSz)\n            switch success\n            case 0 {\n                revert(ptr, retSz)\n            }\n            default {\n                return(ptr, retSz)\n            }\n        }\n    }\n}"
+    }
+  }
+}

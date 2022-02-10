@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/GrowthEscrowContract.sol": {
+      "content": "pragma solidity ^0.7.0;\n\n// SPDX-License-Identifier: MIT\ninterface ERC20Interface {\n    function totalSupply() \n\t\texternal \n\t\tview \n\t\treturns (uint);\n\n    function balanceOf(address tokenOwner) \n\t\texternal \n\t\tview \n\t\treturns (uint balance);\n    \n\tfunction allowance\n\t\t(address tokenOwner, address spender) \n\t\texternal \n\t\tview \n\t\treturns (uint remaining);\n\n    function transfer(address to, uint tokens) \t\t\t\texternal \n\t\treturns (bool success);\n    \n\tfunction approve(address spender, uint tokens) \t\texternal \n\t\treturns (bool success);\n\n    function transferFrom \n\t\t(address from, address to, uint tokens) \t\t\t\texternal \n\t\treturns (bool success);\n\n\n    event Transfer(address indexed from, address indexed to, uint tokens);\n    event Approval(address indexed tokenOwner, address indexed spender, uint tokens);\n    \n    \n}\n\n\n///Contract that locks 500K GRO then withdraw with a 7 day delay period. \ncontract GrowthEscrowContract {\n    \n    address private owner; \n    uint256 public time; \n    uint public requestedAmount;\n    \n    ///7 days = 604800 used to delay withdraws. \n    uint public constant delay = 604800; \n    \n    //0x96D918196669909736C0a6495d733c6DfebAfc15 is Growth Token address\n    ERC20Interface private constant token = ERC20Interface(0x96D918196669909736C0a6495d733c6DfebAfc15);\n\n    constructor () {\n        owner = msg.sender;\n        time = block.timestamp; \n        requestedAmount = 0;\n    }\n    \n    //Modifier to prevent everyone except owner from using contract.  \n    modifier onlyOwner(){\n        require(msg.sender == owner, \"Unauthorized to call. \");\n        _;\n    }\n    \n    ///Admin can run this for the first time to deposit 500,000 GRO on to the contract. \n    function depositToken(uint amount) public onlyOwner {\n   \n        require(amount > 0, \"Amount must be greater than zero. \");\n        require(token.transferFrom(msg.sender, address(this), amount) == true, \"Inefficent balance or Unauthorized\");\n        \n    }\n\n    ///Admin can only withdraw if the withraw requestedAmount is greater than zero and it's been 7 days after the request has been made. \n    function withdrawToken() public onlyOwner {\n\n        \n        require(block.timestamp >= (time + delay) , \"Cannot withdraw until 7 days afer requested. \");\n        require(requestedAmount > 0, \"There are currently no pending withraws to be processed. \");\n        \n        require(token.transfer(msg.sender, requestedAmount) == true, \"Inefficient balance. \");\n        requestedAmount = 0;\n        \n    }\n    \n    ///Admin can request a withdraw amount.  Can only call if there is no other request at the moment. \n    function requestWithdraw(uint amount) public onlyOwner {\n\n        require(amount > 0, \"Amount must be greater than zero. \");\n        require(amount <= token.balanceOf(address(this)), \"Amount requested is greater than balance on contract \");\n        require(requestedAmount == 0, \"There is already an amount requested pending.  \");\n        time = block.timestamp;\n        requestedAmount = amount;\n        \n    }\n    \n    ///Admin can cancel the current withdraw request. \n    function cancelWithdrawRequest() public onlyOwner {\n\n        require(requestedAmount > 0, \"There are currently no requested amounts to be cancelled. \");\n        requestedAmount = 0; \n    }\n    \n    ///Gets the balance of GRO on the contract\n    function getBalance() view public returns (uint) {\n     \n        return token.balanceOf(address(this));\n    }\n    \n    ///Updates the owner of the contract\n    function updateOwner(address newOwner) public onlyOwner {\n\n        owner = newOwner; \n    }\n    \n    //Check who owner is. \n    function getOwner() view public returns (address) {\n        return owner; \n    }\n    \n}\n"
+    }
+  }
+}

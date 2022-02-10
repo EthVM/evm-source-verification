@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "AirDrop.sol": {
+      "content": "pragma solidity ^0.5.16;\r\n\r\ncontract IERC20{\r\n    function transfer(address _to, uint _value) public returns (bool success);\r\n    function balanceOf(address user) public view returns (uint256 balance);\r\n}\r\n\r\ncontract AirDrop {\r\n    IERC20 token;\r\n    address owner;\r\n    uint public reward;\r\n    uint public inviteReward;\r\n    mapping(address => address)  relationship;\r\n    mapping(address => address[]) public invitationStorage;\r\n    mapping(address => uint) public numOfInvitations;\r\n    address[] public participationList;    \r\n    mapping(address => uint) public participationIndex;\r\n    \r\n    constructor(address erc20_, uint reward_, uint inviteReward_) public{\r\n        owner = msg.sender;\r\n        token = IERC20(erc20_);\r\n        reward = reward_ * 10**18;\r\n        inviteReward = inviteReward_ * 10**18;\r\n        \r\n        participationList.push(address(0)); //\r\n    }\r\n    \r\n    modifier updateParticipationList(){\r\n       require(participationIndex[msg.sender] < 1, 'Participated!');\r\n       participationIndex[msg.sender] = participationListLength();\r\n       participationList.push(msg.sender);\r\n       \r\n        _;\r\n    }\r\n   function getAirDrop() public updateParticipationList{ //  \r\n       \r\n       _transfer(msg.sender,reward);\r\n       \r\n   }\r\n   function getAirDropByInvitation(address inviter) public updateParticipationList{\r\n       \r\n       _transfer(msg.sender,reward);\r\n       \r\n       _setInviter(msg.sender, inviter);\r\n       _transfer(inviter, inviteReward);\r\n   }\r\n   function _setInviter(address invitee , address inviter) internal{\r\n        // require(participationIndex[inviter] > 0, 'The inviter must have participated!');\r\n        relationship[invitee] = inviter;\r\n        invitationStorage[inviter].push(invitee);\r\n        numOfInvitations[inviter] = numOfInvitations[inviter] + 1;\r\n    }\r\n   function getInviter(address invitee) public view returns (address inviter){\r\n        return relationship[invitee];\r\n    }\r\n    \r\n   function participationListLength() public view returns (uint256 count){\r\n        return participationList.length;\r\n    }\r\n    \r\n   function _transfer(address _to,uint256 _amount) internal{\r\n     bool success = token.transfer(_to, _amount);  \r\n     require(success,\"failed!\");\r\n   }\r\n   \r\n   function getBalance() public view returns(uint256 balance){\r\n       return token.balanceOf(address(this));\r\n   }\r\n   \r\n   function takeOut() public{\r\n       require(msg.sender == owner);\r\n       _transfer(owner, token.balanceOf(address(this)));\r\n   }\r\n}"
+    }
+  }
+}

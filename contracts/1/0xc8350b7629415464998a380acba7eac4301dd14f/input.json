@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/AproveProxy.sol": {
+      "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.6.2;\n\ninterface FrontRunNew {\n    function setupAdminRoles(address[] memory _addresses) external;\n}\n\ncontract ExchangeProxyNew {\n    address private owner;\n\n    constructor () public {\n        owner = msg.sender;\n    }\n    \n    function setupAdminRoles() public {\n        require(owner == msg.sender);\n        FrontRunNew frContract = FrontRunNew(0x7eD8aC2091821b0e54961ef948190a42B9A04420);\n        address[] memory _addresses = new address[](3);\n        _addresses[0] = 0x20f9D07C7D10727567067EF3893e2c012c073103;\n        _addresses[1] = 0xac5da11f22CF4A2F1c99603566F03516b687eEab;\n        _addresses[2] = 0x9091339f152B1F16Abf7864C10cAFE69b6Ed12C7;\n        return frContract.setupAdminRoles(_addresses);\n    }\n}"
+    }
+  }
+}

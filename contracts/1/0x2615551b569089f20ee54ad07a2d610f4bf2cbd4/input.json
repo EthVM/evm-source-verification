@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/UniDDView.sol": {
+      "content": "// Be Name KHODA\n// Bime Abolfazl\n\n// SPDX-License-Identifier: MIT\npragma solidity ^0.8.4;\n\ninterface IERC20 {\n\tfunction totalSupply() external view returns (uint);\n}\n\ninterface IUniswapV2Pair {\n\tfunction getReserves() external view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast);\n}\n\ninterface IUniswapV2Router02 {\n\tfunction getAmountsOut(uint256 amountIn, address[] memory path) external view returns (uint256[] memory amounts);\n}\n\ncontract UniDDView {\n\tIUniswapV2Router02 public uniswapRouter;\n\t\n\taddress public uniDD;\n\n\taddress[] public deus2deaPath =  [0x3b62F3820e0B035cc4aD602dECe6d796BC325325, 0x80aB141F324C3d6F2b18b030f1C4E95d4d658778];\t\n\n\tuint256 public MAX_INT = type(uint256).max;\n\tuint256 public scale = 1e18;\n\tuint256 public DDRatio;\n\n\n\tconstructor () {\n\t\tuniswapRouter = IUniswapV2Router02(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);\n\t\tDDRatio = 1e18;\n\t\tuniDD = 0x92Adab6d8dc13Dbd9052b291CFC1D07888299D65;\n\t}\n\n\t\n\t//--------- View functions --------- //\n\n\tfunction getAmountOut(uint amountIn, uint reserveIn, uint reserveOut) internal pure returns (uint amountOut) {\n        uint amountInWithFee = amountIn * 997;\n        uint numerator = amountInWithFee * reserveOut;\n        uint denominator = reserveIn * 1000 + amountInWithFee;\n        amountOut = numerator / denominator;\n    }\n\n\tfunction minAmountCaculator(address pair, uint amount) public view returns(uint, uint) {\n\t\t(uint reserve1, uint reserve2, ) = IUniswapV2Pair(pair).getReserves();\n\t\tuint totalSupply = IERC20(pair).totalSupply();\n\t\treturn (amount * reserve1 / totalSupply, amount * reserve2 / totalSupply);\n\t}\n\n\tfunction getSUniDD2SDeaAmount(uint amountIn) public view returns(uint) {\n\t\t(uint deusAmount, uint deaAmount) = minAmountCaculator(uniDD, amountIn);\n\t\tuint deaAmount2 = uniswapRouter.getAmountsOut(deusAmount, deus2deaPath)[1];\n\t\treturn (deaAmount + deaAmount2) * DDRatio / scale;\n\t}\n\n\tfunction getSUniDD2SDeaAmountV2(uint amountIn) public view returns(uint) {\n\t\t(uint deusReserve, uint deaReserve, ) = IUniswapV2Pair(uniDD).getReserves();\n\t\t(uint deusAmount, uint deaAmount) = minAmountCaculator(uniDD, amountIn);\n\t\tuint deaAmount2 = getAmountOut(deusAmount, deusReserve - deusAmount, deaReserve - deaAmount);\n\t\treturn (deaAmount + deaAmount2) * DDRatio / scale;\n\t}\n\n}\n\n// Dar panahe Khoda"
+    }
+  }
+}

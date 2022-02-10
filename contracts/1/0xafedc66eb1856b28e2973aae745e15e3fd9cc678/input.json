@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "EscrowTheMovie.sol": {
+      "content": "pragma solidity 0.7.1;\r\n\r\ncontract EscrowTheMovie{\r\n    \r\n    uint expectedAmount = 1340000000000000000;\r\n    address public sender;\r\n    address payable public receiver;\r\n    bool released;\r\n    \r\n    constructor (){\r\n        receiver = msg.sender;\r\n    }\r\n    \r\n    function deposit(uint amount) public payable {\r\n        require(msg.value == amount);\r\n        sender = msg.sender;\r\n    } \r\n    \r\n    function release() public {\r\n        require(msg.sender == sender);\r\n        released = true;\r\n    }\r\n    \r\n    function withdraw() public{\r\n        require(msg.sender == receiver, \"wrong caller\");\r\n        require(released, \"not released\");\r\n        (bool success, ) = receiver.call{value: expectedAmount}(\"\");\r\n        require(success, \"Unwrapping failed.\");\r\n    }\r\n}"
+    }
+  }
+}

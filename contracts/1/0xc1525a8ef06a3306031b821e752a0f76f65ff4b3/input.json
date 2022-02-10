@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/nuevoseller.sol": {
+      "content": "// SPDX-License-Identifier: MIT\n\npragma solidity ^0.8.0;\n\ninterface IERC20Token {\n    function transferFrom(address _from, address _to, uint256 _value) external returns (bool success);\n}\n\ninterface IERC721 {\n\n    function mint(address to, uint32 _assetType, uint32 _customDetails) external returns (bool success);\n\n}\ncontract Ownable {\n\n    address private owner;\n    \n    event OwnerSet(address indexed oldOwner, address indexed newOwner);\n    \n    modifier onlyOwner() {\n        require(msg.sender == owner, \"Caller is not owner\");\n        _;\n    }\n\n    constructor() {\n        owner = msg.sender; // 'msg.sender' is sender of current call, contract deployer for a constructor\n        emit OwnerSet(address(0), owner);\n    }\n\n\n    function changeOwner(address newOwner) public onlyOwner {\n        emit OwnerSet(owner, newOwner);\n        owner = newOwner;\n    }\n\n    function getOwner() external view returns (address) {\n        return owner;\n    }\n}\n\ncontract POLNSeller is Ownable {\n    \n    address public tokenAddress;\n    address public nftAddress;\n    address public sellingWallet;\n    \n    struct assetDescription {\n        uint256 price;\n        uint32 details;\n    }\n    mapping(uint => assetDescription) public assets;\n    \n    constructor() {\n        sellingWallet = 0xAD334543437EF71642Ee59285bAf2F4DAcBA613F;\n        nftAddress = 0x57E9a39aE8eC404C08f88740A9e6E306f50c937f;\n        tokenAddress = 0xaA8330FB2B4D5D07ABFE7A72262752a8505C6B37;\n        fillAssets(1, (1500 ether), 825241649);\n        \n        \n        fillAssets(2, (3000 ether), 825241649);\n        fillAssets(3, (7500 ether), 825241650);\n        fillAssets(4, (10000 ether), 825241651);\n        fillAssets(5, (15000 ether), 825241652);\n        fillAssets(6, (75000 ether), 825241653);\n        fillAssets(7, (65500 ether), 825241654);\n        fillAssets(8, (40000 ether), 825241655);\n        fillAssets(9, (90000 ether), 825241656);\n        fillAssets(10, (55000 ether), 825241905);\n        fillAssets(11, (105000 ether), 825241906);\n        fillAssets(12, (50000 ether), 825241907);\n        fillAssets(13, (22500 ether), 825241908);\n        fillAssets(14, (30000 ether), 825241909);\n        fillAssets(15, (45000 ether), 825241910);\n    }\n    \n    function fillAssets(uint256 _id, uint256 _price, uint32 _details) private {\n        assets[_id].price = _price;\n        assets[_id].details = _details;\n    }\n    \n    function bytesToUint(bytes memory b) private pure returns (uint256){\n        uint256 number;\n        for(uint i=0;i<b.length;i++){\n            number = number + uint(uint8(b[i]))*(2**(8*(b.length-(i+1))));\n        }\n        return number;\n    }\n    \n    function receiveApproval(address _from, uint256 _value, address _token, bytes memory _extraData) public returns (bool success) {\n        require(tokenAddress == _token);\n        uint assetType = bytesToUint(_extraData);\n        require(assets[assetType].price <= _value);\n        IERC20Token token = IERC20Token(tokenAddress);\n        require(token.transferFrom(_from, sellingWallet, assets[assetType].price), \"ERC20 Transfer error\");\n        IERC721 nft = IERC721(nftAddress);\n        require(nft.mint(_from, uint32(assetType), assets[assetType].details));\n        return true;\n    }\n    \n    function setPrice(uint256 _assetId, uint256 _newPrice) public onlyOwner {\n        assets[_assetId].price = _newPrice;\n    }\n    \n    \n    \n    \n    \n    \n    \n    \n    \n}\n"
+    }
+  }
+}

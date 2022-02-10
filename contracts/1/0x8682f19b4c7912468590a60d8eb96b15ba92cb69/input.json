@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/UpkeepPerformCounterRestrictiveUPDATEDSTEVE.sol": {
+      "content": "pragma solidity 0.7.6;\n\ncontract UpkeepPerformCounterRestrictive {\n    event PerformingUpkeep (\n        bool eligible,\n        address from,\n        uint256 initialCall,\n        uint256 nextEligible,\n        uint256 blockNumber\n    );\n  uint256 public initialCall = 0;\n  uint256 public nextEligible = 0;\n  uint256 public testRange;\n  uint256 public averageEligibilityCadence;\n  uint256 count = 0;\n  constructor(uint256 _testRange, uint256 _averageEligibilityCadence) {\n    testRange = _testRange;\n    averageEligibilityCadence = _averageEligibilityCadence;\n  }\n  function checkUpkeep(bytes calldata data) external returns (bool, bytes memory) {\n    return (eligible(), bytes(\"\"));\n  }\n  function performUpkeep(bytes calldata data) external {\n    bool eligible = eligible();\n    uint256 blockNum = block.number;\n    emit PerformingUpkeep(eligible, tx.origin, initialCall, nextEligible, blockNum);\n    require(eligible);\n    if (initialCall == 0) {\n      initialCall = blockNum;\n    }\n    nextEligible = (blockNum + rand() % (averageEligibilityCadence * 2)) + 1;\n    count++;\n  }\n  function getCountPerforms() view public returns(uint256) {\n    return count;\n  }\n  function eligible() view internal returns(bool) {\n    return initialCall == 0 ||\n      (\n        block.number - initialCall < testRange &&\n        block.number > nextEligible\n      );\n  }\n  function checkEligible() view public returns(bool) {\n    return eligible();\n  }\n  function reset() external {\n      initialCall = 0;\n      count = 0;\n  }\n  function setSpread(uint _newTestRange, uint _newAverageEligibilityCadence) external {\n    testRange = _newTestRange;\n    averageEligibilityCadence = _newAverageEligibilityCadence;\n  }\n  function rand() private view returns (uint256) {\n    return uint256(keccak256(abi.encode(blockhash(block.number - 1), address(this))));\n  }\n}\n"
+    }
+  }
+}

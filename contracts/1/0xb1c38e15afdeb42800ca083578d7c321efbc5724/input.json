@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/verification.sol": {
+      "content": "pragma solidity ^0.8.4;\r\n//SPDX-License-Identifier: MIT\r\n\r\n\r\ncontract Verification {\r\n    event UpdateVerification(bytes32 indexed node, bool didVerify);\r\n    \r\n    address controller;\r\n    \r\n    modifier onlyContoller() {\r\n        require(msg.sender == controller);\r\n        _;\r\n    }\r\n    \r\n    constructor() {\r\n        controller = msg.sender;\r\n    }\r\n    \r\n    function changeContoller(address _newContoller) onlyContoller external {\r\n        controller = _newContoller;\r\n    }\r\n    \r\n    function addVerification(bytes32 _node) onlyContoller public {\r\n        emit UpdateVerification(_node, true);\r\n    }\r\n    \r\n    function removeVerification(bytes32 _node) onlyContoller public {\r\n        emit UpdateVerification(_node, false);\r\n    }\r\n}"
+    }
+  }
+}

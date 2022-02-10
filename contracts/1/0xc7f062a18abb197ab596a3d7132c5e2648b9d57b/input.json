@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/undb_trader.sol": {
+      "content": "pragma solidity ^0.6.0;\n\n    contract Ownable {\n      address public owner;\n      constructor () public {\n        owner = msg.sender;\n      }\n      modifier onlyOwner() {\n        require(msg.sender == owner, \"You is not owner\");\n        _;\n      }\n      function transferOwnership(address newOwner) public onlyOwner {\n        require(newOwner != address(0));\n        owner = newOwner;\n      }\n    }\n\n\n    interface ROUTER{\n        function swapExactTokensForTokens(\n            uint amountIn,\n            uint amountOutMin,\n            address[] calldata path,\n            address to,\n            uint deadline\n        ) external returns (uint[] memory amounts);\n        function swapExactTokensForTokensSupportingFeeOnTransferTokens(\n            uint amountIn,\n            uint amountOutMin,\n            address[] calldata path,\n            address to,\n            uint deadline\n            ) external;\n    }\n\n    interface ERC20{\n         function balanceOf(address account) external returns (uint256);\n         function allowance(address owner, address spender) external returns (uint256);\n         function approve(address spender, uint256 amount) external returns (bool);\n         function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);\n    }\n\ncontract AUtrader is Ownable {\n  bool isBlocked = false;\n  address internal constant UNDB_ADDRESS = 0xd03B6ae96CaE26b743A6207DceE7Cbe60a425c70;\n  uint private licencePrice = 0;\n\n  struct FeeAddress {\n      address payable recipient;\n      bool isExist;\n  }\n  mapping (address => FeeAddress) public addresses; // feeAddress=>recipient\n\n  ERC20 private UNDB;\n\n  constructor() public {\n    UNDB = ERC20(UNDB_ADDRESS);\n    attachAddress(msg.sender);\n  }\n\n\n function exchange(address[] memory path, uint amountIn, uint minOutAmount, address routerAddress, bool isDeflToken) public payable returns(bool){\n     FeeAddress storage recipientEL = addresses[msg.sender];\n     require(recipientEL.isExist, \"Not attached feeAddress\");\n     require(!isBlocked, \"Contract is blocked\");\n     address recipient = recipientEL.recipient;\n     uint deadline = now + 120;\n     ERC20 token = ERC20(path[0]);\n     require(UNDB.balanceOf(recipient) >= licencePrice, \"insufficient balance UNDB\");\n     require(token.balanceOf(recipient) >= amountIn, \"insufficient balance input token\");\n     require(token.allowance(recipient, address(this)) >= amountIn, \"Not approved amountIn\");\n     TransferHelper.safeTransferFrom(path[0], recipient, address(this), amountIn);\n     if(token.allowance(address(this), routerAddress) < amountIn){\n         TransferHelper.safeApprove(path[0], routerAddress, amountIn * 100);\n     }\n     ROUTER router = ROUTER(routerAddress);\n     if(!isDeflToken){\n        router.swapExactTokensForTokens(amountIn, minOutAmount, path, recipient, deadline);\n    } else {\n        uint amountIn_ = token.balanceOf(address(this));\n        router.swapExactTokensForTokensSupportingFeeOnTransferTokens(amountIn_, minOutAmount, path, recipient, deadline);\n    }\n }\n\n function attachAddress(address payable feeAddress) public {\n    addresses[feeAddress] = FeeAddress(msg.sender, true);\n }\n\n function licencePriceChange(uint newPrice) public onlyOwner{\n     licencePrice = newPrice;\n }\n \n function toggleBlock() public onlyOwner {\n     isBlocked = !isBlocked;\n }\n \n function blockStatus() public view onlyOwner returns (bool) {\n     return isBlocked;\n }\n\n}\n\n\n// helper methods for interacting with ERC20 tokens and sending ETH that do not consistently return true/false\nlibrary TransferHelper {\n    function safeApprove(\n        address token,\n        address to,\n        uint256 value\n    ) internal {\n        // bytes4(keccak256(bytes('approve(address,uint256)')));\n        (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0x095ea7b3, to, value));\n        require(\n            success && (data.length == 0 || abi.decode(data, (bool))),\n            'TransferHelperUNDB::safeApprove: approve failed'\n        );\n    }\n\n    function safeTransferFrom(\n        address token,\n        address from,\n        address to,\n        uint256 value\n    ) internal {\n        // bytes4(keccak256(bytes('transferFrom(address,address,uint256)')));\n        (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0x23b872dd, from, to, value));\n        require(\n            success && (data.length == 0 || abi.decode(data, (bool))),\n            'TransferHelperUNDB::transferFrom: transferFrom failed'\n        );\n    }\n}\n\n\n// WETH (ropsten) USDC\n// [\"0xc778417e063141139fce010982780140aa0cd5ab\", \"0x0d9c8723b343a8368bebe0b5e89273ff8d712e3c\"]\n\n// RCORE\n// 0x067a2c2f812e5ef28bd43fb2f1dd0e44cc5cce88\n// https://ropsten.etherscan.io/tx/0x7ebdc08ddc9234aeb11371b957f9c17f2e999b1db4cbaf8079768cc8a013051b\n\n// [\"0x067A2C2F812E5eF28Bd43fB2F1dD0e44CC5cCE88\", \"0xc778417e063141139fce010982780140aa0cd5ab\"]\n// 1000000000000000000\n// 1\n// UNISWAP 0x7a250d5630b4cf539739df2c5dacb4c659f2488d\n// SUSHISWAP 0xd9e1ce17f2641f24ae83637ab66a2cca9c378b9f\n\n// main CORE WETH\n// [\"0x62359Ed7505Efc61FF1D56fEF82158CcaffA23D7\", \"0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2\"]\n// [\"0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2\", \"0xdac17f958d2ee523a2206206994597c13d831ec7\"]\n\n"
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/CombMemeRedeem.sol": {
+      "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.1;\n\n/**\n * @title MyCollectible\n * MyCollectible - a contract for my semi-fungible tokens.\n */\ninterface ICombMeme {\n    function mint(\n        address _to,\n        uint256 _id,\n        uint256 _quantity,\n        bytes calldata _data\n    ) external;\n}\n\n\ninterface ICARMAToken {\n    function burnFrom(\n        address _owner,\n        uint256 _amount\n    ) external;\n}\n\ncontract CombMemeRedeem {\n    ICombMeme public nft;\n    ICARMAToken public carmaToken;\n    mapping(uint256 => uint256) orders;\n    address private _owner;\n\n    constructor(address _nft, address _erc20) {\n        nft = ICombMeme(_nft);\n        carmaToken = ICARMAToken(_erc20);\n        _owner = msg.sender;\n    }\n\n    function setOrder(uint256 _id, uint256 _price) external {\n        require(msg.sender == _owner, \"Only owner!\");\n        require(_price >= 0, \"Price need to be more then 0\");\n\n        orders[_id] = _price;\n    }\n\n    function buy(uint256 _id) external {\n        require(orders[_id] != 0, \"Order does not exist\");\n\n        carmaToken.burnFrom(msg.sender, orders[_id]);\n        nft.mint(msg.sender, _id, 1, \"\");\n    }\n}\n"
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/OceanMan.sol": {
+      "content": "pragma solidity ^0.6.0;\npragma experimental ABIEncoderV2;\n\ninterface IERC20Token {\n\tfunction balanceOf(address) external pure returns (uint256);\n}\n\ninterface UniswapFactory {\n    event PairCreated(address indexed token0, address indexed token1, address pair, uint);\n\n    function feeTo() external view returns (address);\n    function feeToSetter() external view returns (address);\n\n    function getPair(address tokenA, address tokenB) external view returns (address pair);\n    function allPairs(uint) external view returns (address pair);\n    function allPairsLength() external view returns (uint);\n\n    function createPair(address tokenA, address tokenB) external returns (address pair);\n\n    function setFeeTo(address) external;\n    function setFeeToSetter(address) external;\n}\n\ncontract UniswapHelpers {\n    \n    UniswapFactory public univ2Factory = UniswapFactory(0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac);\n    \n    function getPairs(uint256 start, uint256 cnt) public view returns (address[] memory) {\n        address[] memory out = new address[](cnt);\n        for(uint256 i = 0; i < cnt; i++){\n            out[i] = univ2Factory.allPairs(i+start);\n        }\n        return out;\n    }\n}"
+    }
+  }
+}

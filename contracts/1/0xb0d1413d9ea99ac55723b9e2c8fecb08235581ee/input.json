@@ -1,0 +1,35 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "Bridge/DFMBridge.sol": {
+      "content": "// SPDX-License-Identifier: MIT\npragma solidity >= 0.8.9;\npragma experimental ABIEncoderV2;\n\nimport \"../UsePAY/Storage/WrapAddresses.sol\";\n\ncontract DFMBridge is WrapAddresses{\n\n    address private owner = address(0);\n    bool private pending = false;\n    \n    uint256 private fee = 0;\n    \n    uint256 private changeFees = 0;\n    \n    uint256 private baseFeeLimit = 80000000000;\n    \n    constructor ( address _owner) {\n        owner = _owner;\n    }\n    \n    \n    receive () external payable {}\n    fallback() external payable {\n        (, bytes memory result0 ) = address(iAddresses).staticcall(abi.encodeWithSignature(\"viewAddress(uint16)\",600));\n        (address bridge_core) = abi.decode(result0,(address));\n        //get Data \n        assembly {\n            let ptr := mload( 0x40 )\n            calldatacopy( ptr, 0, calldatasize() )\n            let result := delegatecall( gas(), bridge_core , ptr, calldatasize(), 0, 0 )\n            returndatacopy( ptr, 0, returndatasize() )\n            switch result \n                case 0 { //fail\n                    revert( ptr, returndatasize() )\n                } \n                default { //success\n                    return( ptr, returndatasize() )\n                }\n        }\n    }\n}"
+    },
+    "Bridge/DFMBridgeCreator.sol": {
+      "content": "// SPDX-License-Identifier: MIT\npragma solidity >= 0.8.9;\npragma experimental ABIEncoderV2;\n\nimport \"./DFMBridge.sol\";\nimport \"../UsePAY/Storage/WrapAddresses.sol\";\n\ncontract DFMBridgeCreator is WrapAddresses {\n    event createEvent( address indexed pack, address owner );  // 0: pack indexed, 1 : craeteTime , 2 : packInfo\n    function create() external payable \n    {\n        (, bytes memory result0 ) = address(iAddresses).staticcall(abi.encodeWithSignature(\"viewAddress(uint16)\",200)); // owner\n        (address bridge_owner) = abi.decode(result0,(address));\n        require(msg.sender==bridge_owner,\"is not owner\");\n        DFMBridge pers = new DFMBridge( msg.sender );\n        emit createEvent(address( pers ), msg.sender);\n    }\n}"
+    },
+    "UsePAY/Storage/WrapAddresses.sol": {
+      "content": "// SPDX-License-Identifier: MIT\npragma solidity >= 0.7.0;\n\ncontract WrapAddresses {\n    // address internal iAddresses = 0x4E3C648dF58f2Da711f5B34B7eBD3F2A1f888a0A; //eth_rinkeby\n    address internal iAddresses = 0x48aa9c47897B50dBF8B7dc3A1bFa4b05C481EB3d; //eth_mainnet\n    // address internal iAddresses = 0x5dA0e1a95e6F85b3DA11C1350B2A82F40f5b2E0f; //bsc_testnet    \n    // address internal iAddresses = 0x48aa9c47897B50dBF8B7dc3A1bFa4b05C481EB3d; // bsc_mainnet\n    modifier onlyManager(address _addr) {\n        checkManager(_addr);\n        _;\n    }\n    \n    function checkManager(address _addr) internal view {\n        (, bytes memory result ) = address( iAddresses ).staticcall(abi.encodeWithSignature(\"viewAddress(uint16)\",200));\n        require( abi.decode(result,(address)) == _addr , \"This address is not Manager\");\n    } \n}\n"
+    }
+  }
+}
