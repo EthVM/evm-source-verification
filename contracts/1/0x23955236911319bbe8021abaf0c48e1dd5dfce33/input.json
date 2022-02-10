@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/SantalmCoin.sol": {
+      "content": "// SPDX-License-Identifier: MIT\r\npragma solidity 0.8.7;\r\n\r\n// ----------------------------------------------------------------------------\r\n// ERC Token Standard #20 Interface\r\n//\r\n// ----------------------------------------------------------------------------\r\nabstract contract ERC20Interface {\r\n    function totalSupply() public virtual view returns (uint);\r\n    function balanceOf(address tokenOwner) public virtual view returns (uint balance);\r\n    function allowance(address tokenOwner, address spender) public virtual view returns (uint remaining);\r\n    function transfer(address to, uint tokens) public virtual returns (bool success);\r\n    function approve(address spender, uint tokens) public virtual returns (bool success);\r\n    function transferFrom(address from, address to, uint tokens) public virtual returns (bool success);\r\n\r\n    event Transfer(address indexed from, address indexed to, uint tokens);\r\n    event Approval(address indexed tokenOwner, address indexed spender, uint tokens);\r\n}\r\n\r\n// ----------------------------------------------------------------------------\r\n// Safe Math Library\r\n// ----------------------------------------------------------------------------\r\ncontract SafeMath {\r\n    function safeAdd(uint a, uint b) public pure returns (uint c) {\r\n        c = a + b;\r\n        require(c >= a);\r\n    }\r\n    function safeSub(uint a, uint b) public pure returns (uint c) {\r\n        require(b <= a); c = a - b; \r\n    } \r\n    function safeMul(uint a, uint b) public pure returns (uint c) { \r\n        c = a * b; require(a == 0 || c / a == b); \r\n    } \r\n    function safeDiv(uint a, uint b) public pure returns (uint c) { \r\n        require(b > 0);\r\n        c = a / b;\r\n    }\r\n}\r\n\r\ncontract SantalumCoin is ERC20Interface, SafeMath {\r\n    string public name;\r\n    string public symbol;\r\n    uint8 public decimals; // 18 decimals is the strongly suggested default, avoid changing it\r\n    uint256 public tokenBirth;\r\n    uint256 public price;\r\n\r\n    uint256 public _totalSupply;\r\n\r\n    mapping(address => uint) balances;\r\n    mapping(address => mapping(address => uint)) allowed;\r\n\r\n    /**\r\n     * Constrctor function\r\n     *\r\n     * Initializes contract with initial supply tokens to the creator of the contract\r\n     */\r\n    constructor() {\r\n        name = \"Santalum\";\r\n        symbol = \"SST\";\r\n        decimals = 18;\r\n        _totalSupply = 840000000 * (10**decimals);\r\n        tokenBirth = block.timestamp;\r\n        price = 100000000000000000;\r\n\r\n        balances[msg.sender] = _totalSupply;\r\n        emit Transfer(address(0), msg.sender, _totalSupply);\r\n    }\r\n\r\n    function totalSupply() public override view returns (uint) {\r\n        return _totalSupply;\r\n    }\r\n\r\n    function balanceOf(address tokenOwner) public override view returns (uint balance) {\r\n        return balances[tokenOwner];\r\n    }\r\n\r\n    function allowance(address tokenOwner, address spender) public override view returns (uint remaining) {\r\n        return allowed[tokenOwner][spender];\r\n    }\r\n\r\n    function approve(address spender, uint tokens) public override returns (bool success) {\r\n        allowed[msg.sender][spender] = tokens;\r\n        emit Approval(msg.sender, spender, tokens);\r\n        return true;\r\n    }\r\n\r\n    function transfer(address to, uint tokens) public override returns (bool success) {\r\n        require(tokens <= balances[msg.sender]);\r\n        balances[msg.sender] = safeSub(balances[msg.sender], tokens);\r\n        balances[to] = safeAdd(balances[to], tokens);\r\n        emit Transfer(msg.sender, to, tokens);\r\n        return true;\r\n    }\r\n\r\n    function transferFrom(address from, address to, uint tokens) public override returns (bool success) {\r\n        require(tokens <= balances[from]);\r\n        require(tokens <= allowed[from][msg.sender]);\r\n        balances[from] = safeSub(balances[from], tokens);\r\n        allowed[from][msg.sender] = safeSub(allowed[from][msg.sender], tokens);\r\n        balances[to] = safeAdd(balances[to], tokens);\r\n        emit Transfer(from, to, tokens);\r\n        return true;\r\n    }\r\n\r\n    function getPrice() public view returns (uint256 c) {\r\n        uint a = 1;\r\n        uint b = getAge();\r\n        c = a + (b * 1644) / 1000000;\r\n    }\r\n\r\n    function getAge() public view returns (uint256 d) {\r\n        uint256 a = block.timestamp;\r\n        uint256 b = a - tokenBirth;\r\n        uint256 c = b - b % 86400;\r\n        if(c == 0) {\r\n            d = 1;\r\n        } else {\r\n            d = c / 86400;\r\n        }\r\n    }\r\n}"
+    }
+  }
+}

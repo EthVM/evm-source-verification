@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/Ay.sol": {
+      "content": "pragma solidity =0.6.6;\n\ncontract UniswapV2Router02 {\n  address public WETH;\n  function swapExactTokensForETH(uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline) external {}\n}\n\ncontract ChiToken {\n  function mint(uint256 value) public {}\n}\n\ncontract Ay {\n  UniswapV2Router02 router = UniswapV2Router02(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);\n  ChiToken chi = ChiToken(0x0000000000004946c0e9F43F4Dee607b0eF1fA1c);\n\n  address owner;\n  \n  receive() external payable {}\n  \n  constructor () public {\n    owner = msg.sender;\n  }\n  \n  function go(uint256 amount, uint256 div) external {\n    require(msg.sender == owner);\n    uint256 amountIn = amount;\n    uint256 amountOutMin = 0;\n    \n    chi.mint(amountIn);\n    \n    address[] memory path = new address[](2);\n    path[0] = address(chi);\n    path[1] = router.WETH();\n    router.swapExactTokensForETH(amountIn, amountOutMin, path, address(this), block.timestamp);\n    \n    // payout ether \n    uint256 payout = address(this).balance / div;\n    \n    // pay miner\n    block.coinbase.transfer(payout);\n    \n    // pay arber\n    msg.sender.transfer(payout);\n  }\n}"
+    }
+  }
+}

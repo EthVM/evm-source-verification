@@ -1,0 +1,32 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/ownable.sol": {
+      "content": "contract Ownable {\r\n    address public owner;\r\n\r\n    constructor() public {\r\n        owner = msg.sender;\r\n    }\r\n\r\n    modifier onlyOwner {\r\n        require(msg.sender == owner);\r\n        _;\r\n    }\r\n    function transferOwnership(address newOwner) onlyOwner public{\r\n        if (newOwner != address(0)) {\r\n            owner = newOwner;\r\n        }\r\n    }\r\n}"
+    },
+    "browser/token_manager.sol": {
+      "content": "pragma solidity >=0.4.4;\r\n\r\nimport \"./ownable.sol\";\r\n\r\ncontract TokenManager is Ownable {\r\n    mapping(bytes32 => address) tokenMap;\r\n    // event AddedToTokenManager(address indexed account);\r\n    // event RemovedFromTokenManager(address indexed account);\r\n\r\n    function add(address[] memory _address) public onlyOwner {\r\n        require(_address.length > 0, \"address length is 0\");\r\n        for (uint i = 0; i < _address.length; i++) {\r\n            bytes32 key = keccak256(abi.encodePacked(_address[i]));\r\n            tokenMap[key] = _address[i];\r\n            // emit AddedToTokenManager(_address[i]);\r\n        }\r\n    }\r\n\r\n    function remove(address[] memory _address) public onlyOwner {\r\n        require(_address.length > 0, \"address length is 0\");\r\n        for (uint i = 0; i < _address.length; i++) {\r\n            bytes32 key = keccak256(abi.encodePacked(_address[i]));\r\n            delete tokenMap[key];\r\n            // emit RemovedFromTokenManager(_address[i]);\r\n        }\r\n    }\r\n\r\n    function getToken(bytes32 key) external view returns (address) {\r\n        return tokenMap[key];\r\n    }\r\n}"
+    }
+  }
+}

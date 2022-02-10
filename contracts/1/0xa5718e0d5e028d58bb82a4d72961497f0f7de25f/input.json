@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/test-chicontract.sol": {
+      "content": "//SPDX-License-Identifier: MIT\npragma solidity 0.7.0;\n\ninterface iCHI {\n    function freeFromUpTo(address from, uint256 value) external returns (uint256);\n}\n\ncontract ChiTest{\n\n    address internal CHITOKEN = 0x0000000000004946c0e9F43F4Dee607b0eF1fA1c;\n    iCHI public CHI = iCHI(CHITOKEN);\n\n    uint256 test = 0;\n\n    modifier discountCHI() {\n        uint256 gasStart = gasleft();\n        _;\n        uint256 gasSpent = 21000 + gasStart - gasleft() + 16 * msg.data.length;\n        CHI.freeFromUpTo(address(this), (gasSpent + 14154) / 41947);\n    }\n    \n    function updateNum(uint256 newNum) public discountCHI{\n        test = newNum;\n    }\n}"
+    }
+  }
+}

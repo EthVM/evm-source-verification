@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "EthToUTIExchange.sol": {
+      "content": "pragma solidity ^0.5.10;\r\n\r\ncontract ERC20Token\r\n{\r\n    mapping (address => uint256) public balanceOf;\r\n    function transfer(address _to, uint256 _value) public;\r\n}\r\n\r\nlibrary SafeMath {\r\n    /**\r\n     * @dev Returns the addition of two unsigned integers, reverting on\r\n     * overflow.\r\n     *\r\n     * Counterpart to Solidity's `+` operator.\r\n     *\r\n     * Requirements:\r\n     * - Addition cannot overflow.\r\n     */\r\n    function add(uint256 a, uint256 b) internal pure returns (uint256) {\r\n        uint256 c = a + b;\r\n        require(c >= a, \"SafeMath: addition overflow\");\r\n\r\n        return c;\r\n    }\r\n\r\n    /**\r\n     * @dev Returns the subtraction of two unsigned integers, reverting on\r\n     * overflow (when the result is negative).\r\n     *\r\n     * Counterpart to Solidity's `-` operator.\r\n     *\r\n     * Requirements:\r\n     * - Subtraction cannot overflow.\r\n     */\r\n    function sub(uint256 a, uint256 b) internal pure returns (uint256) {\r\n        require(b <= a, \"SafeMath: subtraction overflow\");\r\n        uint256 c = a - b;\r\n\r\n        return c;\r\n    }\r\n\r\n    /**\r\n     * @dev Returns the multiplication of two unsigned integers, reverting on\r\n     * overflow.\r\n     *\r\n     * Counterpart to Solidity's `*` operator.\r\n     *\r\n     * Requirements:\r\n     * - Multiplication cannot overflow.\r\n     */\r\n    function mul(uint256 a, uint256 b) internal pure returns (uint256) {\r\n        // Gas optimization: this is cheaper than requiring 'a' not being zero, but the\r\n        // benefit is lost if 'b' is also tested.\r\n        // See: https://github.com/OpenZeppelin/openzeppelin-solidity/pull/522\r\n        if (a == 0) {\r\n            return 0;\r\n        }\r\n\r\n        uint256 c = a * b;\r\n        require(c / a == b, \"SafeMath: multiplication overflow\");\r\n\r\n        return c;\r\n    }\r\n\r\n    /**\r\n     * @dev Returns the integer division of two unsigned integers. Reverts on\r\n     * division by zero. The result is rounded towards zero.\r\n     *\r\n     * Counterpart to Solidity's `/` operator. Note: this function uses a\r\n     * `revert` opcode (which leaves remaining gas untouched) while Solidity\r\n     * uses an invalid opcode to revert (consuming all remaining gas).\r\n     *\r\n     * Requirements:\r\n     * - The divisor cannot be zero.\r\n     */\r\n    function div(uint256 a, uint256 b) internal pure returns (uint256) {\r\n        // Solidity only automatically asserts when dividing by 0\r\n        require(b > 0, \"SafeMath: division by zero\");\r\n        uint256 c = a / b;\r\n        // assert(a == b * c + a % b); // There is no case in which this doesn't hold\r\n\r\n        return c;\r\n    }\r\n\r\n    /**\r\n     * @dev Returns the remainder of dividing two unsigned integers. (unsigned integer modulo),\r\n     * Reverts when dividing by zero.\r\n     *\r\n     * Counterpart to Solidity's `%` operator. This function uses a `revert`\r\n     * opcode (which leaves remaining gas untouched) while Solidity uses an\r\n     * invalid opcode to revert (consuming all remaining gas).\r\n     *\r\n     * Requirements:\r\n     * - The divisor cannot be zero.\r\n     */\r\n    function mod(uint256 a, uint256 b) internal pure returns (uint256) {\r\n        require(b != 0, \"SafeMath: modulo by zero\");\r\n        return a % b;\r\n    }\r\n}\r\n\r\ncontract EthToUTIExchange\r\n{\r\n    using SafeMath for uint256;\r\n    \r\n    address payable public owner = 0x17654d41806F446262cab9D0C586a79EBE7e457a;\r\n    ERC20Token Token = ERC20Token(0x297da47Ab1b82E650cf07521719d36c372c939e8);\r\n    uint256 public rate = 16;\r\n\r\n    modifier onlyOwner() {\r\n        assert(msg.sender == owner);\r\n        _;\r\n    }\r\n    \r\n    function changeOwner(address payable newOwner) public onlyOwner {\r\n        owner = newOwner;\r\n    }\r\n    \r\n    function withdraw(uint256 amount) public onlyOwner {\r\n        owner.transfer(amount);\r\n    }\r\n    \r\n    function withdrawTokens (address token, uint256 amount) onlyOwner public {\r\n        ERC20Token(token).transfer(owner, amount);\r\n    }\r\n\r\n    function changeRate(uint256 newRate) public onlyOwner {\r\n        rate = newRate;\r\n    }\r\n    \r\n    function balance() view public returns (uint256 ethBalance, uint256 tokenBalance) {\r\n        ethBalance = address(this).balance;\r\n        tokenBalance = Token.balanceOf(address(this));\r\n    }\r\n    \r\n    function() payable external{\r\n        assert(msg.sender == tx.origin);\r\n        if (msg.sender == owner) return;\r\n        uint256 amount = msg.value.mul(rate);\r\n        assert(amount <= Token.balanceOf(address(this)));\r\n        Token.transfer(msg.sender, amount);\r\n    }\r\n    \r\n}"
+    }
+  }
+}

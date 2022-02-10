@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "tests/FryerConfig.sol": {
+      "content": "// Dependency file: contracts/libraries/Upgradable.sol\n\n//SPDX-License-Identifier: MIT\n// pragma solidity >=0.6.5 <0.8.0;\n\ncontract UpgradableProduct {\n    address public impl;\n\n    event ImplChanged(address indexed _oldImpl, address indexed _newImpl);\n\n    constructor() public {\n        impl = msg.sender;\n    }\n\n    modifier requireImpl() {\n        require(msg.sender == impl, \"FORBIDDEN\");\n        _;\n    }\n\n    function upgradeImpl(address _newImpl) public requireImpl {\n        require(_newImpl != address(0), \"INVALID_ADDRESS\");\n        require(_newImpl != impl, \"NO_CHANGE\");\n        address lastImpl = impl;\n        impl = _newImpl;\n        emit ImplChanged(lastImpl, _newImpl);\n    }\n}\n\ncontract UpgradableGovernance {\n    address public governor;\n\n    event GovernorChanged(\n        address indexed _oldGovernor,\n        address indexed _newGovernor\n    );\n\n    constructor() public {\n        governor = msg.sender;\n    }\n\n    modifier requireGovernor() {\n        require(msg.sender == governor, \"FORBIDDEN\");\n        _;\n    }\n\n    function upgradeGovernance(address _newGovernor) public requireGovernor {\n        require(_newGovernor != address(0), \"INVALID_ADDRESS\");\n        require(_newGovernor != governor, \"NO_CHANGE\");\n        address lastGovernor = governor;\n        governor = _newGovernor;\n        emit GovernorChanged(lastGovernor, _newGovernor);\n    }\n}\n\n\n// Dependency file: contracts/libraries/ConfigNames.sol\n\n// pragma solidity >=0.6.5 <0.8.0;\n\nlibrary ConfigNames {\n    bytes32 public constant FRYER_LTV = bytes32(\"FRYER_LTV\");\n    bytes32 public constant FRYER_HARVEST_FEE = bytes32(\"FRYER_HARVEST_FEE\");\n    bytes32 public constant FRYER_VAULT_PERCENTAGE =\n        bytes32(\"FRYER_VAULT_PERCENTAGE\");\n\n    bytes32 public constant FRYER_FLASH_FEE_PROPORTION =\n        bytes32(\"FRYER_FLASH_FEE_PROPORTION\");\n\n    bytes32 public constant PRIVATE = bytes32(\"PRIVATE\");\n    bytes32 public constant STAKE = bytes32(\"STAKE\");\n}\n\n\n// Root file: contracts/FryerConfig.sol\n\npragma solidity >=0.6.5 <0.8.0;\n\n// import \"contracts/libraries/Upgradable.sol\";\n// import \"contracts/libraries/ConfigNames.sol\";\n\ncontract FryerConfig is UpgradableProduct, UpgradableGovernance {\n    uint256 public version = 1;\n    event ConfigValueChanged(bytes32 _name, uint256 _old, uint256 _value);\n\n    struct Config {\n        uint256 minValue;\n        uint256 maxValue;\n        uint256 maxSpan;\n        uint256 value;\n        uint256 enable; // 0:disable, 1: enable\n    }\n\n    mapping(bytes32 => Config) public configs;\n    uint256 public constant PERCENT_DENOMINATOR = 10000;\n    address public constant ZERO_ADDRESS = address(0);\n\n    constructor() public {\n        // 50%\n        _initConfig(ConfigNames.FRYER_LTV, 5000, 8000, 100, 5000);\n\n        // 80%\n        _initConfig(ConfigNames.FRYER_VAULT_PERCENTAGE, 2000, 9000, 500, 8000);\n\n        // 5%\n        _initConfig(ConfigNames.FRYER_HARVEST_FEE, 0, 1000, 100, 500);\n\n        // 5%\n        _initConfig(ConfigNames.FRYER_FLASH_FEE_PROPORTION, 0, 1000, 100, 6);\n    }\n\n    function _initConfig(\n        bytes32 _name,\n        uint256 _minValue,\n        uint256 _maxValue,\n        uint256 _maxSpan,\n        uint256 _value\n    ) internal {\n        Config storage config = configs[_name];\n        config.minValue = _minValue;\n        config.maxValue = _maxValue;\n        config.maxSpan = _maxSpan;\n        config.value = _value;\n        config.enable = 1;\n    }\n\n    function getConfig(bytes32 _name)\n        external\n        view\n        returns (\n            uint256 minValue,\n            uint256 maxValue,\n            uint256 maxSpan,\n            uint256 value,\n            uint256 enable\n        )\n    {\n        Config memory config = configs[_name];\n        minValue = config.minValue;\n        maxValue = config.maxValue;\n        maxSpan = config.maxSpan;\n        value = config.value;\n        enable = config.enable;\n    }\n\n    function getConfigValue(bytes32 _name) public view returns (uint256) {\n        return configs[_name].value;\n    }\n\n    function changeConfig(\n        bytes32 _name,\n        uint256 _minValue,\n        uint256 _maxValue,\n        uint256 _maxSpan,\n        uint256 _value\n    ) external requireImpl returns (bool) {\n        _initConfig(_name, _minValue, _maxValue, _maxSpan, _value);\n        return true;\n    }\n\n    function changeConfigValue(bytes32 _name, uint256 _value)\n        external\n        requireGovernor\n        returns (bool)\n    {\n        Config storage config = configs[_name];\n        require(config.enable == 1, \"DISABLE\");\n        require(\n            _value <= config.maxValue && _value >= config.minValue,\n            \"OVERFLOW\"\n        );\n        uint256 old = config.value;\n        uint256 span = _value >= old ? (_value - old) : (old - _value);\n        require(span <= config.maxSpan, \"EXCEED MAX ADJUST SPAN\");\n        config.value = _value;\n        emit ConfigValueChanged(_name, old, _value);\n        return true;\n    }\n\n \n}\n"
+    }
+  }
+}

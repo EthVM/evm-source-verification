@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "NiftyTools.sol": {
+      "content": "pragma solidity ^0.6.0;\r\n\r\ninterface IERC20 {\r\n\r\n    function totalSupply() external view returns (uint256);\r\n    function balanceOf(address account) external view returns (uint256);\r\n    function transfer(address recipient, uint256 amount) external returns (bool);\r\n    function allowance(address owner, address spender) external view returns (uint256);\r\n    function approve(address spender, uint256 amount) external returns (bool);\r\n    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);\r\n\r\n    event Transfer(address indexed from, address indexed to, uint256 value);\r\n    event Approval(address indexed owner, address indexed spender, uint256 value);\r\n}\r\n\r\ninterface IVNFT {\r\n    function fatality(uint256 _deadId, uint256 _tokenId) external;\r\n    function buyAccesory(uint256 nftId, uint256 itemId) external;\r\n    function claimMiningRewards(uint256 nftId) external;\r\n    function addCareTaker(uint256 _tokenId, address _careTaker) external;\r\n    function careTaker(uint256 _tokenId, address _user)\r\n        external\r\n        view\r\n        returns (address _careTaker);\r\n    function ownerOf(uint256 _tokenId) external view returns (address _owner);\r\n    function itemPrice(uint256 itemId) external view returns (uint256 _amount);\r\n}\r\n\r\ncontract NiftyTools {\r\n\r\n    IVNFT public vnft;\r\n    IERC20 public muse;\r\n    address public owner;\r\n    bool public paused;\r\n\r\n    constructor(IVNFT _vnft, IERC20 _muse) public {\r\n        vnft = _vnft;\r\n        muse = _muse;\r\n        owner = msg.sender;\r\n    }\r\n\r\n    modifier notPaused() {\r\n        require(!paused, \"PAUSED\");\r\n        _;\r\n    }\r\n\r\n    modifier onlyOwner() {\r\n        require(owner == msg.sender, \"Only owner can call\");\r\n        _;\r\n    }\r\n\r\n    function claimMultiple(uint256[] calldata ids) external notPaused onlyOwner {\r\n\r\n        for (uint256 i = 0; i < ids.length; i++) {\r\n            vnft.claimMiningRewards(ids[i]);\r\n        }\r\n        require(muse.transfer(msg.sender, muse.balanceOf(address(this))));\r\n    }\r\n\r\n    function feedMultiple(uint museCost, uint256[] calldata ids, uint256[] calldata itemIds)\r\n        external\r\n        notPaused\r\n    {\r\n        require(\r\n            muse.transferFrom(msg.sender, address(this), museCost),\r\n            \"MUSE:Items\"\r\n        );\r\n        for (uint256 i = 0; i < ids.length; i++) {\r\n            vnft.buyAccesory(ids[i], itemIds[i]);\r\n        }\r\n    }\r\n\r\n    // OWNER FUNCTIONS\r\n    function setVNFT(IVNFT _vnft) public onlyOwner {\r\n        vnft = _vnft;\r\n    }\r\n\r\n    function setPause(bool _paused) public onlyOwner {\r\n        paused = _paused;\r\n    }\r\n\r\n    function approveContractMax() public onlyOwner {\r\n        uint256 MAX_UINT256 = ~uint256(0);\r\n        require(muse.approve(address(vnft), MAX_UINT256), \"MUSE:approve\");\r\n    }\r\n}"
+    }
+  }
+}

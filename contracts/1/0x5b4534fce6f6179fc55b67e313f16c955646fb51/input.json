@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "CompValidator.sol": {
+      "content": "//SPDX-License-Identifier: MIT\npragma solidity ^0.7.4;\npragma experimental ABIEncoderV2;\n\ninterface IComp {\n    function getCurrentVotes(address account) external view returns (uint96);\n}\n\n/**\n * This contract returns true if a voter has enough votes to qualify to vote\n */\ncontract CompVoteValidator {\n    uint96 public minimumVotes;\n    IComp public token;\n\n    constructor(uint96 minimum_votes, IComp token_address) public {\n        minimumVotes = minimum_votes;\n    }\n\n    function isApprovedForFreeVoting(\n        address msg_sender,\n        address target_contract,\n        bytes4 target_identifier,\n        bytes memory target_data\n    ) public view returns (bool) {\n        // All that is nessesary is to check the Vote balance of the Sender at this block\n        return token.getCurrentVotes(msg_sender) >= minimumVotes;\n    }\n}\n"
+    }
+  }
+}

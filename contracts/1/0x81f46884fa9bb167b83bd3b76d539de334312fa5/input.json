@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/Redistributor.sol": {
+      "content": "pragma solidity ^0.7.0;\n\n// Adding only the ERC-20 function we need\ninterface DaiToken {\n    function transfer(address dst, uint wad) external returns (bool);\n    function balanceOf(address guy) external view returns (uint);\n    function transferFrom(\n        address _from,\n        address _to,\n        uint256 _value\n    ) external returns (bool success);\n    function approve(address _spender, uint256 _value) external returns (bool success);\n}\n\ncontract Redistributor {\n    string public version = \"0.0.0\";\n\n    uint256 public sum; // total money accumulated into the system\n    DaiToken public daiToken;\n    string currentCurrency = \"DAI\";\n\n    struct User {\n        address payable addr; // address of the user\n        string fullName; // full name of the user\n        uint256 createdAt; // enrollment date\n    }\n\n    User public admin; //  admin user details\n    mapping(address => bool) public isUserEnrolled; // checks if user is enrolled in the redistribution program\n    User[] public users; // list of all participating users\n\n    enum TransactionType { Donation, Redistribution }\n\n    event Transaction(\n        address indexed beneficiary,\n        address indexed remitter,\n        uint256 emittedAt,\n        TransactionType indexed transactionType,\n        uint256 amount,\n        string currency\n    );\n\n    modifier adminOnly {\n        require(\n            admin.addr == address(0x0) || msg.sender == admin.addr,\n            \"Not authorized: You must be an admin to perform this operation\"\n        );\n        _;\n    }\n\n    modifier enrolledOnly {\n        require(isUserEnrolled[msg.sender], \"Not authorized: You must be enrolled to perform this operation\");\n        _;\n    }\n\n    constructor(string memory _adminName) {\n        // yield to the contract creator\n        yield(msg.sender, _adminName);\n        // initialise DaiToken\n        daiToken = DaiToken(0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa);\n        // daiToken = new DaiToken();\n        // daiToken = _daiToken;\n        \n    }\n\n    /// Give admin access to new account. This is necessary\n    // in case of transfer of power. The action is irreversible.\n    function yield(address payable _newAdminAddr, string memory _newAdminName) public adminOnly {\n        admin = User(_newAdminAddr, _newAdminName, block.timestamp);\n        enroll(_newAdminAddr, _newAdminName);\n    }\n\n    /// Enroll new user\n    function enroll(address payable _userAddr, string memory _userName) public {\n        // proceed if user is not already marked as enrolled\n        require(!isUserEnrolled[_userAddr], \"The User is already enrolled\");\n            User memory newUser = User(_userAddr, _userName, block.timestamp);\n            // add user to the list of participating users\n            users.push(newUser);\n            // mark user as enrolled\n            isUserEnrolled[_userAddr] = true;\n    }\n\n    /// Kill the contract\n    function kill() public adminOnly {\n        require(admin.addr != address(0x0), \"The admin is not initialised\");\n        selfdestruct(admin.addr);\n    }\n\n    /// Donate\n    function donate(uint256 _amount) public enrolledOnly {\n        // Require amount greater than 0\n        require(_amount > 0, \"amount cannot be 0\");\n        \n        daiToken.approve(address(this), _amount);\n        \n        // Transfer Mock DAI tokens to this contract for staking\n        daiToken.transferFrom(msg.sender, address(this), _amount);\n\n        sum = sum + _amount;\n\n        // emit transaction event\n        emit Transaction(\n            address(this),\n            msg.sender,\n            block.timestamp,\n            TransactionType.Donation,\n            _amount,\n            currentCurrency\n        );\n    }\n\n    /// Redistribute\n    function redistribute() public adminOnly {\n        if (sum <= 0) return;\n        uint256 reward = sum / users.length;\n        sum = 0;\n        for (uint256 i = 0; i < users.length; i++) {\n            if (reward > 0) {\n                // redistribute to each user\n                daiToken.transfer(users[i].addr, reward);\n                // emit redistribution event\n                emit Transaction(\n                    users[i].addr,\n                    address(this),\n                    block.timestamp,\n                    TransactionType.Redistribution,\n                    reward,\n                    currentCurrency\n                );\n            }\n        }\n    }\n}\n"
+    }
+  }
+}

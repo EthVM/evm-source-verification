@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "CloneFactory.sol": {
+      "content": "/**\r\n *Submitted for verification at Etherscan.io on 12-14-2020\r\n*/\r\n/*\r\n    Copyright 2020 Charge Factory.\r\n    SPDX-License-Identifier: Apache-2.0\r\n*/\r\n\r\npragma solidity 0.6.9;\r\npragma experimental ABIEncoderV2;\r\n\r\ninterface ICloneFactory {\r\n    function clone(address prototype) external returns (address proxy);\r\n}\r\n\r\n// introduction of proxy mode design: https://docs.openzeppelin.com/upgrades/2.8/\r\n// minimum implementation of transparent proxy: https://eips.ethereum.org/EIPS/eip-1167\r\n\r\ncontract CloneFactory is ICloneFactory {\r\n    function clone(address prototype) external override returns (address proxy) {\r\n        bytes20 targetBytes = bytes20(prototype);\r\n        assembly {\r\n            let clone := mload(0x40)\r\n            mstore(clone, 0x3d602d80600a3d3981f3363d3d373d3d3d363d73000000000000000000000000)\r\n            mstore(add(clone, 0x14), targetBytes)\r\n            mstore(\r\n                add(clone, 0x28),\r\n                0x5af43d82803e903d91602b57fd5bf30000000000000000000000000000000000\r\n            )\r\n            proxy := create(0, clone, 0x37)\r\n        }\r\n        return proxy;\r\n    }\r\n}"
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "lgbt.sol": {
+      "content": "pragma solidity ^0.8.0;\r\n// SPDX-License-Identifier: LGBT Community, MIT\r\n\r\n// ----------------------------------------------------------------------------\r\n// ERC20 LGBT Coin token\r\n// We support LGBT community\r\n// ----------------------------------------------------------------------------\r\n\r\n//       LLL       GGGGGGGG  BBBBBBBB  TTTTTTTT \r\n//       LLL       GGGGGGGG  BBBBBBBB  TTTTTTTT\r\n//       LLL       GG        BB    BB     TT   \r\n//       LLL       GG  GGGG  BBBBBB       TT   \r\n//       LLL       GG    GG  BB    BB     TT   \r\n//       LLLLLLLL  GGGGGGGG  BBBBBBBB     TT   \r\n//       LLLLLLLL  GGGGGGGG  BBBBBBBB     TT    \r\n\r\n\r\ninterface ERC20Interface {\r\n    function totalSupply() external view returns (uint);\r\n    function balanceOf(address tokenOwner) external view returns (uint balance);\r\n    function allowance(address tokenOwner, address spender) external view returns (uint remaining);\r\n    function transfer(address to, uint tokens) external returns (bool success);\r\n    function approve(address spender, uint tokens) external returns (bool success);\r\n    function transferFrom(address from, address to, uint tokens) external returns (bool success);\r\n\r\n    event Transfer(address indexed from, address indexed to, uint tokens);\r\n    event Approval(address indexed tokenOwner, address indexed spender, uint tokens);\r\n}\r\n\r\nlibrary SafeMath {\r\n    \r\n    function tryAdd(uint256 a, uint256 b) internal pure returns (bool, uint256) {\r\n        unchecked {\r\n            uint256 c = a + b;\r\n            if (c < a) return (false, 0);\r\n            return (true, c);\r\n        }\r\n    }\r\n\r\n    function trySub(uint256 a, uint256 b) internal pure returns (bool, uint256) {\r\n        unchecked {\r\n            if (b > a) return (false, 0);\r\n            return (true, a - b);\r\n        }\r\n    }\r\n\r\n    function add(uint256 a, uint256 b) internal pure returns (uint256) {\r\n        return a + b;\r\n    }\r\n\r\n    function sub(uint256 a, uint256 b) internal pure returns (uint256) {\r\n        return a - b;\r\n    }\r\n\r\n    function sub(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {\r\n        unchecked {\r\n            require(b <= a, errorMessage);\r\n            return a - b;\r\n        }\r\n    }\r\n\r\n}\r\n\r\ncontract LGBT is ERC20Interface {\r\n    using SafeMath for uint;\r\n    using SafeMath for uint256;\r\n    string public name;\r\n    string public symbol;\r\n    uint8 public decimals;\r\n   \r\n    uint256 public _totalSupply;\r\n   \r\n    mapping(address => uint) balances;\r\n    mapping(address => mapping(address => uint)) allowed;\r\n   \r\n\tmodifier onlyPayloadSize(uint size) {\r\n\t\tassert(msg.data.length >= size + 4);\r\n\t\t_;\r\n\t} \r\n   \r\n    constructor() {\r\n        name = \"coinLGBT\";\r\n        symbol = \"LGBT\";\r\n        decimals = 0;\r\n        _totalSupply = 1000000000;\r\n       \r\n        balances[msg.sender] = _totalSupply;\r\n        emit Transfer(address(0), msg.sender, _totalSupply);\r\n    }\r\n   \r\n    function totalSupply() public override view returns (uint) {\r\n        return _totalSupply  - balances[address(0)];\r\n    }\r\n   \r\n    function balanceOf(address tokenOwner) public override view returns (uint balance) {\r\n        return balances[tokenOwner];\r\n    }\r\n   \r\n    function allowance(address tokenOwner, address spender) public override view returns (uint remaining) {\r\n        return allowed[tokenOwner][spender];\r\n    }\r\n   \r\n    function approve(address spender, uint tokens) public override returns (bool success) {\r\n        allowed[msg.sender][spender] = tokens;\r\n        emit Approval(msg.sender, spender, tokens);\r\n        return true;\r\n    }\r\n   \r\n    function transfer(address to, uint tokens) public override onlyPayloadSize(2*32) returns (bool success) {\r\n        balances[msg.sender] = balances[msg.sender].sub(tokens);\r\n        balances[to] = balances[to].add(tokens);\r\n        emit Transfer(msg.sender, to, tokens);\r\n        return true;\r\n    }\r\n   \r\n    function transferFrom(address from, address to, uint tokens) public override returns (bool success) {\r\n        balances[from] = balances[from].sub(tokens);\r\n        allowed[from][msg.sender] = allowed[from][msg.sender].sub(tokens);\r\n        balances[to] = balances[to].sub(tokens);\r\n        emit Transfer(from, to, tokens);\r\n        return true;\r\n    }\r\n}"
+    }
+  }
+}

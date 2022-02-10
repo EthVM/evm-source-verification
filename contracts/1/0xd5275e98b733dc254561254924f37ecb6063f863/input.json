@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "LockedResources.sol": {
+      "content": "pragma solidity 0.4.25;\r\n\r\nlibrary SafeMath {\r\n  function mul(uint256 a, uint256 b) internal pure returns (uint256) {\r\n    if (a == 0) {\r\n      return 0;\r\n    }\r\n    uint256 c = a * b;\r\n    require(c / a == b);\r\n    return c;\r\n  }\r\n\r\n  function div(uint256 a, uint256 b) internal pure returns (uint256) {\r\n    require(b > 0);\r\n    uint256 c = a / b;\r\n    return c;\r\n  }\r\n\r\n  function sub(uint256 a, uint256 b) internal pure returns (uint256) {\r\n    require(b <= a);\r\n    uint256 c = a - b;\r\n    return c;\r\n  }\r\n\r\n  function add(uint256 a, uint256 b) internal pure returns (uint256) {\r\n    uint256 c = a + b;\r\n    require(c >= a);\r\n    return c;\r\n  }\r\n\r\n  function mod(uint256 a, uint256 b) internal pure returns (uint256) {\r\n    require(b != 0);\r\n    return a % b;\r\n  }\r\n}\r\n\r\ncontract Token {\r\n  function totalSupply() pure public returns (uint256 supply);\r\n  function balanceOf(address _owner) pure public returns (uint256 balance);\r\n  function transfer(address _to, uint256 _value) public returns (bool success);\r\n  function transferFrom(address _from, address _to, uint256 _value) public returns (bool success);\r\n  function approve(address _spender, uint256 _value) public returns (bool success);\r\n  function allowance(address _owner, address _spender) pure public returns (uint256 remaining);\r\n\r\n  event Transfer(address indexed _from, address indexed _to, uint256 _value);\r\n  event Approval(address indexed _owner, address indexed _spender, uint256 _value);\r\n\r\n  uint public decimals;\r\n  string public name;\r\n}\r\n\r\ncontract Ownable {\r\n  address private _owner;\r\n\r\n  event OwnershipTransferred(\r\n    address indexed previousOwner,\r\n    address indexed newOwner\r\n  );\r\n\r\n  constructor() internal {\r\n    _owner = msg.sender;\r\n    emit OwnershipTransferred(address(0), _owner);\r\n  }\r\n\r\n  function owner() public view returns(address) {\r\n    return _owner;\r\n  }\r\n\r\n  modifier onlyOwner() {\r\n    require(isOwner());\r\n    _;\r\n  }\r\n\r\n  function isOwner() public view returns(bool) {\r\n    return msg.sender == _owner;\r\n  }\r\n\r\n  function renounceOwnership() public onlyOwner {\r\n    emit OwnershipTransferred(_owner, address(0));\r\n    _owner = address(0);\r\n  }\r\n\r\n  function transferOwnership(address newOwner) public onlyOwner {\r\n    _transferOwnership(newOwner);\r\n  }\r\n\r\n  function _transferOwnership(address newOwner) internal {\r\n    require(newOwner != address(0));\r\n    emit OwnershipTransferred(_owner, newOwner);\r\n    _owner = newOwner;\r\n  }\r\n}\r\n\r\ncontract LockedResources is Ownable {\r\n  address public tokenAddress;\r\n  Token public token;\r\n\r\n  uint256 public VaultCreation = now;\r\n\r\n  constructor() public{\r\n    tokenAddress = 0x8AE735c9517F5b9cADe5E814dFc86a5AA640542d;\r\n    token = Token(tokenAddress); \r\n  } \r\n  \r\n  function refundAll() onlyOwner public{\r\n    require(now > VaultCreation + 90 days); \r\n    token.transfer(owner(), token.balanceOf(this));  \r\n  }\r\n  \r\n}"
+    }
+  }
+}

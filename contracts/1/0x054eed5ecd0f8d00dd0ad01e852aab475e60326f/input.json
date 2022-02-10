@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/Payable.sol": {
+      "content": "// SPDX-License-Identifier: MIT\r\npragma solidity ^0.8.3;\r\n\r\ncontract Payable {\r\n    // Payable address can receive Ether\r\n    address payable public owner;\r\n\r\n    // Payable constructor can receive Ether\r\n    constructor() payable {\r\n        owner = payable(msg.sender);\r\n    }\r\n\r\n    // Function to deposit Ether into this contract.\r\n    // Call this function along with some Ether.\r\n    // The balance of this contract will be automatically updated.\r\n    function deposit() public payable {}\r\n\r\n    // Call this function along with some Ether.\r\n    // The function will throw an error since this function is not payable.\r\n    function notPayable() public {}\r\n\r\n    // Function to withdraw all Ether from this contract.\r\n    function withdraw() public {\r\n        // get the amount of Ether stored in this contract\r\n        uint amount = address(this).balance;\r\n\r\n        // send all Ether to owner\r\n        // Owner can receive Ether since the address of owner is payable\r\n        (bool success, ) = owner.call{value: amount}(\"\");\r\n        require(success, \"Failed to send Ether\");\r\n    }\r\n\r\n    // Function to transfer Ether from this contract to address from input\r\n    function transfer(address payable _to, uint _amount) public {\r\n        // Note that \"to\" is declared as payable\r\n        (bool success, ) = _to.call{value: _amount}(\"\");\r\n        require(success, \"Failed to send Ether\");\r\n    }\r\n}"
+    }
+  }
+}

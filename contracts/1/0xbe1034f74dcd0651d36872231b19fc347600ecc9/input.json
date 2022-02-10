@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/zap-mail.sol": {
+      "content": "pragma solidity 0.8.6;\n\ncontract ZapMail {\n    mapping(bytes32 => bool) usernameHashExists;\n\n    event UserRegistered(bytes32 indexed usernameHash, address indexed addr, string username, string publicKey);\n    event EmailSent(address indexed from, address indexed to, string mailHash);\n    event ContactsUpdated(bytes32 indexed usernameHash, string fileHash);\n\n    function registerUser(\n        bytes32 usernameHash,\n        string calldata username,\n        string calldata publicKey\n    ) public {\n        require(usernameHashExists[usernameHash] == false, 'User already exists');\n        usernameHashExists[usernameHash] = true;\n        emit UserRegistered(usernameHash, msg.sender, username, publicKey);\n    }\n\n    function sendEmail(address[] calldata recipients, string calldata mailHash) public {\n        for (uint256 i = 0; i < recipients.length; ++i) {\n            emit EmailSent(tx.origin, recipients[i], mailHash);\n        }\n    }\n\n    function updateContacts(bytes32 usernameHash, string calldata fileHash) public {\n        emit ContactsUpdated(usernameHash, fileHash);\n    }\n}\n"
+    }
+  }
+}

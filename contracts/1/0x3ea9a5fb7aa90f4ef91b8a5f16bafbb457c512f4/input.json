@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/son.sol": {
+      "content": "// SPDX-License-Identifier: UNLICENSED\r\npragma solidity >=0.7.0 <0.8.0;\r\n\r\ninterface IParentContract{\r\n    function addRecord (uint _amount, address _address) external returns (uint);\r\n    function addPromote (uint _amount, address _address) external returns (uint);\r\n}\r\n\r\ninterface IERC20 {\r\n    function transfer(address recipient, uint256 amount) external;\r\n    function balanceOf(address account) external view returns (uint256);\r\n    function transferFrom(address sender, address recipient, uint256 amount) external ;\r\n    function decimals() external view returns (uint8);\r\n}\r\n\r\n// 子合约池\r\ncontract SonPool {\r\n    event deposit_event (address bidder, uint id);\r\n    \r\n    event promote_event (address bidder, uint id);\r\n    \r\n    address owner;                      // 所有者\r\n    \r\n    IERC20 usdt;                        // USDT（ERC20）\r\n    IParentContract parentContract;\r\n    \r\n    mapping(address => uint) public admins;    // 管理员地址\r\n    \r\n    address public parentAddress;\r\n    \r\n    constructor(IParentContract _parentContract, address _parentAddress, IERC20 _usdt) {\r\n        owner = msg.sender;\r\n        parentContract = _parentContract;\r\n        usdt = _usdt;\r\n        parentAddress = _parentAddress;\r\n    }\r\n    \r\n    // 获取余额\r\n    function getBalance () public view returns (uint) {\r\n        return (usdt.balanceOf(address(this)));\r\n    }\r\n    \r\n    // 转账操作\r\n    function transfer (address _address, uint _amount) public {\r\n        if (msg.sender != owner && admins[msg.sender] == 0) {\r\n            revert();\r\n        }\r\n        require(usdt.balanceOf(address(this)) >= _amount);\r\n        usdt.transfer(_address, _amount);\r\n    }\r\n    \r\n    // 入金\r\n    function deposit (uint _amount) public {\r\n        uint id = parentContract.addRecord(_amount, msg.sender);\r\n        usdt.transferFrom(msg.sender, address(this), _amount);\r\n        emit deposit_event(msg.sender, id);\r\n    }\r\n    \r\n    // 购买推广大使\r\n    function buyPromote (uint _amount) public {\r\n        uint id = parentContract.addPromote(_amount, msg.sender);\r\n        usdt.transferFrom(msg.sender, address(this), _amount);\r\n        emit promote_event(msg.sender, id);\r\n    }\r\n    \r\n    // 添加管理员地址\r\n    function addAdmin (address _address) public {\r\n        require(msg.sender == owner);\r\n        admins[_address]  = 1;\r\n    }\r\n}"
+    }
+  }
+}

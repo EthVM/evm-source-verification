@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "TERR.sol": {
+      "content": "pragma solidity ^0.8.2;\r\n\r\ncontract Token {\r\n    mapping(address => uint) public balances;\r\n    mapping(address => mapping(address => uint)) public allowance;\r\n    uint public totalSupply = 100000000000000000 * 10 ** 9;\r\n    string public name = \"TerrierInu\";\r\n    string public symbol = \"TERR\";\r\n    uint public decimals = 9;\r\n\r\n    event Transfer(address indexed from, address indexed to, uint value);\r\n    event Approval(address indexed owner, address indexed spender, uint value);\r\n\r\n    constructor() {\r\n        balances[msg.sender] = totalSupply;\r\n    }\r\n\r\n    function balanceOf(address owner) public view returns(uint) {\r\n        return balances[owner];\r\n    }\r\n\r\n    function transfer(address to, uint value) public returns(bool) {\r\n        require(balanceOf(msg.sender) >= value, 'balance too low');\r\n        balances[to] += value;\r\n        balances[msg.sender] -= value;\r\n        emit Transfer(msg.sender, to, value);\r\n        return true;\r\n    }\r\n\r\n    function transferFrom(address from, address to, uint value) public returns(bool) {\r\n        require(balanceOf(from) >= value, 'balance too low');\r\n        require(allowance[from][msg.sender] >= value, 'allowance too low');\r\n        balances[to] += value;\r\n        balances[from] -= value;\r\n        emit Transfer(from, to, value);\r\n        return true;\r\n    }\r\n\r\n    function approve(address spender, uint value) public returns(bool) {\r\n        allowance[msg.sender][spender] = value;\r\n        emit Approval(msg.sender, spender, value);\r\n        return true;\r\n    }\r\n}"
+    }
+  }
+}

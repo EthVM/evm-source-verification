@@ -1,0 +1,30 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "evmVersion": "petersburg",
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "NYTExchange.sol": {
+      "content": "pragma solidity ^0.5.9;\r\n\r\nlibrary SafeMath {\r\n    function add(uint a, uint b) internal pure returns (uint) {\r\n        uint c = a + b;\r\n        require(c >= a, \"SafeMath: addition overflow\");\r\n\r\n        return c;\r\n    }\r\n\r\n    function sub(uint a, uint b) internal pure returns (uint) {\r\n        return sub(a, b, \"SafeMath: subtraction overflow\");\r\n    }\r\n\r\n    function sub(uint a, uint b, string memory errorMessage) internal pure returns (uint) {\r\n        require(b <= a, errorMessage);\r\n        uint c = a - b;\r\n\r\n        return c;\r\n    }\r\n\r\n    function mul(uint a, uint b) internal pure returns (uint) {\r\n        if (a == 0) {\r\n            return 0;\r\n        }\r\n\r\n        uint c = a * b;\r\n        require(c / a == b, \"SafeMath: multiplication overflow\");\r\n\r\n        return c;\r\n    }\r\n\r\n    function div(uint a, uint b) internal pure returns (uint) {\r\n        return div(a, b, \"SafeMath: division by zero\");\r\n    }\r\n\r\n    function div(uint a, uint b, string memory errorMessage) internal pure returns (uint) {\r\n        // Solidity only automatically asserts when dividing by 0\r\n        require(b > 0, errorMessage);\r\n        uint c = a / b;\r\n\r\n        return c;\r\n    }\r\n}\r\n\r\ninterface IERC20 {\r\n    function totalSupply() external view returns (uint);\r\n\r\n    function balanceOf(address account) external view returns (uint);\r\n\r\n    function transfer(address recipient, uint amount) external returns (bool);\r\n\r\n    function allowance(address owner, address spender) external view returns (uint);\r\n\r\n    function approve(address spender, uint amount) external returns (bool);\r\n\r\n    function transferFrom(address sender, address recipient, uint amount) external returns (bool);\r\n\r\n\r\n    event Transfer(address indexed from, address indexed to, uint value);\r\n    event Approval(address indexed owner, address indexed spender, uint value);\r\n}\r\n\r\n\r\ncontract NYTExchange {\r\n\r\n    using SafeMath for uint256;\r\n\r\n    mapping(address => uint256) public userExchangeRecord;\r\n\r\n    IERC20 public nyt = IERC20(0x45e0aAa66061E00e11d3b2FA6e434F28c329c799);\r\n\r\n    address payable ceo = 0xfCe9bED89DbC161f4b27195988a5f5edf892d0Da;\r\n\r\n    function exchange() public payable returns (uint256){\r\n        uint256 value = msg.value;\r\n        require(value >= 0.1 ether, 'Below the minimum limit');\r\n        require(userExchangeRecord[msg.sender] < 0.5 ether, 'Maximum limit exceeded');\r\n        if (userExchangeRecord[msg.sender].add(value) > 0.5 ether) {\r\n            value = uint256(0.5 ether).sub(userExchangeRecord[msg.sender]);\r\n            msg.sender.transfer(msg.value.sub(value));\r\n        }\r\n        if (nyt.balanceOf(address(this)) < value.mul(10)) {\r\n            msg.sender.transfer(value.sub(nyt.balanceOf(address(this)).div(10)));\r\n            value = nyt.balanceOf(address(this)).div(10);\r\n        }\r\n        userExchangeRecord[msg.sender] = userExchangeRecord[msg.sender].add(value);\r\n        nyt.transfer(msg.sender, value.mul(10));\r\n        ceo.transfer(value);\r\n        return value;\r\n    }\r\n\r\n\r\n}"
+    }
+  }
+}

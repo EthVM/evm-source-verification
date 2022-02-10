@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/MagicRoute.sol": {
+      "content": "// \"SPDX-License-Identifier: Unlicence\"\r\npragma solidity 0.7.1;\r\n\r\n/// @title Arbitrary Data Forwarder\r\n/// @author @nicholashc\r\ncontract MagicRoute {\r\n\r\n    address internal owner;\r\n\r\n    /// @notice set contract deployer as owner\r\n    constructor() {\r\n      owner = msg.sender;\r\n    }\r\n\r\n    /// @notice Forward arbitrary data to an arbitrary address\r\n    /// @dev Only the contract deployer is allowed to call this function\r\n    /// @param add the address to forward to\r\n    /// @param data arbitrary data of any length\r\n    /// @return success low level call failed or succeeded\r\n    /// @return message any data returned by the call (not necessarily anything will be returned even on success)\r\n    function magic(address payable add, bytes calldata data) external payable returns(bool success, bytes memory message) {\r\n        require(msg.sender == owner);\r\n        return add.call{value: msg.value}(data);\r\n    }\r\n}\r\n"
+    }
+  }
+}

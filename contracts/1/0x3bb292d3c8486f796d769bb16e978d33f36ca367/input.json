@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/Token.sol": {
+      "content": "pragma solidity >=0.4.21 <0.7.0;\n\ncontract MagicToken {\n    string public name = \"Magic Token\";\n    string public symbol = \"MTK\";\n    string public standard = \"Magic Token v1.0\";\n    address public adminAddress;\n    uint256 public totalSupply;\n\n    event Transfer(\n        address indexed _from,\n        address indexed _to,\n        uint256 _value\n    );\n\n    event Approval(\n        address indexed _owner,\n        address indexed _spender,\n        uint256 _value\n    );\n\n    mapping(address => uint256) public balanceOf;\n    mapping(address => mapping(address => uint256)) public allowance;\n\n    constructor (uint256 _totalSupply) public {\n        balanceOf[msg.sender] = _totalSupply;\n        totalSupply = _totalSupply;\n        adminAddress = msg.sender;\n    }\n\n    function transfer(address _to, uint256 _value) public returns (bool success) {\n        require(balanceOf[msg.sender] >= _value);\n\n        balanceOf[msg.sender] -= _value;\n        balanceOf[_to] += _value;\n\n        emit Transfer(msg.sender, _to, _value);\n\n        return true;\n    }\n\n    function approve(address _sender, uint256 _value) public returns (bool success) {\n\n        allowance[msg.sender][_sender] = _value;\n        emit Approval(msg.sender, _sender, _value);\n\n        return true;\n    }\n\n    function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) {\n        require(_value <= balanceOf[_from]);\n        require(_value <= allowance[_from][msg.sender]);\n\n        balanceOf[_from] -= _value;\n        balanceOf[_to] += _value;\n\n        allowance[_from][msg.sender] -= _value;\n\n        emit Transfer(_from, _to, _value);\n\n        return true;\n    }\n}\n"
+    }
+  }
+}

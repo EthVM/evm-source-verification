@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/ConsenSysSocialImpact.sol": {
+      "content": "pragma solidity >=0.4.22 <0.7.0;\n\n/**\n * @title ConsenSys Social Impact \n * @dev Store & retreive value in a variable\n */\n \ncontract Owner {\n\n    address private owner;\n    \n    // event for EVM logging\n    event OwnerSet(address indexed oldOwner, address indexed newOwner);\n    \n    // modifier to check if caller is owner\n    modifier isOwner() {\n        // If the first argument of 'require' evaluates to 'false', execution terminates and all\n        // changes to the state and to Ether balances are reverted.\n        // This used to consume all gas in old EVM versions, but not anymore.\n        // It is often a good idea to use 'require' to check if functions are called correctly.\n        // As a second argument, you can also provide an explanation about what went wrong.\n        require(msg.sender == owner, \"Caller is not owner\");\n        _;\n    }\n    \n    /**\n     * @dev Set contract deployer as owner\n     */\n    constructor() public {\n        owner = msg.sender; // 'msg.sender' is sender of current call, contract deployer for a constructor\n        emit OwnerSet(address(0), owner);\n    }\n\n    /**\n     * @dev Change owner\n     * @param newOwner address of new owner\n     */\n    function changeOwner(address newOwner) public isOwner {\n        emit OwnerSet(owner, newOwner);\n        owner = newOwner;\n    }\n\n    /**\n     * @dev Return owner address \n     * @return address of owner\n     */\n    function getOwner() external view returns (address) {\n        return owner;\n    }\n}\n\ncontract ConsensysSocialImpact is Owner {\n\n    string draftUrl = \"https://medium.com/p/4b1c5db029f1/edit\";\n    string author = \"Robert Thomas Greenfield, IV\";\n    string blog; \n    string message; \n    \n    // event for EVM logging\n    event FinalMessage(address indexed _currentOwner, string newMessage);\n    \n    constructor() public {\n        message = \"ConsenSys Social Impact is now dead, but what arises is something greater!\";\n        emit FinalMessage(msg.sender, message);\n    }\n\n    /**\n     * @dev Store value in variable\n     */\n    function store(string memory blogUrl) public isOwner {\n        blog = blogUrl;\n    }\n\n    /**\n     * @dev Return value \n     */\n    function retreive() public view returns (string memory){\n        return blog;\n    }\n}"
+    }
+  }
+}

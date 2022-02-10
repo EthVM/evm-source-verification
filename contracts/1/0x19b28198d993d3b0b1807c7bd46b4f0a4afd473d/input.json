@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 999999
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "LoopringAmmSharedConfig.sol": {
+      "content": "// SPDX-License-Identifier: Apache-2.0\r\n// Copyright 2017 Loopring Technology Limited.\r\npragma solidity ^0.7.0;\r\n\r\n\r\n/// @title Ownable\r\n/// @author Brecht Devos - <brecht@loopring.org>\r\n/// @dev The Ownable contract has an owner address, and provides basic\r\n///      authorization control functions, this simplifies the implementation of\r\n///      \"user permissions\".\r\ncontract Ownable\r\n{\r\n    address public owner;\r\n\r\n    event OwnershipTransferred(\r\n        address indexed previousOwner,\r\n        address indexed newOwner\r\n    );\r\n\r\n    /// @dev The Ownable constructor sets the original `owner` of the contract\r\n    ///      to the sender.\r\n    constructor()\r\n    {\r\n        owner = msg.sender;\r\n    }\r\n\r\n    /// @dev Throws if called by any account other than the owner.\r\n    modifier onlyOwner()\r\n    {\r\n        require(msg.sender == owner, \"UNAUTHORIZED\");\r\n        _;\r\n    }\r\n\r\n    /// @dev Allows the current owner to transfer control of the contract to a\r\n    ///      new owner.\r\n    /// @param newOwner The address to transfer ownership to.\r\n    function transferOwnership(\r\n        address newOwner\r\n        )\r\n        public\r\n        virtual\r\n        onlyOwner\r\n    {\r\n        require(newOwner != address(0), \"ZERO_ADDRESS\");\r\n        emit OwnershipTransferred(owner, newOwner);\r\n        owner = newOwner;\r\n    }\r\n\r\n    function renounceOwnership()\r\n        public\r\n        onlyOwner\r\n    {\r\n        emit OwnershipTransferred(owner, address(0));\r\n        owner = address(0);\r\n    }\r\n}\r\n\r\n// Copyright 2017 Loopring Technology Limited.\r\n\r\npragma experimental ABIEncoderV2;\r\n\r\ninterface IAmmSharedConfig\r\n{\r\n    function maxForcedExitAge() external view returns (uint);\r\n    function maxForcedExitCount() external view returns (uint);\r\n    function forcedExitFee() external view returns (uint);\r\n}\r\n// Copyright 2017 Loopring Technology Limited.\r\n\r\n\r\n\r\n\r\n// Copyright 2017 Loopring Technology Limited.\r\n\r\n\r\n\r\n\r\n\r\n/// @title Claimable\r\n/// @author Brecht Devos - <brecht@loopring.org>\r\n/// @dev Extension for the Ownable contract, where the ownership needs\r\n///      to be claimed. This allows the new owner to accept the transfer.\r\ncontract Claimable is Ownable\r\n{\r\n    address public pendingOwner;\r\n\r\n    /// @dev Modifier throws if called by any account other than the pendingOwner.\r\n    modifier onlyPendingOwner() {\r\n        require(msg.sender == pendingOwner, \"UNAUTHORIZED\");\r\n        _;\r\n    }\r\n\r\n    /// @dev Allows the current owner to set the pendingOwner address.\r\n    /// @param newOwner The address to transfer ownership to.\r\n    function transferOwnership(\r\n        address newOwner\r\n        )\r\n        public\r\n        override\r\n        onlyOwner\r\n    {\r\n        require(newOwner != address(0) && newOwner != owner, \"INVALID_ADDRESS\");\r\n        pendingOwner = newOwner;\r\n    }\r\n\r\n    /// @dev Allows the pendingOwner address to finalize the transfer.\r\n    function claimOwnership()\r\n        public\r\n        onlyPendingOwner\r\n    {\r\n        emit OwnershipTransferred(owner, pendingOwner);\r\n        owner = pendingOwner;\r\n        pendingOwner = address(0);\r\n    }\r\n}\r\n\r\n\r\n\r\ncontract LoopringAmmSharedConfig is Claimable, IAmmSharedConfig\r\n{\r\n    uint _maxForcedExitAge;\r\n    uint _maxForcedExitCount;\r\n    uint _forcedExitFee;\r\n\r\n    event ValueChanged(string name, uint value);\r\n\r\n    function maxForcedExitAge()\r\n        external\r\n        view\r\n        override\r\n        returns (uint)\r\n    {\r\n        return _maxForcedExitAge;\r\n    }\r\n\r\n    function maxForcedExitCount()\r\n        external\r\n        view\r\n        override\r\n        returns (uint)\r\n    {\r\n        return _maxForcedExitCount;\r\n    }\r\n\r\n    function forcedExitFee()\r\n        external\r\n        view\r\n        override\r\n        returns (uint)\r\n    {\r\n        return _forcedExitFee;\r\n    }\r\n\r\n    function setMaxForcedExitAge(uint v)\r\n        external\r\n        onlyOwner\r\n    {\r\n        _maxForcedExitAge = v;\r\n        emit ValueChanged(\"maxForcedExitAge\", v);\r\n    }\r\n\r\n    function setMaxForcedExitCount(uint v)\r\n        external\r\n        onlyOwner\r\n    {\r\n        _maxForcedExitCount = v;\r\n        emit ValueChanged(\"maxForcedExitCount\", v);\r\n    }\r\n\r\n    function setForcedExitFee(uint v)\r\n        external\r\n        onlyOwner\r\n    {\r\n        _forcedExitFee = v;\r\n        emit ValueChanged(\"forcedExitFee\", v);\r\n    }\r\n}"
+    }
+  }
+}

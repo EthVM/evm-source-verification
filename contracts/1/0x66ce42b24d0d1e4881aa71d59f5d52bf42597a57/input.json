@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "LVE.sol": {
+      "content": "// SPDX-License-Identifier: MIT\r\n\r\npragma solidity ^0.6.0;\r\n\r\nabstract contract IERC20 {\r\n    function totalSupply() virtual public view returns (uint256 supply);\r\n    function balanceOf(address _owner) virtual public view returns (uint256 balance);\r\n    function transfer(address _to, uint256 _value) virtual public returns (bool success);\r\n    function transferFrom(address _from, address _to, uint256 _value) virtual public returns (bool success);\r\n    function approve(address _spender, uint256 _value) virtual public returns (bool success);\r\n    function allowance(address _owner, address _spender) virtual public returns (uint256 remaining);\r\n    event Transfer(address indexed _from, address indexed _to, uint256 _value);\r\n    event Approval(address indexed _owner, address indexed _spender, uint256 _value);\r\n}\r\n\r\nlibrary SafeMath {\r\n    function add(uint256 a, uint256 b) internal pure returns (uint256) {\r\n        uint256 c = a + b;\r\n        require(c >= a, \"SafeMath: addition overflow\");\r\n\r\n        return c;\r\n    }\r\n    function sub(uint256 a, uint256 b) internal pure returns (uint256) {\r\n        return sub(a, b, \"SafeMath: subtraction overflow\");\r\n    }\r\n    function sub(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {\r\n        require(b <= a, errorMessage);\r\n        uint256 c = a - b;\r\n\r\n        return c;\r\n    }\r\n}\r\n\r\ncontract ERC20 is IERC20 {\r\n    using SafeMath for uint256;\r\n    uint256 internal total_supply;\r\n    mapping (address => uint256) balances;\r\n    mapping (address => mapping (address => uint256)) allowed;\r\n    event Burn(address indexed burner, uint256 value);\r\n    event Mint(address indexed to, uint256 value);\r\n    function transfer(address _to, uint256 _value) override public returns (bool success) {\r\n        if (balances[msg.sender] >= _value && _value > 0) {\r\n            balances[msg.sender] -= _value;\r\n            balances[_to] += _value;\r\n            emit Transfer(msg.sender, _to, _value);\r\n            return true;\r\n        } else { return false; }\r\n    }\r\n    function transferFrom(address _from, address _to, uint256 _value) override public returns (bool success) {\r\n        if (balances[_from] >= _value && allowed[_from][msg.sender] >= _value && _value > 0) {\r\n            balances[_to] += _value;\r\n            balances[_from] -= _value;\r\n            allowed[_from][msg.sender] -= _value;\r\n            emit Transfer(_from, _to, _value);\r\n            return true;\r\n        } else { return false; }\r\n    }\r\n    function balanceOf(address _owner) public view override returns (uint256 balance) {\r\n        return balances[_owner];\r\n    }\r\n    function approve(address _spender, uint256 _value) public override returns (bool success) {\r\n        allowed[msg.sender][_spender] = _value;\r\n        emit Approval(msg.sender, _spender, _value);\r\n        return true;\r\n    }\r\n    function allowance(address _owner, address _spender) public override returns (uint256 remaining) {\r\n      return allowed[_owner][_spender];\r\n    }\r\n    function totalSupply() public view override returns (uint256 supply) {\r\n        return total_supply;\r\n    }\r\n}\r\n\r\ncontract LVE is ERC20 {\r\n    string public name;\r\n    uint8 public decimals;\r\n    string public symbol;\r\n    address public owner;\r\n    constructor (uint256 _initialAmount, string memory _tokenName, uint8 _decimalUnits, string memory _tokenSymbol) public {\r\n        balances[msg.sender] = _initialAmount* 10 ** uint256(_decimalUnits);\r\n        total_supply = _initialAmount* 10 ** uint256(_decimalUnits);\r\n        name = _tokenName;\r\n        decimals = _decimalUnits;\r\n        symbol = _tokenSymbol;\r\n        owner = msg.sender;\r\n    }\r\n}"
+    }
+  }
+}

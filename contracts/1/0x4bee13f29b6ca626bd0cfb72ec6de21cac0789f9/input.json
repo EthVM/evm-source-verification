@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/1_Storage.sol": {
+      "content": "pragma solidity ^0.6.0;\n \ninterface ERC20Token {\n \n\tfunction totalSupply() external view returns (uint256);\n\tfunction balanceOf(address account) external view returns (uint256);\n\tfunction allowance(address owner, address spender) external view returns (uint256);\n \n\tfunction transfer(address recipient, uint256 amount) external returns (bool);\n\tfunction approve(address spender, uint256 amount) external returns (bool);\n\tfunction transferFrom(address sender, address recipient, uint256 amount) external returns (bool);\n \n\tevent Transfer(address indexed from, address indexed to, uint256 value);\n\tevent Approval(address indexed owner, address indexed spender, uint256 value);\n\t\n}\n \ncontract MyToken is ERC20Token {\n \n\tstring public constant name = \"MetaCards\";\n\tstring public constant symbol = \"MCG\";\n\tuint8 public constant decimals = 0;\n\tuint256 public totalSupply_ = 100000000000;\n\t\n \n\tevent Transfer(address indexed from, address indexed to, uint tokens);\n\tevent Approval(address indexed tokenOwner, address indexed spender, uint tokens);\n \n\tmapping(address => uint256) balances;\n\tmapping(address => mapping (address => uint256)) allowed;\n \n\tusing SafeMath for uint256;\n \n   constructor() public {\n\tbalances[msg.sender] = totalSupply_;\n\t}\n \n\tfunction totalSupply() public override view returns (uint256) {\n\treturn totalSupply_;\n\t}\n \n\tfunction balanceOf(address tokenOwner) public override view returns (uint256) {\n    \treturn balances[tokenOwner];\n\t}\n \n\tfunction allowance(address owner, address delegate) public override view returns (uint) {\n    \treturn allowed[owner][delegate];\n\t}\n \n\tfunction transfer(address receiver, uint256 numTokens) public override returns (bool) {\n    \trequire(numTokens <= balances[msg.sender]);\n    \tbalances[msg.sender] = balances[msg.sender].sub(numTokens);\n    \tbalances[receiver] = balances[receiver].add(numTokens);\n    \temit Transfer(msg.sender, receiver, numTokens);\n    \treturn true;\n\t}\n \n\tfunction approve(address delegate, uint256 numTokens) public override returns (bool) {\n    \tallowed[msg.sender][delegate] = numTokens;\n    \temit Approval(msg.sender, delegate, numTokens);\n    \treturn true;\n\t}\n \n\tfunction transferFrom(address sender, address recipient, uint256 numTokens) public override returns (bool) {\n    \trequire(numTokens <= balances[sender]);\n    \trequire(numTokens <= allowed[sender][msg.sender]);\n \n    \tbalances[sender] = balances[sender].sub(numTokens);\n    \tallowed[sender][msg.sender] = allowed[sender][msg.sender].sub(numTokens);\n    \tbalances[recipient] = balances[recipient].add(numTokens);\n    \temit Transfer(sender, recipient, numTokens);\n    \treturn true;\n\t}\n\t\n}\n \nlibrary SafeMath {\n\tfunction sub(uint256 a, uint256 b) internal pure returns (uint256) {\n  \tassert(b <= a);\n  \treturn a - b;\n\t}\n \n\tfunction add(uint256 a, uint256 b) internal pure returns (uint256) {\n  \tuint256 c = a + b;\n  \tassert(c >= a);\n  \treturn c;\n\t}\n}\n\n"
+    }
+  }
+}

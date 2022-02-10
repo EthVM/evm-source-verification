@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/planckx/XVote.sol": {
+      "content": "pragma solidity 0.7.0; \n\ninterface IERC20 {\n    function transferFrom(address _token, address _from, address _to, uint256 _value) external returns (bool success);\n    function transfer(address _token, address _to, uint256 _value) external returns (bool success);\n}\n\ninterface ERC20 {\n    function allowance(address owner, address spender) external returns (uint256 amount);\n    function balanceOf(address account) external view returns (uint256);\n}\n\ncontract Vote {\n    struct Voter {\n        uint weight; \n        bool voted;\n    }\n    struct Proposal {\n        bytes32 name; \n        uint voteCount; \n    }\n\n    address immutable auer = msg.sender;\n    mapping (address => Voter) voters;\n    Proposal[] proposals;\n    \n    mapping(address => uint256) amounts;\n    address tokenAddress = address(0);\n    address transferAddress = address(0);\n    uint lockTime;\n    uint voteTime;\n    uint releaseTime;\n    uint amountMax;\n    \n   \n    constructor(){\n        \n    }\n    \n    function initVote(bytes32[] memory proposalNames,address tokenAdr,uint locks,uint votes,uint releases,uint amount,address transfer) public {\n        require(auer == msg.sender, \"no author\");\n        require(transferAddress == address(0), \"have init\");\n        require(tokenAdr != address(0), \"address error\");\n     \ttokenAddress = tokenAdr;\n     \tlockTime = locks;\n     \tvoteTime = votes;\n     \treleaseTime = releases;\n     \tamountMax = amount;\n        transferAddress = transfer;\n        voters[auer].weight=1;\n        for(uint i=0;i<proposalNames.length;i++){\n            proposals.push(Proposal({\n                name:proposalNames[i],\n                voteCount:0\n            }));\n        }\n    }\n   \n    function lockPosition(uint256 amount) public{\n        require(block.timestamp <= lockTime,\"lockTime end\");\n        require(ERC20(tokenAddress).allowance(msg.sender,transferAddress) >= amount,\"approve error\");\n        if(amounts[msg.sender]>0){\n            amounts[msg.sender] = amounts[msg.sender] + amount;\n        }else{\n            amounts[msg.sender] = amount;\n        }\n        if(amounts[msg.sender]>=amountMax){\n          if(!voters[msg.sender].voted&&voters[msg.sender].weight==0){\n              voters[msg.sender].weight=1;\n          }\n        }\n        IERC20(transferAddress).transferFrom(tokenAddress,msg.sender, transferAddress , amount);\n    }\n    \n    function withdraw() public {\n        require(block.timestamp >= releaseTime,\"no releaseTime\");\n        require(amounts[msg.sender]>0,\"no amount\");\n        require(ERC20(tokenAddress).balanceOf(transferAddress) >= amounts[msg.sender],\"no enough amount\");\n        amounts[msg.sender] = 0;\n        voters[msg.sender].weight = 0;\n        IERC20(transferAddress).transfer(tokenAddress,msg.sender, amounts[msg.sender]);\n    }\n\n    function vote(uint proposal) public{\n        require(block.timestamp <= voteTime,\"voteTime end\");\n        require(proposal<proposals.length,\"proposal error\");\n        Voter memory sender = voters[msg.sender];\n        require(!sender.voted && sender.weight > 0, \"already voted\");\n        voters[msg.sender].voted = true;\n        proposals[proposal].voteCount = proposals[proposal].voteCount + sender.weight;\n    }\n\n    function getWinProposal() public view virtual returns(uint[] memory){\n        uint winCount = 0;\n        for(uint proposal = 0; proposal <proposals.length; proposal++){\n            if(winCount < proposals[proposal].voteCount){\n                winCount = proposals[proposal].voteCount;\n            }\n        }\n        uint[] memory win = new uint[](0);\n        if(winCount > 0){\n            uint len = 0;\n            for(uint proposal = 0; proposal <proposals.length; proposal++){\n                if(winCount == proposals[proposal].voteCount){\n                    len = len + 1;\n                }\n            }\n            win = new uint[](len);\n            uint idx = 0;\n            for(uint proposal = 0; proposal <proposals.length; proposal++){\n                if(winCount == proposals[proposal].voteCount){\n                    win[idx] = proposal;\n                    idx = idx + 1;\n                }\n            }\n        }\n        return win;\n    }\n    \n    function getBlockTime() public view virtual returns (uint256){\n        return block.timestamp;\n    }\n    \n    function getVoteCount(uint proposal) view virtual public returns(uint){\n        return proposals[proposal].voteCount;\n    }\n    \n      \n    function getName(uint proposal) view virtual public returns(bytes32){\n        return proposals[proposal].name;\n    }\n\n}\n"
+    }
+  }
+}

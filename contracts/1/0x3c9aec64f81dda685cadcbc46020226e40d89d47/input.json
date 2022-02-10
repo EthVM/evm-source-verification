@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/gasRace1.sol": {
+      "content": "pragma solidity >=0.4.16 <0.7.0;\n\ncontract GasRace {\n    uint immutable private deadline;\n    bool private complete;\n    uint private balance;\n    address payable private minter;\n    address payable private victor;\n\n    constructor(uint32 duration) public payable {\n        minter = msg.sender;\n        deadline = block.number + duration;\n        complete = false;\n    }\n    \n    function enter() public payable {\n        if(complete) {\n            revert();\n        }\n        balance = balance + msg.value;\n    }\n    \n    function race() public {\n        if (block.number >= deadline && !complete) {\n            complete = true;\n            refund_owner(balance);\n            victor = msg.sender;\n            award_victor();\n        }\n    }\n    \n    function award_victor() private {\n        victor.transfer(balance);\n    }\n    \n    function refund_owner(uint preserve_amount) private {\n        minter.transfer(address(this).balance - preserve_amount);\n    }\n    \n    function is_complete() public view returns (bool) {\n        return complete;\n    }\n    \n    function get_minter() public view returns (address) {\n        return minter;\n    }\n    \n    function get_victor() public view returns (address) {\n        return victor;\n    }\n    \n    function get_balance() public view returns (uint) {\n        return balance;\n    }\n    \n    function get_deadline() public view returns (uint) {\n        return deadline;\n    }\n}\n\ncontract GasRaceGenerator {\n    GasRace private currentRace;\n    \n    function createRace(uint32 duration)\n        public\n        returns (GasRace tokenAddress)\n    {\n        currentRace = new GasRace(duration);\n        return currentRace;\n    }\n\n    function get_current_race() public view returns (GasRace) {\n        return currentRace;\n    }\n    \n    function race_in_progress() public view returns (bool) {\n        return !currentRace.is_complete();\n    }\n}\n"
+    }
+  }
+}

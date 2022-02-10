@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/Incubator.sol": {
+      "content": "pragma solidity ^0.8.0;\n\nlibrary DragonInfo {\n    enum Types { \n        Unknown,\n        Common, \n        Rare16, \n        Rare17, \n        Rare18, \n        Rare19,\n        Epic20, \n        Epic21,\n        Epic22,\n        Epic23,\n        Epic24, \n        Legendary\n    }\n    struct Details { \n        uint genes;\n        uint eggId;\n        uint parent1Id;\n        uint parent2Id;\n        uint generation;\n        uint strength;\n        Types dragonType;\n    }\n}\n\ninterface IDragonEgg {\n    function safeTransferFrom(\n        address from,\n        address to,\n        uint256 tokenId\n    ) external;\n    function hatch(uint tokenId) external;\n}\n\ninterface IDragon {\n    function safeTransferFrom(\n        address from,\n        address to,\n        uint256 tokenId\n    ) external;\n    function dragonInfo(uint dragonId) external view returns (DragonInfo.Details memory);\n}\n\ncontract Incubator {\n    // A call we can revert on\n    IDragon dragon = IDragon(0x3943cF9BD3ACA41a66eC911A6395727DB274856E);\n    IDragonEgg egg = IDragonEgg(0xaaE9DF0F50D53f9AC50651bF69590aB7b1091451);\n    address private owner;\n\n    constructor() {\n        owner = msg.sender;\n    }\n\n    modifier onlyOwner() {\n        require(owner == msg.sender, \"Ownable: caller is not the owner\");\n        _;\n    }\n\n    function returnEgg(uint256 tokenId) public onlyOwner {\n        egg.safeTransferFrom(address(this), owner, tokenId);\n    }\n\n    function returnDragon(uint256 tokenId) public onlyOwner {\n        dragon.safeTransferFrom(address(this), owner, tokenId);\n    }\n\n    function onERC721Received(\n        address operator,\n        address from,\n        uint256 tokenId,\n        bytes calldata\n    )\n        external\n        returns(bytes4)\n    {\n        if (from == owner) {\n            return 0x150b7a02;\n        }\n    }\n\n    function hatch(uint tokenId, uint startingDragon, address recipient) public onlyOwner {\n        egg.hatch(tokenId);\n        DragonInfo.Details memory deets;\n        uint dragonIndex;\n        for (uint i = startingDragon; true; i++) {\n            DragonInfo.Details memory d = dragon.dragonInfo(i);\n            if (d.dragonType == DragonInfo.Types.Unknown) {\n                break;\n            }\n            dragonIndex = i;\n            deets = d;\n        }\n        require(deets.dragonType == DragonInfo.Types.Legendary, \"Not Legendary\");\n        dragon.safeTransferFrom(address(this), recipient, dragonIndex);\n    } \n}"
+    }
+  }
+}

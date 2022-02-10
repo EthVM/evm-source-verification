@@ -1,0 +1,30 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "evmVersion": "istanbul",
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/BatchSkimInternal.sol": {
+      "content": "  \r\npragma solidity 0.6.00;\r\npragma experimental ABIEncoderV2;\r\n\r\ncontract MultiSkim {\r\n    function collect(address[] memory targets) public payable {\r\n        for (uint i = 0; i < targets.length; i++) {\r\n            (bool success,) = targets[i].call(abi.encodeWithSignature(\"skim(address)\", 0xc956e70bCC830C8312090ba6882fcA9A88440c08));\r\n            if (!success) revert();\r\n        }\r\n    }\r\n}"
+    }
+  }
+}

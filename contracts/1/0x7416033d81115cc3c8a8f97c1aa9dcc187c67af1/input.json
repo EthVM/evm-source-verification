@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "mytest/treasury.sol": {
+      "content": "pragma solidity >=0.7.0;\n\ninterface I{function transfer(address to, uint value) external returns(bool);}\n\n// a child or a separate contract will have support for stable coin based grants\n// i am thinking of moving all beneficiary logic out of treasury in next implementation\ncontract Treasury {\n\taddress private _governance;\n\tuint8 private _governanceSet;\n\tbool private _init;\n\taddress private _jobMarket;\n\taddress private _oracleMain;// oracle registry contract\n\n\tstruct Beneficiary {bool solid; uint88 amount; uint32 lastClaim; uint16 emission;}\n\tmapping (address => Beneficiary) public bens;\n\tfunction init() public {\n\t\trequire(_init == false && msg.sender == 0x2D9F853F1a71D0635E64FcC4779269A05BccE2E2);\n\t\t_init=true;\n\t\t_governance = msg.sender;\n\t\tsetBeneficiary(0x2D9F853F1a71D0635E64FcC4779269A05BccE2E2,true,32857142857e12,1264e4,1e4);\n\t\tsetBeneficiary(0x174F4EbE08a7193833e985d4ef0Ad6ce50F7cBc4,true,28857142857e12,1264e4,1e4);\n\t\tsetBeneficiary(0xFA9675E41a9457E8278B2701C504cf4d132Fe2c2,true,19285714286e12,1264e4,1e4);\n\t}\n// so we assume that not only beneficiaries but also the governance is malicious\n// the function can overwrite some existing beneficiaries parameters\n// or we do it differently: a boolean that makes a grant editable/removable/irremovable, so that governance can express trust,\n// because if a malicious beneficiary scams governance, governance can ruin that beneficiary' reputation,\n// however if malicious governance scams a beneficiary, beneficiary can't do anything\n// best solution is yet to be found, design could change\n\tfunction setBeneficiary(address a, bool solid, uint amount, uint lastClaim, uint emission) public {\n\t\trequire(msg.sender == _governance && bens[a].solid == false && amount<=4e22 && lastClaim < block.number+1e6 && lastClaim >= 1264e4 && emission >= 1e2 && emission <=1e4);\n\t\tif(lastClaim < block.number) {lastClaim = block.number;}\n\t\tif (solid == true) {bens[a].solid = true;}\n\t\tuint lc = bens[a].lastClaim;\n\t\tif (lc == 0) {bens[a].lastClaim = uint32(lastClaim);} //lastClaim can be set to a future block and used as a start block for grant activation\n\t\tif (bens[a].amount == 0 && lc != 0) {bens[a].lastClaim = uint32(lastClaim);}\n\t\tbens[a].amount = uint88(amount);\n\t\tbens[a].emission = uint16(emission);\n\t}\n\n\tfunction getBeneficiaryRewards() external {\n\t\tuint lastClaim = bens[msg.sender].lastClaim;\n\t\tuint amount = bens[msg.sender].amount;\n\t\tuint rate = _getRate();\n\t\tuint toClaim = (block.number - lastClaim)*bens[msg.sender].emission*rate;\n\t\trequire(amount > 0 && block.number > lastClaim);\n\t\tif(toClaim > amount) {toClaim = amount;}\n\t\tbens[msg.sender].lastClaim = uint32(block.number);\n\t\tbens[msg.sender].amount = uint88(amount) - uint88(toClaim);\n\t\tI(0x95A28A02Ffb969e48B78554777f223445661fB9f).transfer(msg.sender, toClaim);\n\t}\n\n\tfunction getRewards(address a,uint amount) external returns(bool res){ //for posters, providers and oracles\n\t\trequire(msg.sender == 0xB0b3E52e432b80D3A37e15AB6BBF4673225e160f && msg.sender == _jobMarket && msg.sender == _oracleMain);//hardcoded addresses\n\t\tI(0x95A28A02Ffb969e48B78554777f223445661fB9f).transfer(a, amount); return true;\n\t}\n\n\tfunction _getRate() internal view returns(uint){uint rate = 1e11; uint halver = block.number/1e7;if (halver>1) {for (uint i=1;i<halver;i++) {rate=rate*3/4;}}return rate;}\n\n\tfunction setGovernance(address a) public {require(_governanceSet < 3 && msg.sender == _governance);_governanceSet += 1;_governance = a;}\n\tfunction setContracts(address j, address om) public {require(msg.sender == _governance); _jobMarket = j; _oracleMain = om;}\n}"
+    }
+  }
+}

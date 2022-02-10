@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/MultiplierProxy.sol": {
+      "content": "pragma solidity ^0.6.0;\n\n\n\ncontract MultiplierProxy {\n    bytes32 private constant implementationPosition = bytes32(uint256(keccak256(\"zzz.multi.i\")) - 1);\n    bytes32 private constant proxyOwnerPosition = bytes32(uint256(keccak256(\"zzz.multi.o\")) - 1);\n\n    constructor() public {\n        _setUpgradeabilityOwner(msg.sender);\n    }\n\n    function setup(address _implementation) external {\n        require(msg.sender == proxyOwner());\n        _setImplementation(_implementation);\n    }\n\n    function setupOwner(address _newOwner) external {\n        require(msg.sender == proxyOwner());\n        _setUpgradeabilityOwner(_newOwner);\n    }\n\n    // setter to set the position of an implementation from the implementation position onwards\n    function _setImplementation(address _newImplementation) internal {\n        require(msg.sender == proxyOwner());\n        bytes32 position = implementationPosition;\n\n        assembly {\n            sstore(position, _newImplementation)\n        }\n    }\n\n    // retrieving the address at the implementation position\n    function implementation() public view returns (address impl) {\n        bytes32 position = implementationPosition;\n        assembly {\n            impl := sload(position)\n        }\n    }\n\n    function proxyOwner() public view returns (address owner) {\n        bytes32 position = proxyOwnerPosition;\n        assembly {\n            owner := sload(position)\n        }\n    }\n\n    function _setUpgradeabilityOwner(address _newProxyOwner) private {\n        bytes32 position = proxyOwnerPosition;\n        assembly {\n            sstore(position, _newProxyOwner)\n        }\n    }\n\n    fallback() external payable {\n        address addr = implementation();\n\n        assembly {\n            calldatacopy(0, 0, calldatasize())\n            let result := delegatecall(gas(), addr, 0, calldatasize(), 0, 0)\n            returndatacopy(0, 0, returndatasize())\n            switch result\n                case 0 {\n                    revert(0, returndatasize())\n                }\n                default {\n                    return(0, returndatasize())\n                }\n        }\n    }\n}\n"
+    }
+  }
+}

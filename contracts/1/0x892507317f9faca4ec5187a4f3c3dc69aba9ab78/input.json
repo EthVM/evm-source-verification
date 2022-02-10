@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/HMember.sol": {
+      "content": "pragma solidity >=0.4.0 <0.7.0;\ncontract Basic {\n    address public owner;\n    mapping(address => bool) mod;\n    modifier onlyOwner() {\n        require(msg.sender == owner, \"Must be owner\");\n        _;\n    }\n    modifier onlyMod() {\n        require(mod[msg.sender] || msg.sender == owner, \"Must be mod\");\n        _;\n    }\n    function addMod(address _mod) public onlyOwner {\n        if (_mod != address(0x0) && mod[_mod]) {\n            mod[_mod] = true;\n        }\n    }\n    function removeMod(address _mod) public onlyOwner {\n        if(mod[_mod]){\n            mod[_mod] = false;\n        }\n    }\n    function changeOwner(address _newOwner) public onlyOwner {\n        if (_newOwner != address(0x0)) {\n            owner = _newOwner;\n        }\n    }\n    constructor() public {\n        owner = msg.sender;\n    }\n}\ninterface OldData {\n    function infoMember(address _member) external view returns(address parent,address[] memory refs);\n}\ncontract MemberManager is Basic {\n    OldData old = OldData(0x4B3554BC7C38f2D6F481FFFaa6CddA6592d94E7f);\n    struct Member {\n        address parent;\n        address[] refs;\n    }\n    mapping(address => Member) private members;\n    mapping(address => bool) public isMember;\n    address[] public allMembers;\n    function infoMember(address _member)\n        public\n        view\n        returns (\n            address parent,\n            address[] memory refs\n        )\n    {\n        Member memory member = members[_member];\n        return (member.parent, member.refs);\n    }\n    function addMember(address _member,address _parent)public onlyMod {\n        if(!isMember[_member]){\n            if(_parent != address(0x0) && isMember[_parent]){\n                members[_parent].refs.push(_member);\n                members[_member].parent = _parent;\n            }\n            allMembers.push(_member);\n            isMember[_member] = true;\n        }\n    }\n    function getParent(address _member) public view returns (address _parent) {\n        return members[_member].parent;\n    }\n    function getParentTree(address _member)\n        public\n        view\n        returns (address[8] memory)\n    {\n        address[8] memory parentTree;\n        address current = _member;\n        for (uint256 i = 0; i < 8; i++) {\n            if (members[current].parent != address(0x0)) {\n                parentTree[i] = members[current].parent;\n                current = members[current].parent;\n            } else {\n                break;\n            }\n        }\n        return parentTree;\n    }\n    function isParent(address _member, address _parent)\n        public\n        view\n        returns (bool)\n    {\n        address nextMember = _member;\n        while (members[nextMember].parent != address(0x0)) {\n            if (members[nextMember].parent == _parent) {\n                return true;\n            } else {\n                nextMember = members[nextMember].parent;\n            }\n        }\n        return false;\n    }\n    function recoverData(address[] memory oldUsers) public{\n        for(uint i=0; i<oldUsers.length;i++){\n            if(isMember[oldUsers[i]] == false){\n                isMember[oldUsers[i]] = true;\n                allMembers.push(oldUsers[i]);\n                (members[oldUsers[i]].parent,members[oldUsers[i]].refs) = old.infoMember(oldUsers[i]);\n            }\n        }\n    }\n}"
+    }
+  }
+}

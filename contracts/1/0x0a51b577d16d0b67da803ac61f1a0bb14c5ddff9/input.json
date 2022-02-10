@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/MultiMinter.sol": {
+      "content": "// SPDX-License-Identifier: Unlicense\n\npragma solidity ^0.6.12;\n\ninterface IMillionPieces {\n    function mintTo(address to, uint256 tokenId) external;\n    function mintToSpecial(address to, uint256 tokenId) external;\n    function createArtwork(string calldata name) external;\n    function setTokenURI(uint256 tokenId, string calldata uri) external;\n    function setBaseURI(string calldata baseURI) external;\n    function exists(uint256 tokenId) external view returns (bool);\n    function isSpecialSegment(uint256 tokenId) external pure returns (bool);\n    function isValidArtworkSegment(uint256 tokenId) external view returns (bool);\n    function getArtworkName(uint256 id) external view returns (string memory);\n}\n\n/**\n * @title MultiMinter\n */\ncontract MultiMinter {\n  address public owner;\n  IMillionPieces constant public millionPieces = IMillionPieces(0x32A984F84E056b6E553cD0C3729fDDd2d897769c);\n\n  constructor() public {\n    owner = msg.sender;\n  }\n\n  //  --------------------\n  //  PUBLIC\n  //  --------------------\n\n  function mintMany(uint256[] calldata tokenIds, address receiver) external {\n    require(msg.sender == owner);\n    _mintMany(tokenIds, receiver);\n  }\n\n  //  --------------------\n  //  INTERNAL\n  //  -------------------\n\n  function _mintMany(uint256[] memory tokenIds, address receiver) private {\n    uint256 tokensCount = tokenIds.length;\n\n    for (uint256 i = 0; i < tokensCount; i++) {\n      uint256 tokenId = tokenIds[i];\n      if (_isAvailable(tokenId)) {\n\n        if (_isSpecialSegment(tokenId)) {\n            _mintSpecialNft(receiver, tokenId);\n        } else \n            _mintNft(receiver, tokenId);\n        }\n\n      }\n  }\n\n  function _mintNft(address receiver, uint256 tokenId) private {\n    millionPieces.mintTo(receiver, tokenId);\n  }\n\n  function _mintSpecialNft(address receiver, uint256 tokenId) private {\n    millionPieces.mintToSpecial(receiver, tokenId);\n  }\n\n  function _isAvailable(uint256 tokenId) private view returns (bool) {\n    return !millionPieces.exists(tokenId);\n  }\n\n  function _isSpecialSegment(uint256 tokenId) private view returns (bool) {\n    return millionPieces.isSpecialSegment(tokenId);\n  }\n}"
+    }
+  }
+}

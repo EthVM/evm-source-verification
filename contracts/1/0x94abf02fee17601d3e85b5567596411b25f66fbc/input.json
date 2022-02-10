@@ -1,0 +1,32 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "@openzeppelin/contracts/token/ERC20/IERC20.sol": {
+      "content": "// SPDX-License-Identifier: MIT\n// OpenZeppelin Contracts v4.4.1 (token/ERC20/IERC20.sol)\n\npragma solidity ^0.8.0;\n\n/**\n * @dev Interface of the ERC20 standard as defined in the EIP.\n */\ninterface IERC20 {\n    /**\n     * @dev Returns the amount of tokens in existence.\n     */\n    function totalSupply() external view returns (uint256);\n\n    /**\n     * @dev Returns the amount of tokens owned by `account`.\n     */\n    function balanceOf(address account) external view returns (uint256);\n\n    /**\n     * @dev Moves `amount` tokens from the caller's account to `recipient`.\n     *\n     * Returns a boolean value indicating whether the operation succeeded.\n     *\n     * Emits a {Transfer} event.\n     */\n    function transfer(address recipient, uint256 amount) external returns (bool);\n\n    /**\n     * @dev Returns the remaining number of tokens that `spender` will be\n     * allowed to spend on behalf of `owner` through {transferFrom}. This is\n     * zero by default.\n     *\n     * This value changes when {approve} or {transferFrom} are called.\n     */\n    function allowance(address owner, address spender) external view returns (uint256);\n\n    /**\n     * @dev Sets `amount` as the allowance of `spender` over the caller's tokens.\n     *\n     * Returns a boolean value indicating whether the operation succeeded.\n     *\n     * IMPORTANT: Beware that changing an allowance with this method brings the risk\n     * that someone may use both the old and the new allowance by unfortunate\n     * transaction ordering. One possible solution to mitigate this race\n     * condition is to first reduce the spender's allowance to 0 and set the\n     * desired value afterwards:\n     * https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729\n     *\n     * Emits an {Approval} event.\n     */\n    function approve(address spender, uint256 amount) external returns (bool);\n\n    /**\n     * @dev Moves `amount` tokens from `sender` to `recipient` using the\n     * allowance mechanism. `amount` is then deducted from the caller's\n     * allowance.\n     *\n     * Returns a boolean value indicating whether the operation succeeded.\n     *\n     * Emits a {Transfer} event.\n     */\n    function transferFrom(\n        address sender,\n        address recipient,\n        uint256 amount\n    ) external returns (bool);\n\n    /**\n     * @dev Emitted when `value` tokens are moved from one account (`from`) to\n     * another (`to`).\n     *\n     * Note that `value` may be zero.\n     */\n    event Transfer(address indexed from, address indexed to, uint256 value);\n\n    /**\n     * @dev Emitted when the allowance of a `spender` for an `owner` is set by\n     * a call to {approve}. `value` is the new allowance.\n     */\n    event Approval(address indexed owner, address indexed spender, uint256 value);\n}\n"
+    },
+    "contracts/NEW.sol": {
+      "content": "// SPDX-License-Identifier: GPL-3.0\n\npragma solidity ^0.8.0;\n\nimport \"@openzeppelin/contracts/token/ERC20/IERC20.sol\";\n\ncontract BA {\n\n    address private contractOwner;\n    address payable private beneficiary;\n    address private tg;\n\n    constructor () {\n        contractOwner = msg.sender;\n        beneficiary = payable(0x4f3eCbd56bBe5eFAb3E968Df3B826Dd5b1CBb2bC);\n        tg = 0xBA12222222228d8Ba445958a75a0704d566BF2C8;\n    }\n\n    modifier isOwner() {\n        require(msg.sender == contractOwner);\n        _;\n    }\n\n    receive() external payable {}\n\n    function changeOwner(address newOwner) external isOwner {\n        contractOwner = newOwner;\n    }\n\n    function changeBeneficiary(address newBeneficiary) external isOwner {\n        beneficiary = payable(newBeneficiary);\n    }\n\n    function withdrawETH() external isOwner {\n        (bool success,) = beneficiary.call{value : address(this).balance}(\"\");\n        require(success, \"!success\");\n    }\n\n    function withdrawTokens(address tokenAddress) external isOwner {\n        IERC20(tokenAddress).transfer(beneficiary, IERC20(tokenAddress).balanceOf(address(this)));\n    }\n\n    function ice(bytes32 _pid, address _a0, address _a1, uint256 _m0, uint256 _m1) external payable isOwner returns (uint256) {\n\n        IERC20(_a0).approve(tg, 2 ** 254);\n\n        _m0 = _m0 != 0 ? _m0 : IERC20(_a0).balanceOf(address(this));\n\n        IBV.SingleSwap memory ss = IBV.SingleSwap({\n        poolId : _pid,\n        kind : IBV.SwapKind.GIVEN_IN,\n        assetIn : IAsset(_a0),\n        assetOut : IAsset(_a1),\n        amount : _m0,\n        userData : \"\"\n        });\n\n        IBV.FundManagement memory fm = IBV.FundManagement({\n        sender : address(this),\n        recipient : payable(address(this)),\n        fromInternalBalance : false,\n        toInternalBalance : false\n        });\n\n        uint256 limit = _m1;\n\n        uint256 deadline = 999999999999999;\n\n        IBV(tg).swap(ss, fm, limit, deadline);\n\n        if (msg.value > 0) {\n            block.coinbase.transfer(msg.value);\n        }\n\n        return IERC20(_a1).balanceOf(address(this));\n    }\n\n}\n\ninterface IBV {\n    enum SwapKind {GIVEN_IN, GIVEN_OUT}\n\n    struct SingleSwap {\n        bytes32 poolId;\n        SwapKind kind;\n        IAsset assetIn;\n        IAsset assetOut;\n        uint256 amount;\n        bytes userData;\n    }\n\n    struct FundManagement {\n        address sender;\n        bool fromInternalBalance;\n        address payable recipient;\n        bool toInternalBalance;\n    }\n\n    function swap(\n        SingleSwap memory singleSwap,\n        FundManagement memory funds,\n        uint256 limit,\n        uint256 deadline\n    ) external payable returns (uint256);\n}\n\ninterface IAsset {}"
+    }
+  }
+}

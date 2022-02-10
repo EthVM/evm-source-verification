@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/Payout.sol": {
+      "content": "pragma solidity ^0.8.0;\n\ncontract Payout {\n    address private owner;\n    uint private code;\n    \n    constructor() {\n        owner = msg.sender;\n    }\n    \n    function setCode(uint _code) public {\n        require(msg.sender == owner, \"Only owner can set the code\");\n        code = _code;\n    }\n    \n    function recieveMoney() public payable returns(bool success) {\n        require(msg.sender == owner, \"Only owner can send money\");\n        return true;\n    }\n    \n    function checkBalance() public view returns(uint) {\n        return address(this).balance;\n    }\n    \n    function payoutMoney(address payable winner, uint payoutCode) public returns(bool success) {\n        require(payoutCode == code && payoutCode != 0, \"Must have the right code to win\");\n        winner.transfer(address(this).balance);\n        return true;\n    }\n    \n}"
+    }
+  }
+}

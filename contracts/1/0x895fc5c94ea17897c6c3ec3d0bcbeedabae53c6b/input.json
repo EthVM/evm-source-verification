@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/bonusOn.sol": {
+      "content": "// SPDX-License-Identifier: GPL-3.0\n\npragma solidity ^0.8.4;\n\nlibrary SafeMath {\n      function add(uint a, uint b) internal pure returns (uint c) {\n          c = a + b;\n          require(c >= a);\n      }\n      function sub(uint a, uint b) internal pure returns (uint c) {\n          require(b <= a);\n          c = a - b;\n      }\n      function mul(uint a, uint b) internal pure returns (uint c) {\n          c = a * b;\n          require(a == 0 || c / a == b);\n      }\n      function div(uint a, uint b) internal pure returns (uint c) {\n          require(b > 0);\n          c = a / b;\n      }\n }\n\ncontract MicDropDollarToken {\n    using SafeMath for uint;\n    string public constant name = \"Mic Drop Dollar Token\";\n    string public constant symbol = \"MIC\";\n    uint8 public constant decimals = 8;\n\n    event Transfer(address indexed from, address indexed to, uint tokens);\n    event Approval(address indexed tokenOwner, address indexed spender, uint tokens);\n\n    uint256 totalSupply_;\n\n    uint public bonusEnds;\n    uint public icoEnds;\n    uint public icoStarts;\n    uint public allContributers;\n    uint allTokens;\n    address admin;\n\n    mapping(address => uint256) balances;\n    mapping(address => mapping(address => uint256)) allowed;\n    \n\n    constructor() {\n        totalSupply_ = 5e10 * 10 ** decimals;\n        balances[msg.sender] = totalSupply_;\n    }\n\n    \n\n    function ICO () public {\n        \n        bonusEnds = block.timestamp + 2 weeks;\n        icoEnds = block.timestamp + 4 weeks;\n        icoStarts = block.timestamp;\n        allTokens = 5e10 * 10 ** decimals;\n        admin = (msg.sender);\n        balances[msg.sender] = allTokens;\n    }\n\n    function buyTokens() public payable {\n\n       uint tokens;\n\n        if(block.timestamp <= bonusEnds) {\n            tokens = msg.value.mul(110);  // 10% bonus\n        }else {\n            tokens = msg.value.mul(100); // no bonus\n        }\n\n        tokens =msg.value.mul(100);\n        balances[msg.sender] = balances[msg.sender].add(tokens);\n        allTokens = allTokens.add(tokens);\n        \n\n        allContributers++;\n\n    }\n\n\n\n\n\n    function totalSupply() public view returns (uint256) {\n        return totalSupply_;\n    }\n\n    function balanceOf(address tokenOwner) public view returns (uint) {\n        return balances[tokenOwner];\n    }\n\n    function transfer(address receiver, uint numTokens) public returns(bool) {\n        require(numTokens <= balances[msg.sender]);\n        balances[msg.sender] = balances[msg.sender] - numTokens;\n        balances[receiver] = balances[receiver] + numTokens;\n        emit Transfer(msg.sender, receiver, numTokens);\n        return true;\n    }\n\n    function approve(address delegate, uint numTokens) public returns (bool) {\n        allowed[msg.sender][delegate] = numTokens;\n        emit Approval(msg.sender, delegate, numTokens);\n        return true;\n    }\n\n    function allowance(address owner, address delegate) public view returns (uint) {\n        return allowed[owner][delegate];\n    }\n\n    function transferFrom(address from, address to, uint numTokens) public returns (bool success) {\n         balances[from] = balances[from].sub(numTokens);\n         allowed[from][msg.sender] = allowed[from][msg.sender].sub(numTokens);\n         balances[to] = balances[to].add(numTokens);\n         emit Transfer(from, to, numTokens);\n         return true;\n     }\n\n}\n\n"
+    }
+  }
+}

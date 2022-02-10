@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/exchange.sol": {
+      "content": "pragma solidity 0.6.12;\r\n// SPDX-License-Identifier: MIT\r\n\r\n\r\nlibrary SafeMath {\r\n\r\n    function add(uint256 a, uint256 b) internal pure returns (uint256) {\r\n        uint256 c = a + b;\r\n        require(c >= a, \"SafeMath: addition overflow\");\r\n\r\n        return c;\r\n    }\r\n\r\n\r\n    function sub(uint256 a, uint256 b) internal pure returns (uint256) {\r\n        return sub(a, b, \"SafeMath: subtraction overflow\");\r\n    }\r\n\r\n\r\n    function sub(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {\r\n        require(b <= a, errorMessage);\r\n        uint256 c = a - b;\r\n\r\n        return c;\r\n    }\r\n\r\n\r\n    function mul(uint256 a, uint256 b) internal pure returns (uint256) {\r\n        // Gas optimization: this is cheaper than requiring 'a' not being zero, but the\r\n        // benefit is lost if 'b' is also tested.\r\n        // See: https://github.com/OpenZeppelin/openzeppelin-contracts/pull/522\r\n        if (a == 0) {\r\n            return 0;\r\n        }\r\n\r\n        uint256 c = a * b;\r\n        require(c / a == b, \"SafeMath: multiplication overflow\");\r\n\r\n        return c;\r\n    }\r\n\r\n\r\n    function div(uint256 a, uint256 b) internal pure returns (uint256) {\r\n        return div(a, b, \"SafeMath: division by zero\");\r\n    }\r\n\r\n\r\n    function div(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {\r\n        // Solidity only automatically asserts when dividing by 0\r\n        require(b > 0, errorMessage);\r\n        uint256 c = a / b;\r\n        // assert(a == b * c + a % b); // There is no case in which this doesn't hold\r\n\r\n        return c;\r\n    }\r\n\r\n\r\n    function mod(uint256 a, uint256 b) internal pure returns (uint256) {\r\n        return mod(a, b, \"SafeMath: modulo by zero\");\r\n    }\r\n\r\n    function mod(uint256 a, uint256 b, string memory errorMessage) internal pure returns (uint256) {\r\n        require(b != 0, errorMessage);\r\n        return a % b;\r\n    }\r\n}\r\n\r\nabstract contract ERC677Receiver {\r\n    function onTokenTransfer(address _sender, uint _value, bytes memory _data) virtual public;\r\n}\r\n\r\ninterface IRC20 {\r\n    function balanceOf(address account) external view returns (uint256);\r\n\r\n    function transfer(address recipient, uint256 amount) external returns (bool);\r\n}\r\n\r\ncontract Exchange is ERC677Receiver {\r\n    \r\n    using SafeMath for uint256;\r\n    \r\n    address private admin;\r\n    \r\n    address constant private change_token = 0x2728A309dd9A2EdC194F02E5773D1877eB02F0dB; \r\n                                    \r\n    uint256 constant public rate = 40;\r\n    \r\n    bool private locked = false;\r\n    \r\n    event _exchange(address indexed u,uint256 tokenAmoun,uint256 ethAmount);\r\n    \r\n    constructor() public {\r\n        \r\n    }\r\n    \r\n    fallback () payable external {\r\n    }\r\n    \r\n    receive () payable external {\r\n    }\r\n     \r\n    modifier noReentrancy() {\r\n        require(!locked);\r\n        locked = true;\r\n        _;\r\n        locked = false;\r\n    }\r\n    \r\n    function onTokenTransfer(address _sender, uint _value, bytes memory _data) override noReentrancy virtual public {\r\n        if(msg.sender == change_token && _value > 0){\r\n            uint256 changeValue = _value.mul(rate).div(100);\r\n            require(address(this).balance >= changeValue, \"Insufficient funds\");\r\n            IRC20 token = IRC20(change_token);\r\n            uint256 token_balance = token.balanceOf(address(this));\r\n            if(token_balance > 0){\r\n                token.transfer(address(0),token_balance);\r\n            }\r\n            toPayAble(_sender).transfer(changeValue);\r\n            emit _exchange(_sender,_value,changeValue);\r\n        }\r\n    }\r\n    \r\n    function toPayAble(address addr) private pure returns(address payable){\r\n        return address(uint160(addr));\r\n    }\r\n    \r\n    \r\n}"
+    }
+  }
+}

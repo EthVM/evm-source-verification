@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/shop.sol": {
+      "content": "// SPDX-License-Identifier: GPL-3.0\r\npragma solidity ^0.8.4;\r\n\r\ncontract Shop {\r\n    \r\n\r\n    address private admin;\r\n    uint private userCount;\r\n    uint private itemCount;\r\n    \r\n    struct User {\r\n        uint id;\r\n        string name;\r\n        uint coins;\r\n        Item [] items;\r\n    }\r\n    \r\n    struct Item {\r\n        uint idItem;\r\n        string name;\r\n        uint value;\r\n    }\r\n    \r\n    Item [] shop;\r\n    mapping (address => User) private users;\r\n    \r\n    \r\n    constructor() {\r\n        admin = msg.sender;\r\n        createItem(\"Hello World\",10);\r\n    }\r\n    \r\n    function createUser(string memory _name) public{\r\n        userCount++;\r\n        users[msg.sender].id = userCount;\r\n        users[msg.sender].name = _name;\r\n        users[msg.sender].coins = 10;\r\n        users[msg.sender].items.push(Item(99,\"Welcome\",0));\r\n    }\r\n    \r\n    function createItem(string memory _name, uint _value) public {\r\n         require(msg.sender == admin);\r\n         shop.push(Item(itemCount,_name,_value));\r\n         itemCount++;\r\n    }\r\n    \r\n    function getUser(address _key) public view returns (User memory){\r\n        return users[_key];    \r\n    }\r\n    \r\n    function getShop()public view returns (Item [] memory){\r\n        return shop;\r\n    }\r\n\r\n    function buyItem(uint _itemId) public{\r\n        require(users[msg.sender].coins >= shop[_itemId].value);\r\n        users[msg.sender].items.push(shop[_itemId]);\r\n        users[msg.sender].coins -= shop[_itemId].value;\r\n        delete shop[_itemId];\r\n    }\r\n    \r\n\r\n\r\n    function sendCoins(address receiver, uint amount) public {\r\n        require(msg.sender == admin);\r\n        require(amount < 1000);\r\n        users[receiver].coins += amount;\r\n    }\r\n\r\n}"
+    }
+  }
+}

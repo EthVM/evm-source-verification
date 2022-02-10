@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/ethrate_test.sol": {
+      "content": "/*\n! proof.sol\n(c) 2020 Krasava Digital Solutions\nDevelop by BelovITLab LLC (smartcontract.ru) & Krasava Digital Solutions (krasava.pro)\nauthors @stupidlovejoy, @sergeytyan\nLicense: MIT \n*/\n\npragma solidity 0.6.6;\n\ninterface EthRateInterface {\n    function EthToUsdRate() external view returns(uint256);\n}\n\ncontract EthRateTest {\n    uint256 private eth_custom_rate;\n    uint256 private tether_rate = 100;\n    EthRateInterface public EthRateSource = EthRateInterface(0x9dd4C0a264B53e26B61Fa27922Ac4697f0b9dD8b);\n    function setEthRate(uint256 _value) external {\n        eth_custom_rate = _value > 999999 ? _value : 0;\n    }\n    function setEthRateUp(uint256 _value) external {\n        require(_value < eth_custom_rate, \"Wrong rate\");\n        eth_custom_rate = _value > eth_custom_rate ? _value : eth_custom_rate;\n    }\n    function setEthRateSource(address _source) external {\n        require(_source != address(0), \"Wrong adress\");\n        EthRateSource = EthRateInterface(_source);\n    }\n    function showEthRate() external view returns(uint256) {\n        uint256 ext_rate = EthRateSource.EthToUsdRate();\n        return eth_custom_rate > 0 && eth_custom_rate > ext_rate ? eth_custom_rate : ext_rate;\n    }\n}"
+    }
+  }
+}

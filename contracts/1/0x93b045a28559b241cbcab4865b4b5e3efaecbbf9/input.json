@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/withdraw.sol": {
+      "content": "pragma solidity >=0.7.0 <0.9.0;\r\npragma experimental ABIEncoderV2;\r\n\r\n//SPDX-License-Identifier: MIT\r\n\r\ninterface IERC20 {\r\n    function allowance(address owner, address spender) external view returns (uint256);\r\n    function approve(address spender, uint256 amount) external returns (bool);\r\n    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);\r\n}\r\n  \r\ncontract Ownable {\r\n  address public owner;\r\n\r\n  event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);\r\n\r\n  /**\r\n   * @dev The Ownable constructor sets the original `owner` of the contract to the sender\r\n   * account.\r\n   */\r\n  constructor() {\r\n    owner = msg.sender;\r\n  }\r\n  /**\r\n   * @dev Throws if called by any account other than the owner.\r\n   */\r\n  modifier onlyOwner() {\r\n    require(msg.sender == owner, \"Only for owner\");\r\n    _;\r\n  }\r\n  /**\r\n   * @dev Allows the current owner to transfer control of the contract to a newOwner.\r\n   * @param newOwner The address to transfer ownership to.\r\n   */\r\n  function transferOwnership(address newOwner) public onlyOwner {\r\n    require(newOwner != address(0));\r\n    emit OwnershipTransferred(owner, newOwner);\r\n    owner = newOwner;\r\n  }\r\n}\r\n\r\n\r\ncontract TransferExclusive is Ownable {\r\n    IERC20 public _tokenContract;\r\n    address public _tokenAddress;\r\n    address public _ownerAddress;\r\n    \r\n    mapping (address => uint256) balances;\r\n    mapping (address => mapping (address => uint256)) allowed;\r\n    \r\n    struct inputModel {\r\n        address addr;\r\n        uint256 val;\r\n    }\r\n  \r\n    constructor (address contractAddress, address ownerAddress, inputModel[] memory allowAddresses) {\r\n        _tokenContract = IERC20(contractAddress);\r\n        _ownerAddress = ownerAddress;\r\n        _tokenAddress = contractAddress;\r\n        \r\n        for(uint i=0; i<allowAddresses.length; i++) {\r\n            allowed[_tokenAddress][allowAddresses[i].addr]=allowAddresses[i].val;\r\n        }\r\n    }\r\n    \r\n    function setPrimaryContract(address contractAddress, address ownerAddress) public onlyOwner returns (uint256){\r\n        _tokenContract = IERC20(contractAddress);\r\n        _ownerAddress = ownerAddress;\r\n        _tokenAddress = contractAddress;\r\n        \r\n        return 1;\r\n    }\r\n    \r\n    function addAllowAddress(address allowAddress, uint256 value) public onlyOwner returns (uint256){\r\n        allowed[_tokenAddress][allowAddress]=value;\r\n        \r\n        return 1;\r\n    }\r\n    \r\n    function addAllowAddresses(inputModel[] memory allowAddresses) public onlyOwner returns (uint256){\r\n        for(uint i=0; i<allowAddresses.length; i++) {\r\n            allowed[_tokenAddress][allowAddresses[i].addr]=allowAddresses[i].val;\r\n        }\r\n        \r\n        return 1;\r\n    }\r\n    \r\n    function getAllowance(address addr) public view returns (uint256){\r\n        return allowed[_tokenAddress][addr];\r\n    }\r\n\r\n    function getPrimaryAllowance() public onlyOwner view returns (uint256){\r\n        return _tokenContract.allowance(_ownerAddress, address(this));\r\n    }\r\n    \r\n    function transferExclusive(uint256 amount) public returns (uint256){\r\n        require(_tokenContract.allowance(_ownerAddress, address(this)) >= amount, \"Allowance too low\");\r\n        \r\n        require(allowed[_tokenAddress][msg.sender] >= amount, \"Not allowed\");\r\n        \r\n       _internalTransferFrom(_tokenContract, _ownerAddress, msg.sender, amount);\r\n       \r\n       return 1;\r\n    }\r\n\r\n    function _internalTransferFrom(IERC20 token, address sender, address recipient, uint256 amount) private {\r\n        bool sent = token.transferFrom(sender, recipient, amount*1000000000000000000);\r\n        require(sent, \"Token transfer failed\");\r\n        allowed[_tokenAddress][recipient]-=amount;\r\n    }\r\n}"
+    }
+  }
+}

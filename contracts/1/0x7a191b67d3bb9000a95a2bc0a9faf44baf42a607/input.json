@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 999999
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/Deploy.sol": {
+      "content": "/**\r\n *Submitted for verification at Etherscan.io on 2021-04-14\r\n*/\r\n\r\n// SPDX-License-Identifier: MIT\r\npragma solidity 0.6.12;\r\n\r\n/// @notice A library for performing overflow-/underflow-safe math,\r\n/// updated with awesomeness from of DappHub (https://github.com/dapphub/ds-math).\r\nlibrary BoringMath {\r\n    function add(uint256 a, uint256 b) internal pure returns (uint256 c) {\r\n        require((c = a + b) >= b, \"BoringMath: Add Overflow\");\r\n    }\r\n\r\n    function sub(uint256 a, uint256 b) internal pure returns (uint256 c) {\r\n        require((c = a - b) <= a, \"BoringMath: Underflow\");\r\n    }\r\n\r\n    function mul(uint256 a, uint256 b) internal pure returns (uint256 c) {\r\n        require(b == 0 || (c = a * b) / b == a, \"BoringMath: Mul Overflow\");\r\n    }\r\n}\r\n\r\ninterface IAggregator {\r\n    function latestAnswer() external view returns (int256 answer);\r\n}\r\n\r\ninterface IUniswapV2Pair {\r\n    function totalSupply() external view returns (uint256);\r\n    function getReserves() external view returns (\r\n        uint112 reserve0,\r\n        uint112 reserve1,\r\n        uint32 blockTimestampLast\r\n    );\r\n}\r\n\r\n/// @title LPChainlinkOracleV1\r\n/// @author BoringCrypto\r\n/// @notice Oracle used for getting the price of an LP token paired with ETH based on an token-ETH chainlink oracle with 18 decimals\r\n/// @dev Optimized version based on https://blog.alphafinance.io/fair-lp-token-pricing/\r\ncontract LPETHChainlinkOracleV1 is IAggregator {\r\n    using BoringMath for uint256;\r\n\r\n    IUniswapV2Pair public immutable pair;\r\n    IAggregator public immutable tokenOracle;\r\n\r\n    constructor (IUniswapV2Pair pair_, IAggregator tokenOracle_) public {\r\n        pair = pair_;\r\n        tokenOracle = tokenOracle_;\r\n    }\r\n\r\n    // credit for this implementation goes to\r\n    // https://github.com/abdk-consulting/abdk-libraries-solidity/blob/master/ABDKMath64x64.sol\r\n    function sqrt (uint256 x) internal pure returns (uint128) {\r\n        if (x == 0) return 0;\r\n        uint256 xx = x;\r\n        uint256 r = 1;\r\n        if (xx >= 0x100000000000000000000000000000000) { xx >>= 128; r <<= 64; }\r\n        if (xx >= 0x10000000000000000) { xx >>= 64; r <<= 32; }\r\n        if (xx >= 0x100000000) { xx >>= 32; r <<= 16; }\r\n        if (xx >= 0x10000) { xx >>= 16; r <<= 8; }\r\n        if (xx >= 0x100) { xx >>= 8; r <<= 4; }\r\n        if (xx >= 0x10) { xx >>= 4; r <<= 2; }\r\n        if (xx >= 0x8) { r <<= 1; }\r\n        r = (r + x / r) >> 1;\r\n        r = (r + x / r) >> 1;\r\n        r = (r + x / r) >> 1;\r\n        r = (r + x / r) >> 1;\r\n        r = (r + x / r) >> 1;\r\n        r = (r + x / r) >> 1;\r\n        r = (r + x / r) >> 1; // Seven iterations should be enough\r\n        uint256 r1 = x / r;\r\n        return uint128 (r < r1 ? r : r1);\r\n    }  \r\n\r\n    // Calculates the lastest exchange rate\r\n    function latestAnswer() external view override returns (int256) {\r\n        (uint256 reserve0, uint256 reserve1, ) = IUniswapV2Pair(pair).getReserves();\r\n        uint256 totalSupply = pair.totalSupply();\r\n        uint256 k = reserve0.mul(reserve1);\r\n        uint256 ethValue = sqrt((k / 1e18).mul(uint256(tokenOracle.latestAnswer())));\r\n        uint256 totalValue = ethValue.mul(2);\r\n        return int256(totalValue.mul(1e18) / totalSupply);\r\n    }\r\n}"
+    }
+  }
+}

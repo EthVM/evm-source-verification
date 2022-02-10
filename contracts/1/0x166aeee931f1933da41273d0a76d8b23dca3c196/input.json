@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "MouseTrap.sol": {
+      "content": "// SPDX-License-Identifier: MIT \npragma solidity 0.8.7;\n\n/*\nWARNING: This is a trap. It is designed for the dev to make money from overconfident searchers.\nHowever, It *is* possible for sophisticated searchers to drain all the money from this contract \nat a rate of about 2.75 ETH per hour.\n\nPlay at your own risk, and know that you probably don't understand all the risks.\nNo refunds. I drink your tears. That's the whole point.\n\nHOW IT WORKS\n1. Register your upcoming attempt by calling register()\n    - Registering costs 1 ETH. You get this back, plus 0.02 ETH profit, only if you succeed in stealing the cheese.\n    - EOA's only.\n    - Must not register if your address is already registered.\n2. Steal the cheese by calling stealTheCheese() while passing in the target block number.\n    - You must wait at least 1 block after registering before trying to steal the cheese.\n    - You must use a priority fee of at least 20 gwei.\n    - You must pass in the correct block number.\n    - You must not try to steal the cheese for a block in which it's already been stolen.\n\nBreak any rule and you lose your 1 ETH. Otherwise, you get it back + another 0.02 ETH.\n\nMy hope is that I'll earn at least 1 ETH in failures before someone figures it out and drains the contract.\n\nThis contract has not been audited and is probably broken. Go nuts.\n*/\ncontract MouseTrap {\n    \n    mapping(address => uint256) public registeredBlock;\n    uint256 private lastBlockCheeseWasStolen;\n    address payable public immutable dev;\n    \n    constructor() {\n        require(msg.sender == tx.origin, 'dev must be EOA');\n        dev = payable(msg.sender);\n    }\n    \n    receive() external payable {}\n    \n    function register() external payable {\n        // no risk, no reward\n        if (msg.value < 1 ether) return;\n        \n        // EOA only\n        if (msg.sender != tx.origin) {\n            _lose();\n            return;\n        }\n        \n        // already registered\n        if (registeredBlock[msg.sender] != 0) {\n            _lose();\n            return;\n        }\n        \n        // successfully registered!\n        registeredBlock[msg.sender] = block.number;\n    }\n    \n    function stealTheCheese(uint256 _targetBlock) external {\n        // must register before trying to steal cheese\n        if (registeredBlock[msg.sender] == 0) return;\n        \n        // must wait at least 1 block after registering before trying to steal cheese\n        if (block.number == registeredBlock[msg.sender]) {\n            _lose();\n            return;\n        }\n        \n        // must have priority fee of at least 20 gwei\n        if (tx.gasprice - block.basefee < 20 gwei) {\n            _lose();\n            return;\n        }\n        \n        // must pass in the correct block number\n        if (_targetBlock != block.number) {\n            _lose();\n            return;\n        }\n        \n        // cheese can be stolen only once per block\n        if (lastBlockCheeseWasStolen == block.number) {\n            _lose();\n            return;\n        }\n        \n        lastBlockCheeseWasStolen = block.number;\n\n        // winner!!\n        sendValue(payable(msg.sender), 1.02 ether);\n    }\n    \n    function _lose() private {\n        registeredBlock[msg.sender] = 0;\n        sendValue(dev, 1 ether);\n    }\n\n    // OpenZeppelin's sendValue function\n\tfunction sendValue(address payable recipient, uint256 amount) private {\n\t\trequire(address(this).balance >= amount, \"Address: insufficient balance\");\n\t\t// solhint-disable-next-line avoid-low-level-calls, avoid-call-value\n\t\t(bool success, ) = recipient.call{ value: amount }(\"\");\n\t\trequire(success, \"Address: unable to send value, recipient may have reverted\");\n\t}\n\n}\n"
+    }
+  }
+}

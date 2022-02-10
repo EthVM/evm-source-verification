@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "erc20.sol": {
+      "content": "//SPDX-License-Identifier: GPL-3.0\n\npragma solidity >=0.5.0 <0.9.0;\n// ----------------------------------------------------------------------------\n// EIP-20: ERC-20 Token Standard\n// https://eips.ethereum.org/EIPS/eip-20\n// -----------------------------------------\n\ninterface ERC20Interface {\n    function totalSupply() external view returns (uint);\n    function balanceOf(address tokenOwner) external view returns (uint balance);\n    function transfer(address to, uint tokens) external returns (bool success);\n    \n    function allowance(address tokenOwner, address spender) external view returns (uint remaining);\n    function approve(address spender, uint tokens) external returns (bool success);\n    function transferFrom(address from, address to, uint tokens) external returns (bool success);\n    \n    event Transfer(address indexed from, address indexed to, uint tokens);\n    event Approval(address indexed tokenOwner, address indexed spender, uint tokens);\n}\n\n\ncontract Valence is ERC20Interface{\n    string public name = \"Valence\";\n    string public symbol = \"VALE\";\n    uint public decimals = 18; //18 is very common\n    uint public override totalSupply;\n    \n    address public founder;\n    mapping(address => uint) public balances;\n    // balances[0x1111...] = 100;\n    \n    mapping(address => mapping(address => uint)) allowed;\n    // allowed[0x111][0x222] = 100;\n    \n    \n    constructor(){\n        totalSupply = 1000000000000000000000000000;\n        founder = msg.sender;\n        balances[founder] = totalSupply;\n    }\n    \n    \n    function balanceOf(address tokenOwner) public view override returns (uint balance){\n        return balances[tokenOwner];\n    }\n    \n    \n    function transfer(address to, uint tokens) public override returns(bool success){\n        require(balances[msg.sender] >= tokens);\n        \n        balances[to] += tokens;\n        balances[msg.sender] -= tokens;\n        emit Transfer(msg.sender, to, tokens);\n        \n        return true;\n    }\n    \n    \n    function allowance(address tokenOwner, address spender) view public override returns(uint){\n        return allowed[tokenOwner][spender];\n    }\n    \n    \n    function approve(address spender, uint tokens) public override returns (bool success){\n        require(balances[msg.sender] >= tokens);\n        require(tokens > 0);\n        \n        allowed[msg.sender][spender] = tokens;\n        \n        emit Approval(msg.sender, spender, tokens);\n        return true;\n    }\n    \n    \n    function transferFrom(address from, address to, uint tokens) public override returns (bool success){\n         require(allowed[from][to] >= tokens);\n         require(balances[from] >= tokens);\n         \n         balances[from] -= tokens;\n         balances[to] += tokens;\n         allowed[from][to] -= tokens;\n         \n         return true;\n     }\n}"
+    }
+  }
+}

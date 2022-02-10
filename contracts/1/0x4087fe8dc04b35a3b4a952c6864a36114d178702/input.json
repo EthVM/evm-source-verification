@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "ibAMM.sol": {
+      "content": "// SPDX-License-Identifier: MIT\r\npragma solidity 0.8.10;\r\n\r\ninterface erc20 {\r\n    function approve(address, uint) external returns (bool);\r\n    function transfer(address, uint) external returns (bool);\r\n    function transferFrom(address, address, uint) external returns (bool);\r\n    function balanceOf(address) external view returns (uint);\r\n}\r\n\r\ninterface synth {\r\n    function exchangeAtomically(\r\n        bytes32 src,\r\n        uint amount,\r\n        bytes32 dest,\r\n        bytes32 trackingCode\r\n    ) external returns (uint);\r\n\r\n    function getAmountsForExchange(\r\n        uint sourceAmount,\r\n        bytes32 sourceCurrencyKey,\r\n        bytes32 destinationCurrencyKey\r\n    )\r\n    external\r\n    view\r\n    returns (\r\n        uint amountReceived,\r\n        uint fee,\r\n        uint exchangeFeeRate\r\n    );\r\n}\r\n\r\ninterface curve {\r\n    function exchange(int128 i, int128 j, uint _dx, uint _min_dy) external returns (uint);\r\n    function get_dy(int128 i, int128 j, uint dx) external view returns (uint);\r\n}\r\n\r\ncontract ibAMM {\r\n    synth constant snx = synth(0xDC01020857afbaE65224CfCeDb265d1216064c59);\r\n    erc20 constant ibeur = erc20(0x96E61422b6A9bA0e068B6c5ADd4fFaBC6a4aae27);\r\n    erc20 constant seur = erc20(0xD71eCFF9342A5Ced620049e616c5035F1dB98620);\r\n    erc20 constant susd = erc20(0x57Ab1ec28D129707052df4dF418D58a2D46d5f51);\r\n\r\n    curve constant eurp = curve(0x19b080FE1ffA0553469D20Ca36219F17Fcf03859);\r\n\r\n    bytes32 constant eur_key = bytes32(\"sEUR\");\r\n    bytes32 constant usd_key = bytes32(\"sUSD\");\r\n\r\n    constructor() {\r\n        ibeur.approve(address(eurp), type(uint).max);\r\n        seur.approve(address(snx), type(uint).max);\r\n    }\r\n\r\n    function synth_swap(uint amount) external returns (uint) {\r\n        seur.transferFrom(msg.sender, address(this), amount);\r\n        uint _out = snx.exchangeAtomically(eur_key, amount, usd_key, \"ib\");\r\n        susd.transfer(msg.sender, _out);\r\n        return _out;\r\n    }\r\n\r\n    function get_dy(erc20 from, uint amount) external view returns (uint out) {\r\n        if (from == ibeur) {\r\n            return get_dy_out(amount);\r\n        } else if (from == susd) {\r\n            return get_dy_in(amount);\r\n        }\r\n    }\r\n\r\n    function get_dy_out(uint amount) public view returns (uint out) {\r\n        out = eurp.get_dy(0, 1, amount);\r\n        (out,,) = snx.getAmountsForExchange(out, eur_key, usd_key);\r\n    }\r\n\r\n    function get_dy_in(uint amount) public view returns (uint out) {\r\n        (out,,) = snx.getAmountsForExchange(amount, usd_key, eur_key);\r\n        out = eurp.get_dy(0, 1, out);\r\n    }\r\n\r\n    function swap(erc20 from, uint amount, uint minOut) external returns (uint out) {\r\n        if (from == ibeur) {\r\n            return swap_out(amount, minOut);\r\n        } else if (from == susd) {\r\n            return swap_in(amount, minOut);\r\n        }\r\n    }\r\n\r\n    function swap_out(uint amount, uint minOut) public returns (uint out) {\r\n        ibeur.transferFrom(msg.sender, address(this), amount);\r\n        out = eurp.exchange(0, 1, amount, 0);\r\n        out = snx.exchangeAtomically(eur_key, out, usd_key, \"ib\");\r\n        require(out > minOut, \"slippage\");\r\n        susd.transfer(msg.sender, out);\r\n    }\r\n\r\n    function swap_in(uint amount, uint minOut) public returns (uint out) {\r\n        susd.transferFrom(msg.sender, address(this), amount);\r\n        out = snx.exchangeAtomically(usd_key, amount, eur_key, \"ib\");\r\n        out = eurp.exchange(1, 0, out, 0);\r\n        require(out > minOut, \"slippage\");\r\n        ibeur.transfer(msg.sender, out);\r\n    }\r\n}"
+    }
+  }
+}

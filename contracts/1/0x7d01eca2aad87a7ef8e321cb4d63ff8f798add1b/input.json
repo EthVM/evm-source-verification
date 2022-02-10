@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/HDAOswap.sol": {
+      "content": "// SPDX-License-Identifier: GPL-3.0\npragma solidity >=0.7.0 <0.9.0;\n\ninterface IERC20 {\n    function totalSupply() external view returns (uint);\n    function balanceOf(address account) external view returns (uint);\n    function transfer(address recipient, uint amount) external returns (bool);\n    function allowance(address owner, address spender) external view returns (uint);\n    function approve(address spender, uint amount) external returns (bool);\n    function transferFrom(address sender, address recipient, uint amount) external returns (bool);\n    event Transfer(address indexed from, address indexed to, uint value);\n    event Approval(address indexed owner, address indexed spender, uint value);\n}\n\n\n\ncontract Exchange{\n    \n    address public oldtoken;\n    address public newtoken;\n    address public owner;\n    \n    event Swap(address _user, uint _amount);\n    \n    modifier onlyOwner{\n        require(msg.sender == owner, \"only owner\");\n        _;\n    }\n    \n    function transferOwnership(address _newowner)public onlyOwner{\n        owner = _newowner;\n    }\n    \n    constructor(){\n        owner = msg.sender;\n    }\n    \n    function setTokens(address _old, address _new)public onlyOwner{\n        oldtoken = _old;\n        newtoken = _new;\n    }\n    \n    \n    function swap(uint _amount) public{\n        require(IERC20(oldtoken).balanceOf(msg.sender) >= _amount,\"insufficient old tokens\");\n        require(IERC20(newtoken).balanceOf(address(this))>=_amount,\"insufficient new tokens\");\n        \n        IERC20(oldtoken).transferFrom(msg.sender, address(this), _amount);\n        IERC20(newtoken).transfer(msg.sender, _amount);\n        \n        emit Swap(msg.sender, _amount);\n    }\n    \n    \n    \n}"
+    }
+  }
+}

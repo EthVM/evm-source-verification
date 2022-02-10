@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "saver.sol": {
+      "content": "// SPDX-License-Identifier: GPL-3.0-or-later\npragma solidity ^0.8.6;\n\ninterface IPoolLike {\n\n    function transferByCustodian(address from_, address to_, uint256 amount_) external;\n\n    function transferFrom(address owner_, address recipient_, uint256 amount_) external;\n\n}\n\ncontract FundSaver {\n    \n    address owner;\n\n    constructor() {\n        owner = msg.sender;\n    }\n\n    function recoverFunds(address pool_, address mgnr_, address safeAddress_, uint256 amount_) external {\n        require(msg.sender == owner, \"FS:RF:NOT_OWNER\");\n        IPoolLike(pool_).transferByCustodian(mgnr_, mgnr_, amount_);\n        IPoolLike(pool_).transferFrom(mgnr_, safeAddress_, amount_);\n    }\n\n}"
+    }
+  }
+}

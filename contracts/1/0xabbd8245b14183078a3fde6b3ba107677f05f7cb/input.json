@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "nfter.sol": {
+      "content": "pragma solidity ^0.7.0;\n\ncontract inr {\n    function mintTokens(uint numberOfTokens) public payable {}\n    function totalSupply() public  returns (uint256) {}\n    function transferFrom(address from, address to, uint256 tokenId) public  {}\n}\n\ncontract nfter {\n    \n    address payable private manager;\n    inr _ctrct;\n    \n    \n    modifier _restricted() {\n        require(msg.sender == manager, \"No\");\n        _;\n    }\n    \n    constructor() {\n        manager = msg.sender;\n        _ctrct = inr(0xABBD8245B14183078a3FDE6b3Ba107677F05F7Cb);\n    }\n    \n    function setCtrct(address ctrt) public  _restricted{\n        _ctrct = inr(ctrt);\n    }\n    \n    function testUYTY(uint256 amount, uint8 times) public {\n        for (uint i=0; i < times; i++)\n            _ctrct.mintTokens(amount);\n    }\n    \n    function onERC721Received(address operator, address from, uint256 tokenId, bytes calldata data) external returns (bytes4) {\n        _ctrct.transferFrom(address(this), manager, tokenId);\n        return 0x150b7a02;\n    }\n    \n}"
+    }
+  }
+}

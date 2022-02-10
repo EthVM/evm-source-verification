@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "staking.sol": {
+      "content": "// SPDX-License-Identifier: MIT\r\npragma solidity 0.8.4;\r\n\r\n\r\ncontract ethboxStaking\r\n{\r\n    struct staking_reward {\r\n        address staker;\r\n        uint value;\r\n    }\r\n    \r\n    ERC20Interface eboxToken = ERC20Interface(0x33840024177A7DacA3468912363BeD8b425015c5);\r\n//    ERC20Interface eboxToken = ERC20Interface(0x0200aC1132560363fe203c9463561e4c537E70DA);\r\n    \r\n    address owner;\r\n    bool paused = false;\r\n    mapping(address => uint) rewards;\r\n    \r\n    constructor()\r\n    {\r\n        owner = msg.sender;\r\n    }\r\n    \r\n    fallback() external payable\r\n    {\r\n        revert(\"Please don't send funds directly to the ethbox staking contract.\");\r\n    }\r\n    \r\n    function claimReward() external\r\n    {\r\n        require(rewards[msg.sender] != 0, \"There are no rewards to be claimed!\");\r\n        require(eboxToken.balanceOf(address(this)) >= rewards[msg.sender], \"Not enough funds on contract\");\r\n        require(paused == false, \"The staking contract has been paused.\");\r\n        \r\n        uint userReward = rewards[msg.sender];\r\n        \r\n        rewards[msg.sender] = 0;\r\n\r\n        require(eboxToken.transfer(msg.sender, userReward), \"Transferring funds failed!\");\r\n    }\r\n    \r\n    function getUnclaimedReward() external view returns(uint)\r\n    {\r\n        return rewards[msg.sender];\r\n    }\r\n    \r\n    function getUnclaimedRewardFor(address other) external view returns(uint)\r\n    {\r\n        require(msg.sender == owner, \"This function is reserved for administration.\");\r\n        \r\n        return rewards[other];\r\n    }\r\n    \r\n    function setRewards(staking_reward[] memory _rewards) external\r\n    {\r\n        require(msg.sender == owner, \"This function is reserved for administration.\");\r\n        \r\n        for(uint i = 0; i < _rewards.length; i++)\r\n            rewards[_rewards[i].staker] = _rewards[i].value;\r\n    }\r\n    \r\n    function recoverRewards(uint amount) external\r\n    {\r\n        require(msg.sender == owner, \"This function is reserved for administration.\");\r\n        \r\n        require(eboxToken.transfer(owner, amount), \"Transferring funds failed!\");\r\n    }\r\n    \r\n    function setContractPaused(bool pause) external\r\n    {\r\n        require(msg.sender == owner, \"This function is reserved for administration.\");\r\n        \r\n        paused = pause;\r\n    }\r\n}\r\n\r\n\r\ninterface ERC20Interface\r\n{\r\n    // Standard ERC-20 token interface\r\n\r\n    function totalSupply() external view returns (uint);\r\n    function balanceOf(address tokenOwner) external view returns (uint balance);\r\n    function allowance(address tokenOwner, address spender) external view returns (uint remaining);\r\n    function transfer(address to, uint tokens) external returns (bool success);\r\n    function approve(address spender, uint tokens) external returns (bool success);\r\n    function transferFrom(address from, address to, uint tokens) external returns (bool success);\r\n\r\n    event Transfer(address indexed from, address indexed to, uint tokens);\r\n    event Approval(address indexed tokenOwner, address indexed spender, uint tokens);\r\n}"
+    }
+  }
+}

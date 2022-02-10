@@ -1,0 +1,32 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/lib/SafeMath.sol": {
+      "content": "pragma solidity >=0.6.6;\n\n// SPDX-License-Identifier: MIT\n\nlibrary SafeMath {\n\n    function add(uint a, uint b) internal pure returns (uint c) {\n        c = a + b;\n        require(c >= a);\n        return c;\n    }\n\n    function sub(uint a, uint b) internal pure returns (uint c) {\n        require(b <= a);\n        c = a - b;\n        return c;\n    }\n\n    function mul(uint a, uint b) internal pure returns (uint c) {\n        c = a * b;\n        require(a == 0 || c / a == b);\n        return c;\n    }\n\n    function div(uint a, uint b) internal pure returns (uint c) {\n        require(b > 0);\n        c = a / b;\n        return c;\n    }\n\n}"
+    },
+    "contracts/oppath.sol": {
+      "content": "pragma solidity >=0.6.6;\r\npragma experimental ABIEncoderV2;\r\n\r\nimport './lib/SafeMath.sol';\r\n\r\ninterface v3quoter{\r\n  function quoteExactInputSingle(\r\n        address tokenIn,\r\n        address tokenOut,\r\n        uint24 fee,\r\n        uint256 amountIn,\r\n        uint160 sqrtPriceLimitX96\r\n    ) external returns (uint256 amountOut);\r\n}\r\n\r\n\r\ninterface curvepool{\r\n    function get_dy(uint256 i , uint256 j, uint256 dx) external view returns (uint256 dy);\r\n    function get_dy(int128 i , int128 j, uint256 dx) external view returns (uint256 dy);\r\n    function get_dy_underlying(int128 i , int128 j, uint256 dx) external view returns (uint256 dy);\r\n}\r\n\r\n\r\ninterface customizeddex{\r\n    function getout(uint256 amountin, uint256[] calldata params) external returns(uint256 amountout);\r\n}\r\n\r\n\r\n\r\ncontract oppath {\r\n    using SafeMath for uint;\r\n    \r\n\r\n    \r\n    address quoter_addr = address(0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6);\r\n    \r\n    v3quoter quoter = v3quoter(quoter_addr);\r\n\r\n\r\n    constructor() public {\r\n\r\n    }\r\n    \r\n\r\n\r\n\r\n    struct dexinfo{\r\n        uint256 dexindex;\r\n        uint256[] params;\r\n    }\r\n\r\n\r\n\r\n\r\n    function v3out(address tokenIn, address tokenOut, uint24 fee, uint256 amountIn) private returns (uint256 amountOut) {\r\n        amountOut = quoter.quoteExactInputSingle(tokenIn, tokenOut, fee, amountIn, 0);\r\n    }\r\n\r\n\r\n    function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut) internal pure returns (uint amountOut) {\r\n        uint amountInWithFee = amountIn.mul(997);\r\n        uint numerator = amountInWithFee.mul(reserveOut);\r\n        uint denominator = reserveIn.mul(1000).add(amountInWithFee);\r\n        amountOut = numerator / denominator;\r\n    } \r\n  \r\n\r\n    function v2out(address pooladdr, uint256 flag, uint256 amountin) private returns(uint256 amountout){\r\n\r\n        bytes memory returnData;\r\n        (, returnData) = address(pooladdr).staticcall(abi.encodeWithSelector(0x0902f1ac));\r\n        (uint r0, uint r1, ) = abi.decode(returnData, (uint,uint,uint)); \r\n\r\n        if(flag == 0){\r\n            amountout = getAmountOut(amountin, r0, r1);\r\n        }else{\r\n            amountout = getAmountOut(amountin, r1, r0);\r\n        }\r\n\r\n    }\r\n\r\n\r\n\r\n\r\n    function detectarb(uint256 lowerbound, uint256 higherbound , uint256 step, dexinfo[] calldata infos) public returns(uint256 bestin, uint256 bestprofit, uint256[] memory amounts){\r\n        \r\n        uint256 amountin = lowerbound;\r\n\r\n        while(amountin < higherbound){\r\n            uint256 temp = amountin;\r\n\r\n            uint256[] memory tempamounts = new uint256[](infos.length);\r\n\r\n            for(uint i=0; i < infos.length; i++){\r\n\r\n                dexinfo memory di = infos[i];\r\n\r\n                if(di.dexindex == 0){\r\n                    temp = v2out(address(uint160(di.params[0])), di.params[1], temp);\r\n                    tempamounts[i] = temp;\r\n                }else if(di.dexindex == 1){\r\n                    temp = v3out(address(uint160(di.params[0])), address(uint160(di.params[1])), uint24(di.params[2]), temp);\r\n                    tempamounts[i] = temp;\r\n                }else if(di.dexindex == 2){\r\n                    temp = curvepool(address(uint160(di.params[0]))).get_dy(uint256(di.params[1]) , uint256(di.params[2]), temp);\r\n                    tempamounts[i] = temp;\r\n                }else if(di.dexindex == 3){\r\n                    temp = curvepool(address(uint160(di.params[0]))).get_dy(int128(uint128(di.params[1])) , int128(uint128(di.params[2])), temp);\r\n                    tempamounts[i] = temp;\r\n                }else if(di.dexindex == 4){\r\n                    temp = curvepool(address(uint160(di.params[0]))).get_dy_underlying(int128(uint128(di.params[1])) , int128(uint128(di.params[2])), temp);\r\n                    tempamounts[i] = temp;\r\n                }else{\r\n                    // for customrize\r\n                    temp = customizeddex(address(uint160(di.params[0]))).getout(temp, di.params);\r\n                    tempamounts[i] = temp;\r\n                }\r\n            }\r\n\r\n\r\n            if(temp < amountin){\r\n                break;\r\n            }\r\n\r\n            if(temp - amountin < bestprofit){\r\n                break;\r\n            }else{\r\n                bestprofit = temp - amountin;\r\n                bestin = amountin;\r\n                amounts = tempamounts;\r\n                amountin = amountin + step;\r\n            }\r\n\r\n        }\r\n\r\n\r\n    }\r\n\r\n\r\n}"
+    }
+  }
+}

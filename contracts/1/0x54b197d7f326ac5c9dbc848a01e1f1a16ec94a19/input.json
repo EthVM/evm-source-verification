@@ -1,0 +1,32 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "@chainlink/contracts/src/v0.6/interfaces/AggregatorV3Interface.sol": {
+      "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.6.0;\n\ninterface AggregatorV3Interface {\n\n  function decimals()\n    external\n    view\n    returns (\n      uint8\n    );\n\n  function description()\n    external\n    view\n    returns (\n      string memory\n    );\n\n  function version()\n    external\n    view\n    returns (\n      uint256\n    );\n\n  // getRoundData and latestRoundData should both raise \"No data present\"\n  // if they do not have data to report, instead of returning unset values\n  // which could be misinterpreted as actual reported values.\n  function getRoundData(\n    uint80 _roundId\n  )\n    external\n    view\n    returns (\n      uint80 roundId,\n      int256 answer,\n      uint256 startedAt,\n      uint256 updatedAt,\n      uint80 answeredInRound\n    );\n\n  function latestRoundData()\n    external\n    view\n    returns (\n      uint80 roundId,\n      int256 answer,\n      uint256 startedAt,\n      uint256 updatedAt,\n      uint80 answeredInRound\n    );\n\n}\n"
+    },
+    "github/mrahier17/SwissVault/SwissVault.sol": {
+      "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.6.0;\n\nimport \"@chainlink/contracts/src/v0.6/interfaces/AggregatorV3Interface.sol\";\n\ncontract SwissVault {\n    \n    mapping(address => uint) public balances;\n    mapping(address => mapping(address => uint)) public allowance;\n    uint public totalSupply = 21000000 * 10 ** 18;\n    string public name = \"SwissVault\";\n    string public symbol = \"SVLT\";\n    uint public decimals = 18;\n    uint public lastBTCPrice = 0;\n    uint public burnRatePerc = 0;\n    bool public isBurn = true;\n    address private owner;\n    \n    AggregatorV3Interface internal priceFeed;\n    \n    event Transfer(address indexed from, address indexed to, uint value);\n    event Approval(address indexed owner, address indexed spender, uint value);\n\n    /**\n     * Network: BSC Testnet\n     * Aggregator: BTC/USD\n     * Address: 0x5741306c21795FdCBb9b265Ea0255F499DFe515C\n     */    \n    constructor() public {\n        balances[msg.sender] = totalSupply;\n        owner = msg.sender;\n        priceFeed = AggregatorV3Interface(0x5741306c21795FdCBb9b265Ea0255F499DFe515C);\n    }\n    \n    modifier onlyOwner() {\n        require(owner == msg.sender);\n            _;\n    }\n    \n    // Get the latest BTC price\n    function getBTCPrice() public view returns (int) {\n        (\n            uint80 roundID, \n            int price,\n            uint startedAt,\n            uint timeStamp,\n            uint80 answeredInRound\n        ) = priceFeed.latestRoundData();\n        return price;\n    } \n    \n    // Set the last BTC price\n    function setLastBTCPrice(uint value) onlyOwner public {\n      lastBTCPrice = value;    \n    }\n    \n    // Set the burn flag\n    function setIsBurn(bool value) onlyOwner public {\n      isBurn = value;    \n    }    \n    \n    // Calculate the burn rate based on BTC price\n    function calculateBurnRate(uint value) private returns (uint)  {\n        if (isBurn == false){\n          lastBTCPrice = 0;    \n        }else if (lastBTCPrice == 0) {\n          lastBTCPrice = uint(getBTCPrice());   \n        }\n        \n        uint currentBTCPrice = uint(getBTCPrice());\n        \n        burnRatePerc = (lastBTCPrice * 1000) / currentBTCPrice;\n        lastBTCPrice = currentBTCPrice;\n        \n        return (value * burnRatePerc) / 100000;\n      }    \n    \n    \n    // Returns the balance of an address\n    function balanceOf(address owners) public view returns(uint){\n        return balances[owners];\n    }\n    \n    // Transfer token to an address\n    function transfer(address to, uint value) public returns(bool){\n        require(balanceOf(msg.sender) >= value, 'balance too low');\n        \n        uint tokensToBurn = calculateBurnRate(value);\n        uint tokensToTransfer = value - tokensToBurn;        \n\n        balances[msg.sender] = balances[msg.sender] - value;\n        balances[to] = balances[to] + tokensToTransfer;  \n        \n        totalSupply = totalSupply - tokensToBurn;\n\n        emit Transfer(msg.sender, to, tokensToTransfer);\n        emit Transfer(msg.sender, address(0), tokensToBurn);\n\n        return true;\n    }\n    \n    // Transfer token from an address to another address\n    function transferFrom(address from, address to, uint value) public returns(bool){\n        require(balanceOf(from) >= value, 'balance too low');\n        require(allowance[from][msg.sender] >= value, 'allowance too low');\n        \n        uint tokensToBurn = calculateBurnRate(value);\n        uint tokensToTransfer = value - tokensToBurn;          \n        \n        balances[from] = balances[from] - value;\n        balances[to] = balances[to] + tokensToTransfer;  \n        \n        totalSupply = totalSupply - tokensToBurn;\n\n        emit Transfer(from, to, tokensToTransfer);\n        emit Transfer(from, address(0), tokensToBurn);\n        \n        return true;\n    }\n    \n    // Approve the transaction\n    function approve(address spender, uint value) public returns(bool){\n        allowance[msg.sender][spender] = value;\n        emit Approval(msg.sender, spender, value);\n        return true;\n    }\n}"
+    }
+  }
+}

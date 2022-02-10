@@ -1,0 +1,32 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "eth/Admin.sol": {
+      "content": "// SPDX-License-Identifier: GPL-3.0\r\n\r\npragma solidity ^0.8.0;\r\nimport \"./IAdmin.sol\";\r\n\r\n/**\r\n * @title Karastar Admin\r\n * @dev Authorization management, does not require proxy, is deployed first.\r\n */\r\ncontract Admin is IAdmin {\r\n    address public master = 0x9431670006EEcE8e493cF17016cDE08bDA23Eb64; // master\r\n    address[] public auditors = [\r\n        0x9431670006EEcE8e493cF17016cDE08bDA23Eb64,\r\n        0x525B179883A1de2670928B2562796Aa277584CF0,\r\n        0x3374a84F4aFBF964BEf576f47e8E9A25DEfEaEfa\r\n    ]; // auditors\r\n\r\n    bool public mustAudit = false; // must audit\r\n\r\n    mapping(address => mapping(address => address)) _transAuditor; // transfer admin (admin=>(from=>to))\r\n    mapping(address => address) _transMaster; // transfer master(admin=>to)\r\n\r\n    mapping(address => address[]) _newAddress; // audit for new address(new address=>admin)\r\n    address[] _lastAddress; // audited address\r\n\r\n    /**\r\n     * @dev Throws if called by any account other than the master.\r\n     */\r\n    modifier onlyMaster() {\r\n        require(master == msg.sender, \"Ownable: caller is not the master\");\r\n        _;\r\n    }\r\n\r\n    /**\r\n     * @dev Throws if called by any account other than the auditor.\r\n     */\r\n    modifier onlyAuditor() {\r\n        require(\r\n            _addressOf(auditors, msg.sender) > -1,\r\n            \"Ownable: caller is not the auditor\"\r\n        );\r\n        _;\r\n    }\r\n\r\n    /**\r\n     * @dev Open the audit\r\n     */\r\n    function openAudit() public onlyMaster {\r\n        mustAudit = true;\r\n    }\r\n\r\n    /**\r\n     * @dev Transfer of authority.\r\n     * At least two people agreed\r\n     */\r\n    function transferAdmin(address from, address to) public onlyAuditor {\r\n        int256 index = _addressOf(auditors, from);\r\n        require(index >= 0, \"from error\");\r\n\r\n        _transAuditor[msg.sender][from] = to;\r\n        for (uint256 i = 0; i < auditors.length; i++) {\r\n            if (\r\n                auditors[i] != msg.sender &&\r\n                _transAuditor[auditors[i]][from] == to\r\n            ) {\r\n                // audited\r\n                auditors[uint256(index)] = to;\r\n                delete _transAuditor[auditors[i]][from];\r\n                delete _transAuditor[msg.sender][from];\r\n            }\r\n        }\r\n    }\r\n\r\n    /**\r\n     * @dev Transfer of master.\r\n     * At least two people agreed, one of them must be the original master user\r\n     * Master's secrect key cannot be lost\r\n     */\r\n    function transferMaster(address to) public onlyAuditor {\r\n        _transMaster[msg.sender] = to;\r\n        if (_transMaster[master] == to) {\r\n            // audited\r\n            int256 index = _addressOf(auditors, master);\r\n            if (index > -1) {\r\n                auditors[uint256(index)] = to;\r\n            }\r\n            master = to;\r\n        }\r\n    }\r\n\r\n    /**\r\n     * @dev Allows the agent to upgrade to the new address\r\n     */\r\n    function updateNew(address[] memory to) public onlyAuditor {\r\n        for (uint256 i = 0; i < to.length; i++) {\r\n            if (_addressOf(_newAddress[to[i]], msg.sender) < 0) {\r\n                _newAddress[to[i]].push(msg.sender);\r\n            }\r\n        }\r\n        _lastAddress = to;\r\n    }\r\n\r\n    /**\r\n     * @dev Throws If fail the audit.\r\n     */\r\n    function mustAudited(address to) override public view {\r\n        if (mustAudit) {\r\n            require(\r\n                _newAddress[to].length > 1 && _addressOf(_lastAddress, to) > -1,\r\n                \"must be audited\"\r\n            );\r\n        }\r\n    }\r\n\r\n    /**\r\n     * @dev Throws if called by any account other than the master.\r\n     */\r\n    function mustMaster(address addr) override public view {\r\n        require(master == addr, \"caller is not the master\");\r\n    }\r\n\r\n    /**\r\n     * @dev Whether  the master.\r\n     */\r\n    function isMaster(address addr) override public view returns (bool) {\r\n        return master == addr;\r\n    }\r\n\r\n    /**\r\n     * @dev array indexOf, same as javascript\r\n     */\r\n    function _addressOf(address[] memory arr, address addr)\r\n        internal\r\n        pure\r\n        returns (int256)\r\n    {\r\n        for (uint256 i = 0; i < arr.length; i++) {\r\n            if (arr[i] == addr) {\r\n                return int256(i);\r\n            }\r\n        }\r\n        return -1;\r\n    }\r\n}"
+    },
+    "eth/IAdmin.sol": {
+      "content": "// SPDX-License-Identifier: GPL-3.0\r\n\r\npragma solidity ^0.8.0;\r\n\r\ninterface IAdmin {\r\n    function mustAudited(address to) external view;\r\n    function mustMaster(address addr) external view;\r\n    function isMaster(address addr) external view returns (bool);\r\n}"
+    }
+  }
+}

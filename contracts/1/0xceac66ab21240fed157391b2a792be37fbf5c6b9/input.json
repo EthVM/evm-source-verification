@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "BuccaneerLOCK.sol": {
+      "content": "pragma solidity ^0.4.2;\r\n\r\ninterface BuccV2 {\r\n    function transferFrom(address from, address to, uint256 value)\r\n    external returns (bool);\r\n    function transfer(address to, uint256 value) external returns (bool);\r\n}\r\n\r\n\r\ncontract owned {\r\n    address public owner;\r\n\r\n    function owned() {\r\n        owner = msg.sender;\r\n    }\r\n\r\n    modifier onlyOwner {\r\n        if (msg.sender != owner) throw;\r\n        _;\r\n    }\r\n}\r\n\r\n\r\ncontract BuccaneerLOCK is owned {\r\n    //BUCC contract\r\n    BuccV2 private buccInstance;\r\n    address v2Address = address(0xd5a7d515fb8b3337acb9b053743e0bc18f50c855);\r\n    //Time Lock \r\n    uint256 timeLOCK = now + 30 days;\r\n    address doubleLOCK = address(0x909A20070DE16b798BFB53357f62604B687FB685);\r\n    //Number of Tokens\r\n    uint256 numberofBUCC;\r\n\r\n    //For showing number of tokens\r\n    function displayBalance() public view returns (uint256) {\r\n        return numberofBUCC / 10000000000; \r\n    }\r\n    \r\n    //For showing number + decimal of tokens (solidity has no decimals so thus, +10 decimals or ten zeros)\r\n    function forContractBalance() public view returns (uint256) {\r\n        return numberofBUCC;\r\n    }\r\n    \r\n    //One way deposit function\r\n    function depositToLOCK(uint256 amountToDeposit) public onlyOwner returns (bool) {\r\n        require (doubleLOCK == msg.sender);\r\n        buccInstance = BuccV2(v2Address);\r\n        numberofBUCC += amountToDeposit;\r\n        return buccInstance.transferFrom(doubleLOCK, address(this), amountToDeposit);\r\n    }\r\n    \r\n    //When the lock expires, withdraw\r\n    function lockExpire(uint256 amountToWithdraw) public onlyOwner returns (bool) {\r\n        require (doubleLOCK == msg.sender);\r\n        //time lock displayed here\r\n        require(now > timeLOCK);\r\n        buccInstance = BuccV2(v2Address);\r\n        numberofBUCC -= amountToWithdraw;\r\n        return buccInstance.transfer(doubleLOCK, amountToWithdraw);\r\n    }\r\n}"
+    }
+  }
+}

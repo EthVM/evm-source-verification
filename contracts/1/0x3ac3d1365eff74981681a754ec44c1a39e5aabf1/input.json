@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "balanceHelper_2021-08-06.sol": {
+      "content": "// SPDX-License-Identifier: GPL-3.0\r\npragma solidity ^0.8.6;\r\n\r\n\r\n\r\nabstract contract ERC20Interface {\r\n    function balanceOf(address whom) view public virtual returns (uint256);\r\n}\r\n\r\ncontract balanceHelper {\r\n    \r\n    struct balancePair\r\n    {\r\n        address addr; \r\n        uint256 etherBalance;\r\n        uint256[] tokenBalances; \r\n    }\r\n\r\n    function _getTokenBalance(address _from, address _tokenAddress) view internal returns (uint256) {\r\n        try ERC20Interface(_tokenAddress).balanceOf(_from) returns (uint256 v) {\r\n            return v;\r\n        } catch {\r\n            return 0;\r\n        }\r\n    }\r\n    \r\n    function _getEtherBalance(address _from) view internal returns (uint256) {\r\n        return address(_from).balance;\r\n    }\r\n    \r\n    function getBalances(address[] memory _addresses, address[] memory _tokens) view public returns (balancePair[] memory) {\r\n        balancePair[] memory result = new balancePair[](_addresses.length);\r\n        \r\n\r\n        for (uint256 a = 0; a < _addresses.length; a++) {\r\n\r\n            uint256[] memory tokenBal = new uint256[](_tokens.length);\r\n            uint256 etherBal = _getEtherBalance(_addresses[a]);\r\n\r\n            for (uint256 t = 0; t < _tokens.length; t++) {\r\n                tokenBal[t] = _getTokenBalance(_addresses[a], _tokens[t]);\r\n            }\r\n            \r\n            result[a] = balancePair(_addresses[a], etherBal, tokenBal);\r\n        }\r\n        return result;\r\n    }\r\n\r\n}"
+    }
+  }
+}

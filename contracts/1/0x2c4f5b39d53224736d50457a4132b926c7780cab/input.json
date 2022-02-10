@@ -1,0 +1,32 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/ERC20Interface.sol": {
+      "content": "pragma solidity ^0.6.0;\r\n/**\r\n * Contract that exposes the needed erc20 token functions\r\n */\r\n\r\ninterface ERC20Interface  {\r\n  // Send _value amount of tokens to address _to\r\n  function transfer(address _to, uint256 _value) external returns (bool success);\r\n  // Get the account balance of another account with address _owner\r\n  function balanceOf(address _owner) external returns (uint256 balance);\r\n}"
+    },
+    "browser/mehr001.sol": {
+      "content": "pragma solidity 0.6.0;\r\nimport \"./ERC20Interface.sol\";\r\n/**\r\n * Contract that will forward any incoming Ether to the creator of the contract\r\n */\r\ncontract Forwarder {\r\n  // Address to which any funds sent to this contract will be forwarded\r\n  address payable modirAddress;\r\n \r\n  ////event ForwarderDeposited(address from, uint value, bytes data);\r\n  ////event TokensFlushed(address forwarderAddress, uint value, address tokenContractAddress);\r\n\r\n  /**\r\n   * Create the contract, and sets the destination address to that of the creator\r\n   */\r\n  constructor() public{\r\n    modirAddress = 0x6C89BBc038FF1516F0bDf166D434Ae9356c81574;\r\n  }\r\n\r\n  /**\r\n   * Modifier that will execute internal code block only if the sender is the parent address\r\n   */\r\n  modifier onlyModir {\r\n    if (msg.sender != modirAddress) {\r\n      revert();\r\n    }\r\n    _;\r\n  }\r\n\r\n  /**\r\n   * Default function; Gets called when Ether is deposited, and forwards it to the parent address\r\n   */\r\n  receive() external payable {\r\n    // throws on failure\r\n    modirAddress.transfer(msg.value);\r\n    // Fire off the deposited event if we can forward it\r\n    ////emit ForwarderDeposited(msg.sender, msg.value, msg.data);\r\n  }\r\n  \r\n  function changeParent(address payable newParentAddress) public onlyModir{\r\n      modirAddress = newParentAddress;\r\n  }\r\n\r\n  /**\r\n   * Execute a token transfer of the full balance from the forwarder token to the parent address\r\n   * @param tokenContractAddress the address of the erc20 token contract\r\n   */\r\n  function flushTokens(address tokenContractAddress) public onlyModir {\r\n    ERC20Interface instance = ERC20Interface(tokenContractAddress);\r\n    uint256 forwarderBalance = instance.balanceOf(address(this));\r\n    if (forwarderBalance == 0) {\r\n      revert();\r\n    }\r\n    if (!instance.transfer(modirAddress, forwarderBalance)) {\r\n      revert();\r\n    }\r\n    // fire of an event just for the record!\r\n    ////emit TokensFlushed(address(this), forwarderBalance, tokenContractAddress);\r\n  }\r\n\r\n  /**\r\n   * It is possible that funds were sent to this address before the contract was deployed.\r\n   * We can flush those funds to the parent address.\r\n   */\r\n  function flush() public {\r\n    // throws on failure\r\n    modirAddress.transfer(address(this).balance);\r\n  }\r\n}"
+    }
+  }
+}

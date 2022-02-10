@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "ERC20BatchTransfer.sol": {
+      "content": "pragma solidity ^0.5.7;\r\n/**\r\n * @title ERC20 interface\r\n * @dev see https://eips.ethereum.org/EIPS/eip-20\r\n */\r\ninterface IERC20 {\r\n    function transfer(address to, uint256 value) external returns (bool);\r\n\r\n    function approve(address spender, uint256 value) external returns (bool);\r\n\r\n    function transferFrom(address from, address to, uint256 value) external returns (bool);\r\n\r\n    function totalSupply() external view returns (uint256);\r\n\r\n    function balanceOf(address who) external view returns (uint256);\r\n\r\n    function allowance(address owner, address spender) external view returns (uint256);\r\n\r\n    event Transfer(address indexed from, address indexed to, uint256 value);\r\n\r\n    event Approval(address indexed owner, address indexed spender, uint256 value);\r\n    \r\n    event Freeze(address indexed from, uint256 value);\r\n    \r\n    event Unfreeze(address indexed from, uint256 value);\r\n}\r\n\r\ncontract ERC20BatchTransfer{\r\n    address public contractOwner;\r\n    bool isWorking = false;\r\n    \r\n    constructor() public{\r\n        contractOwner = msg.sender;\r\n    }\r\n    \r\n    function batchTransfer(IERC20 _contract, address[] memory _tos, uint256[] memory _values) public payable{\r\n        require(_tos.length <= 100,\"The number of addresses exceeds the limit\");\r\n        require(isWorking,\"Contract is disenable\");\r\n        require(_tos.length == _values.length);\r\n        uint256 sumTransferAmount = 0;\r\n        for (uint i = 0; i < _values.length; i++){\r\n            require(sumTransferAmount + _values[i] >= sumTransferAmount);\r\n            sumTransferAmount += _values[i];\r\n        }\r\n        require(_contract.balanceOf(msg.sender) >= sumTransferAmount);\r\n        require(_contract.allowance(msg.sender,address(this)) >= sumTransferAmount);\r\n        \r\n        for (uint i = 0; i < _tos.length; i++){\r\n            _contract.transferFrom(msg.sender,_tos[i],_values[i]);\r\n        }\r\n    }\r\n    \r\n    function enable() public{\r\n        require(msg.sender == contractOwner);\r\n        isWorking = true;\r\n    }\r\n    \r\n    function disenable() public{\r\n        require(msg.sender == contractOwner);\r\n        isWorking = false;\r\n    }\r\n}"
+    }
+  }
+}

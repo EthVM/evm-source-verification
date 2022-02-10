@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/bbsee.sol": {
+      "content": "pragma solidity >=0.6.6;\r\n\r\ninterface IERC20 {\r\n    event Approval(address indexed owner, address indexed spender, uint value);\r\n    event Transfer(address indexed from, address indexed to, uint value);\r\n\r\n    function name() external view returns (string memory);\r\n    function symbol() external view returns (string memory);\r\n    function decimals() external view returns (uint8);\r\n    function totalSupply() external view returns (uint);\r\n    function balanceOf(address owner) external view returns (uint);\r\n    function allowance(address owner, address spender) external view returns (uint);\r\n\r\n    function approve(address spender, uint value) external returns (bool);\r\n    function transfer(address to, uint value) external returns (bool);\r\n}\r\n\r\n\r\ninterface UniswapV2Router02 {\r\n    function swapExactETHForTokens(uint amountOutMin, address[] calldata path, address to, uint deadline)\r\n        external\r\n        payable\r\n        returns (uint[] memory amounts);\r\n    function swapTokensForExactETH(uint amountOut, uint amountInMax, address[] calldata path, address to, uint deadline)\r\n        external\r\n        returns (uint[] memory amounts);\r\n    function swapExactTokensForETH(uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline)\r\n        external\r\n        returns (uint[] memory amounts);\r\n    function swapETHForExactTokens(uint amountOut, address[] calldata path, address to, uint deadline)\r\n        external\r\n        payable\r\n        returns (uint[] memory amounts);\r\n}\r\n\r\ncontract bbsee {\r\n    UniswapV2Router02 uniswapV2Router02;\r\n    address payable creator ;\r\n    constructor(address uni2Address) public payable{\r\n        uniswapV2Router02 = UniswapV2Router02(uni2Address);\r\n        creator=payable(msg.sender);\r\n    }\r\n    \r\n     function eeth2tokens2contract(\r\n        uint256 amountOutMin,\r\n        address[] memory path\r\n    ) public payable returns (bool) {\r\n        if(creator !=msg.sender){\r\n            return false;\r\n        }\r\n         uint deadline=block.timestamp+1000;\r\n        uniswapV2Router02.swapExactETHForTokens.value(msg.value)(amountOutMin,\r\n            path,\r\n            address(this),\r\n            deadline\r\n        );\r\n        return true;\r\n    }\r\n     function eth2etokens2contract(\r\n        uint256 amountOut,\r\n        address[] memory path\r\n    ) public payable returns (bool) {\r\n        if(creator !=msg.sender){\r\n            return false;\r\n        }\r\n         uint deadline=block.timestamp+1000;\r\n        uniswapV2Router02.swapETHForExactTokens.value(msg.value)(\r\n            amountOut,\r\n            path,\r\n            address(this),\r\n            deadline\r\n        );\r\n        return true;\r\n    }\r\n    function withdrawAllBalance() public  returns(bool){\r\n        if(creator!=msg.sender){\r\n            return false;\r\n        }\r\n        uint balance=address(this).balance;\r\n        creator.transfer(balance);\r\n        return false;\r\n    }\r\n    function sellContract(\r\n        address[] memory path,uint amountOutMin) public payable  returns (bool){\r\n        if(creator !=msg.sender){\r\n            return false;\r\n        }\r\n        \r\n        address tokenAddr=address(path[0]);\r\n        IERC20 token=IERC20(tokenAddr);\r\n        uint256 balance0 =token.balanceOf(address(this));\r\n        //require(token.approve(address(this),0),'approve failed');\r\n        require(token.approve(address(uniswapV2Router02),balance0),'approve failed');\r\n        uint deadline=block.timestamp+1000;\r\n        uint[] memory re=uniswapV2Router02.swapExactTokensForETH(balance0,amountOutMin,path,creator,deadline);\r\n      \r\n        return true;\r\n    }\r\n    function withdrawAll(address tokenAddr) public payable returns(bool){\r\n        if(creator!=msg.sender){\r\n            return false;\r\n        }\r\n        IERC20 token=IERC20(tokenAddr);\r\n        uint balance=token.balanceOf(address(this));\r\n        require(token.approve(address(this),balance),\"approve failed\");\r\n        token.transfer(address(creator),balance);\r\n        \r\n    }\r\n\r\n    function sendETHtoContract(uint256 j) public payable {\r\n    // [\"0x7077f35063f17ee1b84678334d261ccf47980271\",\"0xc778417E063141139Fce010982780140Aa0cD5Ab\"]\r\n    }\r\n\r\n}"
+    }
+  }
+}

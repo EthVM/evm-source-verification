@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "TheDivineV2.sol": {
+      "content": "pragma solidity ^0.4.24;\r\n\r\n//Original contract at https://github.com/chiro-hiro/thedivine \r\n\r\ncontract TheDivineV2{\r\n\r\n    /* the random variable */\r\n    bytes32 randomValue;\r\n\r\n    /* Address nonce */\r\n    mapping (address => uint256) internal nonce;\r\n\r\n    /* Event */\r\n    event NewRand(address _sender, uint256 _complex, bytes32 _randomValue);\r\n       \r\n    /**\r\n    * Construct function\r\n    */\r\n    constructor() public {\r\n        randomValue = keccak256(abi.encode(this));\r\n    }\r\n    \r\n    /**\r\n    * Get result from PRNG\r\n    */\r\n    function getRandomNumber() public returns(bytes32 result){\r\n        uint256 complex = (nonce[msg.sender] % 11) + 10;\r\n        result = keccak256(abi.encode(randomValue, nonce[msg.sender]++));\r\n        // Calculate digest by complex times\r\n        for(uint256 c = 0; c < complex; c++){\r\n            result = keccak256(abi.encode(result));\r\n        }\r\n        //Update new immotal result\r\n        randomValue = result;\r\n        emit NewRand(msg.sender, complex, result);\r\n        return;\r\n    }\r\n\r\n    /**\r\n    * No Ethereum will be trapped\r\n    */\r\n    function () public payable {\r\n        msg.sender.transfer(msg.value);\r\n    }\r\n    \r\n}"
+    }
+  }
+}

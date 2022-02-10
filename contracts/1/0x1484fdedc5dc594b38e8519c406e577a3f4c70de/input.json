@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/RootAddress.sol": {
+      "content": "pragma solidity = 0.6.0;\n\n\n\ncontract RootAddress\n{\n\taddress[] private   manager;\n\tuint8 private\t\tmanagerMin\t\t= 2;\n\tuint8 private\t\tmanagerMax\t\t= 250;\n\tmapping (string => address) private mcwsContractAddress;\n\n\n\n\tevent log001 ( address );\n\tevent log002 ( address );\n\tevent log010 ( string, address );\n\n\n\n\tconstructor () public\n\t{\n\t    manager.push ( msg.sender );\n\t    emit log001 ( msg.sender );\n\t\t// superAddress\n\t\t// counterAddress\n\t\t// pCoreAddress\n\t}\n\n\n\n\tmodifier onlyInManager { require ( getIndex(manager,msg.sender) < 255, \"RAMSG001\" ); _; }\n\n\n\n\tfunction getManagers () external view returns ( address[] memory )\n\t{\n\t\treturn manager;\n\t}\n\tfunction getAddress ( string calldata _key ) external view returns ( address )\n\t{\n\t\treturn mcwsContractAddress[_key];\n\t}\n\tfunction getIndex ( address[] memory _group, address _address  ) private pure returns ( uint8 )\n\t{\n\t\tfor ( uint8 i=0; i<_group.length; i++ )\n\t\t\tif ( _group[i] == _address ) return i;\n\t\treturn uint8(255);\n\t}\n\n\n\n\tfunction removeInArray ( address[] storage _group, uint8 _index ) private\n\t{\n\t    if ( _index < _group.length-1 )\n    \t    _group[_index] = _group[_group.length-1];\n\t    _group.pop();\n\t}\n\tfunction setAddress ( string calldata _key, address _address ) external payable onlyInManager\n\t{\n\t    mcwsContractAddress[_key] = _address;\n\t\temit log010 ( _key, _address );\n\t}\n\tfunction addManager ( address _manager ) external payable onlyInManager\n\t{\n\t\trequire ( manager.length < managerMax, \"RAMSG002\" );\n\t    require ( getIndex(manager,_manager) == 255, \"RAMSG003\" );\n\t\tmanager.push ( _manager );\n\t\temit log001 ( _manager );\n\t}\n\tfunction removeManager ( address _manager ) external payable onlyInManager\n\t{\n\t\trequire ( manager.length > managerMin, \"RAMSG004\" );\n\t\tuint8 idx = getIndex ( manager, _manager );\n\t\trequire ( idx < 255, \"RAMSG005\" );\n\t\tremoveInArray ( manager, idx );\n\t\temit log002 ( _manager );\n\t}\n}\n"
+    }
+  }
+}

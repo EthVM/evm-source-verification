@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "ProxySwapAsset.sol": {
+      "content": "pragma solidity >=0.5.0;\r\n\r\nlibrary Helper {\r\n    function safeTransfer(address token, address to, uint256 value) internal {\r\n        // bytes4(keccak256(bytes('transfer(address,uint256)')));\r\n        (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0xa9059cbb, to, value));\r\n        require(success && (data.length == 0 || abi.decode(data, (bool))), 'Helper::safeTransfer: failed');\r\n    }\r\n\r\n    function safeTransferFrom(address token, address from, address to, uint256 value) internal {\r\n        // bytes4(keccak256(bytes('transferFrom(address,address,uint256)')));\r\n        (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0x23b872dd, from, to, value));\r\n        require(success && (data.length == 0 || abi.decode(data, (bool))), 'Helper::safeTransferFrom: failed');\r\n    }\r\n}\r\n\r\ncontract ProxySwapAsset {\r\n    event LogChangeMPCOwner(address indexed oldOwner, address indexed newOwner, uint indexed effectiveTime);\r\n    event LogChangeLpProvider(address indexed oldProvider, address indexed newProvider);\r\n    event LogSwapin(bytes32 indexed txhash, address indexed account, uint amount);\r\n    event LogSwapout(address indexed account, address indexed bindaddr, uint amount);\r\n\r\n    address private _oldOwner;\r\n    address private _newOwner;\r\n    uint256 private _newOwnerEffectiveTime;\r\n    uint256 constant public effectiveInterval = 2 * 24 * 3600;\r\n\r\n    address public proxyToken;\r\n    address public lpProvider;\r\n\r\n    modifier onlyOwner() {\r\n        require(msg.sender == owner(), \"only owner\");\r\n        _;\r\n    }\r\n\r\n    modifier onlyProvider() {\r\n        require(msg.sender == lpProvider, \"only lp provider\");\r\n        _;\r\n    }\r\n\r\n    constructor(address _proxyToken, address _lpProvider) public {\r\n        proxyToken = _proxyToken;\r\n        lpProvider = _lpProvider;\r\n        _newOwner = msg.sender;\r\n        _newOwnerEffectiveTime = block.timestamp;\r\n    }\r\n\r\n    function owner() public view returns (address) {\r\n        return block.timestamp >= _newOwnerEffectiveTime ? _newOwner : _oldOwner;\r\n    }\r\n\r\n    function changeMPCOwner(address newOwner) public onlyOwner returns (bool) {\r\n        require(newOwner != address(0), \"new owner is the zero address\");\r\n        _oldOwner = owner();\r\n        _newOwner = newOwner;\r\n        _newOwnerEffectiveTime = block.timestamp + effectiveInterval;\r\n        emit LogChangeMPCOwner(_oldOwner, _newOwner, _newOwnerEffectiveTime);\r\n        return true;\r\n    }\r\n\r\n    function changeLpProvider(address newProvider) public onlyProvider returns (bool) {\r\n        require(newProvider != address(0), \"new provider is the zero address\");\r\n        emit LogChangeLpProvider(lpProvider, newProvider);\r\n        lpProvider = newProvider;\r\n    }\r\n\r\n    function withdraw(address to, uint256 amount) public onlyProvider {\r\n        Helper.safeTransfer(proxyToken, to, amount);\r\n    }\r\n\r\n    function Swapin(bytes32 txhash, address account, uint256 amount) public onlyOwner returns (bool) {\r\n        Helper.safeTransfer(proxyToken, account, amount);\r\n        emit LogSwapin(txhash, account, amount);\r\n        return true;\r\n    }\r\n\r\n    // keep same interface with 'amount' parameter though it's unnecessary here\r\n    function Swapout(uint256 amount, address bindaddr) public returns (bool) {\r\n        require(bindaddr != address(0), \"bind address is the zero address\");\r\n        Helper.safeTransferFrom(proxyToken, msg.sender, address(this), amount);\r\n        emit LogSwapout(msg.sender, bindaddr, amount);\r\n        return true;\r\n    }\r\n}"
+    }
+  }
+}

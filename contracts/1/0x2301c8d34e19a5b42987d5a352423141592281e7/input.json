@@ -1,0 +1,32 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "Owned.sol": {
+      "content": "// SPDX-License-Identifier: MIT\r\npragma solidity >=0.4.0 <0.7.0;\r\n\r\ncontract Owned {\r\n    address owner;\r\n\r\n    constructor() public {\r\n        owner = msg.sender;\r\n    }\r\n\r\n    modifier onlyOwner {\r\n        require(\r\n            msg.sender == owner,\r\n            \"Only owner can call this function.\"\r\n        );\r\n        _;\r\n    }\r\n\r\n    function transferOwnership(address newOwner) public onlyOwner {\r\n        owner = newOwner;\r\n    }\r\n}\r\n"
+    },
+    "browser/Vault.sol": {
+      "content": "// SPDX-License-Identifier: MIT\r\npragma solidity >=0.4.0 <0.7.0;\r\n\r\nimport \"Owned.sol\";\r\n\r\ncontract Vault is Owned {\r\n    function withdraw() public onlyOwner {\r\n        require(\r\n            block.timestamp > 2137158000,\r\n            \"Not yet.\"\r\n        );\r\n        msg.sender.transfer(address(this).balance);\r\n    }\r\n\r\n    receive() external payable {}\r\n}\r\n"
+    }
+  }
+}

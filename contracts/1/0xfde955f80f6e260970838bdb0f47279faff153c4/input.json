@@ -1,0 +1,50 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "./contracts/lib/Decimal.sol": {
+      "content": "// SPDX-License-Identifier: MIT\n\npragma solidity ^0.5.16;\npragma experimental ABIEncoderV2;\n\nimport {SafeMath} from \"../lib/SafeMath.sol\";\nimport {Math} from \"./Math.sol\";\n\n/**\n * @title Decimal\n *\n * Library that defines a fixed-point number with 18 decimal places.\n */\nlibrary Decimal {\n    using SafeMath for uint256;\n\n    // ============ Constants ============\n\n    uint256 constant BASE = 10**18;\n\n    // ============ Structs ============\n\n    struct D256 {\n        uint256 value;\n    }\n\n    // ============ Functions ============\n\n    function one()\n        internal\n        pure\n        returns (D256 memory)\n    {\n        return D256({ value: BASE });\n    }\n\n    function onePlus(\n        D256 memory d\n    )\n        internal\n        pure\n        returns (D256 memory)\n    {\n        return D256({ value: d.value.add(BASE) });\n    }\n\n    function mul(\n        uint256 target,\n        D256 memory d\n    )\n        internal\n        pure\n        returns (uint256)\n    {\n        return Math.getPartial(target, d.value, BASE);\n    }\n\n    function mul(\n        D256 memory d1,\n        D256 memory d2\n    )\n        internal\n        pure\n        returns (D256 memory)\n    {\n        return Decimal.D256({ value: Math.getPartial(d1.value, d2.value, BASE) });\n    }\n\n    function div(\n        uint256 target,\n        D256 memory d\n    )\n        internal\n        pure\n        returns (uint256)\n    {\n        return Math.getPartial(target, BASE, d.value);\n    }\n\n    function add(\n        D256 memory d,\n        uint256 amount\n    )\n        internal\n        pure\n        returns (D256 memory)\n    {\n        return D256({ value: d.value.add(amount) });\n    }\n\n    function sub(\n        D256 memory d,\n        uint256 amount\n    )\n        internal\n        pure\n        returns (D256 memory)\n    {\n        return D256({ value: d.value.sub(amount) });\n    }\n\n}\n"
+    },
+    "./contracts/lib/Math.sol": {
+      "content": "// SPDX-License-Identifier: MIT\n\npragma solidity ^0.5.16;\npragma experimental ABIEncoderV2;\n\nimport {SafeMath} from \"./SafeMath.sol\";\n\n/**\n * @title Math\n *\n * Library for non-standard Math functions\n */\nlibrary Math {\n    using SafeMath for uint256;\n\n    // ============ Library Functions ============\n\n    /*\n     * Return target * (numerator / denominator).\n     */\n    function getPartial(\n        uint256 target,\n        uint256 numerator,\n        uint256 denominator\n    )\n        internal\n        pure\n        returns (uint256)\n    {\n        return target.mul(numerator).div(denominator);\n    }\n\n    function to128(\n        uint256 number\n    )\n        internal\n        pure\n        returns (uint128)\n    {\n        uint128 result = uint128(number);\n        require(\n            result == number,\n            \"Math: Unsafe cast to uint128\"\n        );\n        return result;\n    }\n\n    function min(\n        uint256 a,\n        uint256 b\n    )\n        internal\n        pure\n        returns (uint256)\n    {\n        return a < b ? a : b;\n    }\n\n    function max(\n        uint256 a,\n        uint256 b\n    )\n        internal\n        pure\n        returns (uint256)\n    {\n        return a > b ? a : b;\n    }\n}\n"
+    },
+    "./contracts/lib/SafeMath.sol": {
+      "content": "\npragma solidity ^0.5.16;\n\nlibrary SafeMath {\n    function mul(uint256 a, uint256 b) internal pure returns (uint256) {\n        if (a == 0) {\n            return 0;\n        }\n\n        uint256 c = a * b;\n        require(c / a == b, \"SafeMath: multiplication overflow\");\n\n        return c;\n    }\n\n    function div(uint256 a, uint256 b) internal pure returns (uint256) {\n\n        require(b > 0, \"SafeMath: division by zero\");\n        uint256 c = a / b;\n\n        return c;\n    }\n\n    function sub(uint256 a, uint256 b) internal pure returns (uint256) {\n        require(b <= a, \"SafeMath: subtraction overflow\");\n        uint256 c = a - b;\n\n        return c;\n    }\n\n    function add(uint256 a, uint256 b) internal pure returns (uint256) {\n        uint256 c = a + b;\n        require(c >= a, \"SafeMath: addition overflow\");\n\n        return c;\n    }\n}\n"
+    },
+    "./contracts/oracle/IChainLinkAggregator.sol": {
+      "content": "// SPDX-License-Identifier: MIT\n\npragma solidity ^0.5.16;\n\ninterface IChainLinkAggregator {\n\n    function decimals()\n        external\n        view\n        returns (uint8);\n\n    function latestAnswer()\n        external\n        view\n        returns (int256);\n\n    function latestTimestamp()\n        external\n        view\n        returns (uint256);\n\n    function latestRound()\n        external\n        view\n        returns (uint256);\n\n    function getAnswer(uint256 roundId)\n        external\n        view\n        returns (int256);\n\n    function getTimestamp(uint256 roundId)\n        external\n        view\n        returns (uint256);\n\n    event AnswerUpdated(\n        int256 indexed current,\n        uint256 indexed roundId,\n        uint256 timestamp\n    );\n\n    event NewRound(\n        uint256 indexed roundId,\n        address indexed startedBy,\n        uint256 startedAt\n    );\n}\n"
+    },
+    "./contracts/oracle/IOracle.sol": {
+      "content": "// SPDX-License-Identifier: MIT\n\npragma solidity ^0.5.16;\npragma experimental ABIEncoderV2;\n\nimport {Decimal} from \"../lib/Decimal.sol\";\n\ninterface IOracle {\n\n    function fetchCurrentPrice()\n        external\n        view\n        returns (Decimal.D256 memory);\n\n}"
+    },
+    "./contracts/oracle/IRiskOracle.sol": {
+      "content": "// SPDX-License-Identifier: MIT\n\npragma solidity ^0.5.16;\n\ninterface IRiskOracle {\n\n    function latestAnswer()\n        external\n        view\n        returns (int256);\n\n}\n"
+    },
+    "./contracts/oracle/IYToken.sol": {
+      "content": "// SPDX-License-Identifier: MIT\n\npragma solidity ^0.5.16;\npragma experimental ABIEncoderV2;\n\ninterface IYToken {\n\n    function getPricePerFullShare()\n        external\n        view returns (uint);\n\n}\n"
+    },
+    "./contracts/oracle/YUSDOracle.sol": {
+      "content": "// SPDX-License-Identifier: MIT\n\npragma solidity ^0.5.16;\npragma experimental ABIEncoderV2;\n\nimport {Decimal} from \"../lib/Decimal.sol\";\nimport {SafeMath} from \"../lib/SafeMath.sol\";\n\nimport {IOracle} from \"./IOracle.sol\";\nimport {IRiskOracle} from \"./IRiskOracle.sol\";\nimport {IYToken} from \"./IYToken.sol\";\nimport {IChainLinkAggregator} from \"./IChainLinkAggregator.sol\";\n\ncontract YUSDOracle is IOracle {\n\n    using SafeMath for uint256;\n\n    uint256 constant BASE = 10**18;\n\n    IRiskOracle public aaveRiskOracle;\n    IChainLinkAggregator public chainlinkETHUSDAggregator;\n\n    address public yUSDAddress;\n\n    constructor()\n        public\n    {\n        yUSDAddress = 0x5dbcF33D8c2E976c6b560249878e6F1491Bca25c;\n        chainlinkETHUSDAggregator = IChainLinkAggregator(0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419);\n        aaveRiskOracle = IRiskOracle(0x4CC91E0c97c5128247E71a5DdF01CA46f4fa8d1d);\n    }\n\n    function fetchCurrentPrice()\n        external\n        view\n        returns (Decimal.D256 memory)\n    {\n        uint256 yUSDPricePerFullShare = IYToken(yUSDAddress).getPricePerFullShare();\n\n        // It's safe to typecast here since Aave's risk oracle has a backup oracles\n        // if the price drops below $0 in the original signed int.\n        uint256 priceOfYUSDTokenInETH = uint256(aaveRiskOracle.latestAnswer());\n        uint256 priceOfETHInUSD = uint256(chainlinkETHUSDAggregator.latestAnswer()).mul(10 ** 10);\n        uint256 priceOfYUSDInUSD = priceOfYUSDTokenInETH.mul(priceOfETHInUSD).div(BASE);\n\n        uint256 result = yUSDPricePerFullShare.mul(priceOfYUSDInUSD).div(BASE);\n\n        require(\n            result > 0,\n            \"YUSDOracle: cannot report a price of 0\"\n        );\n\n        return Decimal.D256({\n            value: result\n        });\n    }\n\n}\n"
+    }
+  }
+}

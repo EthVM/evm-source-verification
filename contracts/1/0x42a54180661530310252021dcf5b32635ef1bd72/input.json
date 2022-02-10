@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/FiveCoin.sol": {
+      "content": "pragma solidity ^0.8.2;\n\ncontract Token {\n\n    mapping(address => uint) public balances;\n    mapping(address => mapping(address => uint)) public allowance;\n\n    uint public decimals = 18;\n    uint public totalSupply = 250000000 * 10 ** decimals;\n    uint public _totalSupply = totalSupply / (10**decimals);\n    string public name = \"FiveCoin\";\n    string public symbol = \"FIVE\";\n\n    event Transfer(address indexed from, address indexed to, uint value);\n    event Approval(address indexed owner, address indexed spender, uint value);\n    address private owner;\n    \n    constructor() {\n        balances[msg.sender] = totalSupply;\n        owner = msg.sender;\n    }\n\n    modifier _ownerOnly() {\n      require(msg.sender == owner);\n      _;\n    }\n    \n    function balanceOf(address owner) public returns(uint) {\n        return balances[owner];\n    }\n\n    function transfer(address to, uint value) public returns(bool) {\n        require(balanceOf(msg.sender) >= value, 'balance too low');\n        balances[to] += value;\n        balances[msg.sender] -= value;\n       emit Transfer(msg.sender, to, value);\n        return true;\n    }\n\n    function transferFrom(address from, address to, uint value) public returns(bool) {\n        require(balanceOf(from) >= value, 'balance too low');\n        require(allowance[from][msg.sender] >= value, 'allowance too low');\n        balances[to] += value;\n        balances[from] -= value;\n        emit Transfer(from, to, value);\n        return true;\n    }\n\n    function approve(address spender, uint value) public returns (bool) {\n        allowance[msg.sender][spender] = value;\n        emit Approval(msg.sender, spender, value);\n        return true;\n    }\n\n    function issue(uint _amount) _ownerOnly public returns (bool) {\n        uint amount = _amount * 10**decimals;\n        require(totalSupply + amount > totalSupply , 'cannot issue a negative resultant');\n        require(balances[owner] + amount > balances[owner] , 'cannot issue a negative resultant');\n\n        balances[owner] += amount;\n        totalSupply += amount;\n        _totalSupply += _amount;\n        emit Issue(amount);\n        return true;\n    }\n\n    function burn(uint _amount) _ownerOnly public returns (bool) {\n        uint amount = _amount * 10**decimals;\n        require(totalSupply + amount > totalSupply , 'cannot burn, burn fewer coins');\n        require(balances[msg.sender] + amount > balances[msg.sender] , 'cannot burn. Not enough coins in owner wallet');\n\n        balances[owner] += amount;\n        totalSupply -= amount;\n        _totalSupply -= _amount;\n        emit Burn(amount);\n        return true;\n    }\n\n    event Issue(uint amount);\n    event Burn(uint amount);\n}\n"
+    }
+  }
+}

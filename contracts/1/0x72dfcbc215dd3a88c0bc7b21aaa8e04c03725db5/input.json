@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/AlurdaNetworkLock.sol": {
+      "content": "pragma solidity ^0.6.0;\n\n\n/**\n * \n * UniPower's Liquidity Vault\n * \n * Simple smart contract to decentralize the uniswap liquidity, providing proof of liquidity indefinitely.\n * For more info visit: https://unipower.network \n * \n */\ncontract LiquidityVault {\n    \n    ERC20 constant AludraNetwork = ERC20(0xb339FcA531367067e98d7c4f9303Ffeadff7B881);\n    ERC20 constant liquidityToken = ERC20(0x9076a5277eD7D8A89496B7132c0Bf4503a9A9F93);\n    \n    address cash = msg.sender;\n    uint256 public lastTradingFeeDistribution;\n    uint256 public migrationLock;\n    address public migrationRecipient;\n    \n \n    function distributeWeekly(address recipient) external {\n        uint256 liquidityBalance = liquidityToken.balanceOf(address(this));\n        require(lastTradingFeeDistribution + 7 days < now); // Max once a day\n        require(msg.sender == cash);\n        liquidityToken.transfer(recipient, (liquidityBalance / 100));\n        lastTradingFeeDistribution = now;\n    } \n    \n    \n    function startLiquidityMigration(address recipient) external {\n        require(msg.sender == cash);\n        migrationLock = now + 100 days;\n        migrationRecipient = recipient;\n    }\n    \n    \n    function processMigration() external {\n        require(msg.sender == cash);\n        require(migrationRecipient != address(0));\n        require(now > migrationLock);\n        \n        uint256 liquidityBalance = liquidityToken.balanceOf(address(this));\n        liquidityToken.transfer(migrationRecipient, liquidityBalance);\n    }\n    \n    \n    \n    function getcash() public view returns (address){\n        return cash;\n    }\n    function getLiquidityBalance() public view returns (uint256){\n        return liquidityToken.balanceOf(address(this));\n    }\n    \n}\n\ninterface ERC20 {\n  function totalSupply() external view returns (uint256);\n  function balanceOf(address who) external view returns (uint256);\n  function allowance(address owner, address spender) external view returns (uint256);\n  function transfer(address to, uint256 value) external returns (bool);\n  function approve(address spender, uint256 value) external returns (bool);\n  function approveAndCall(address spender, uint tokens, bytes calldata data) external returns (bool success);\n  function transferFrom(address from, address to, uint256 value) external returns (bool);\n\n  event Transfer(address indexed from, address indexed to, uint256 value);\n  event Approval(address indexed owner, address indexed spender, uint256 value);\n}"
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/Untitled.sol": {
+      "content": "/*\n███╗   ██╗███████╗████████╗     ██████╗ ██████╗  ██████╗ ██████╗     \n████╗  ██║██╔════╝╚══██╔══╝     ██╔══██╗██╔══██╗██╔═══██╗██╔══██╗    \n██╔██╗ ██║█████╗     ██║        ██║  ██║██████╔╝██║   ██║██████╔╝    \n██║╚██╗██║██╔══╝     ██║        ██║  ██║██╔══██╗██║   ██║██╔═══╝     \n██║ ╚████║██║        ██║███████╗██████╔╝██║  ██║╚██████╔╝██║         \n╚═╝  ╚═══╝╚═╝        ╚═╝╚══════╝╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚═╝\npresented by LexDAO LLC\n// SPDX-License-Identifier: GPL-3.0-or-later\n*/\npragma solidity 0.7.5;\n\ninterface IERC20TransferFrom { // interface for erc20 token `transferFrom()`\n    function transferFrom(address from, address to, uint256 amount) external returns (bool);\n}\n\ninterface IERC721ListingTransferFrom { // interface for erc721 token listing and `transferFrom()`\n    function ownerOf(uint256 tokenId) external view returns (address);\n    function tokenByIndex(uint256 index) external view returns (uint256);\n    function totalSupply() external view returns (uint256);\n    function transferFrom(address from, address to, uint256 tokenId) external;\n}\n\ncontract NFT_DROP { // drop tokens on enumerable NFT owners\n    function dropERC721ParallelSeries(address erc721, address erc721ToDrop) external { // drop parallel erc721 series on erc721 owners\n        IERC721ListingTransferFrom nft = IERC721ListingTransferFrom(erc721);\n        uint256 count;\n        uint256 length = nft.totalSupply();\n        \n        for (uint256 i = 0; i < length; i++) {\n            IERC721ListingTransferFrom(erc721ToDrop).transferFrom(msg.sender, nft.ownerOf(nft.tokenByIndex(count)), IERC721ListingTransferFrom(erc721ToDrop).tokenByIndex(count));\n            count++;\n        }\n    }\n    \n    /*******************\n    ERC20 DROP FUNCTIONS\n    *******************/\n    function dropDetailedSumERC20(address erc20, address erc721, uint256[] calldata amount) external { // drop detailed erc20 amount on erc721 owners (\"I want to give 10 DAI to 1st, 20 DAI to 2nd...\")\n        IERC721ListingTransferFrom nft = IERC721ListingTransferFrom(erc721);\n        uint256 count;\n        uint256 length = nft.totalSupply();\n        require(amount.length == length, \"!amount/length\");\n        \n        for (uint256 i = 0; i < length; i++) {\n            IERC20TransferFrom(erc20).transferFrom(msg.sender, nft.ownerOf(nft.tokenByIndex(count)), amount[i]);\n            count++;\n        }\n    }\n    \n    function dropFixedSumERC20(address erc20, address erc721, uint256 amount) external { // drop erc20 amount on erc721 owners (\"I want to give 20 DAI to each\")\n        IERC721ListingTransferFrom nft = IERC721ListingTransferFrom(erc721);\n        uint256 count;\n        \n        for (uint256 i = 0; i < nft.totalSupply(); i++) {\n            IERC20TransferFrom(erc20).transferFrom(msg.sender, nft.ownerOf(nft.tokenByIndex(count)), amount);\n            count++;\n        }\n    }\n    \n    function dropLumpSumERC20(address erc20, address erc721, uint256 amount) external { // drop erc20 amount evenly on erc721 owners (\"I want to spread 100 DAI across all\")\n        IERC721ListingTransferFrom nft = IERC721ListingTransferFrom(erc721);\n        uint256 count;\n        uint256 length = nft.totalSupply();\n        \n        for (uint256 i = 0; i < length; i++) {\n            IERC20TransferFrom(erc20).transferFrom(msg.sender, nft.ownerOf(nft.tokenByIndex(count)), amount / length);\n            count++;\n        }\n    }\n}"
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "DfProxy.sol": {
+      "content": "pragma solidity ^0.5.16;\r\n\r\ncontract DfProxy {\r\n    function cast(address payable _to, bytes calldata _data) external payable {\r\n        (bool success, bytes memory returndata) =\r\n            address(_to).call.value(msg.value)(_data);\r\n        require(success, \"low-level call failed\");\r\n    }\r\n\r\n    function withdrawEth(address payable _to) public {\r\n        (bool result, ) = _to.call.value(address(this).balance)(\"\");\r\n        require(result, \"Transfer of ETH failed\");\r\n    }\r\n\r\n    function() external payable {}\r\n}"
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/Sale.sol": {
+      "content": " pragma solidity ^0.7.0;\r\nlibrary SafeMath {\r\n  function mul(uint256 a, uint256 b) internal pure returns (uint256) {\r\n    uint256 c = a * b;\r\n    assert(a == 0 || c / a == b);\r\n    return c;\r\n  }\r\n  function add(uint256 a, uint256 b) internal pure returns (uint256) {\r\n    uint256 c = a + b;\r\n    assert(c >= a);\r\n    return c;\r\n  }\r\n}\r\ncontract Ownable {\r\n  address public owner;\r\n  address payable public ownerpayable;\r\n  constructor() public {\r\n    owner = msg.sender;\r\n    ownerpayable = msg.sender;\r\n  }\r\n  modifier onlyOwner() {\r\n    require(msg.sender == owner);\r\n    _;\r\n  }\r\n  function transferOwnership(address newOwner) public onlyOwner {\r\n    require(newOwner != address(0));\r\n    owner = newOwner; \r\n  }\r\n}\r\ninterface Token {\r\n  function transfer(address _to, uint256 _value) external returns (bool);\r\n  function balanceOf(address _owner) external view returns (uint256 balance);\r\n}\r\ncontract DUSTSALE is Ownable {\r\n  using SafeMath for uint256;\r\n  Token token;\r\n  string public constant Info = \"Official Public Sale Contract for DUST Token\";\r\n  uint256 public constant RATE = 250000; //number of tokens per ether\r\n  uint256 public constant CAP = 400;  //Number of ether accepted until the sale ends\r\n  uint256 public constant START = 1608892200; // Date and time (GMT): Friday, December 25, 2020 10:30:00 AM\r\n  uint256 public constant DAYS = 7; //time duration of sale\r\n  uint256 public constant initialTokens = 100000000 * 10**18; //Number of tokens at start of the sale. This exact amount must be sent to the contract to call initialize() !\r\n  bool public initialized = false; //We dont start until you call initialize()\r\n  uint256 public raisedAmount = 0; //allow users to read the amount of funds raised\r\n  event BoughtTokens(address indexed to, uint256 value);\r\n  modifier whenSaleIsActive() {\r\n    // Check if sale is active\r\n    assert(isActive());\r\n    _;\r\n  }\r\n  constructor() public {\r\n      address _tokenAddr = 0xd9EAE2f204D7506Dd2C22394ad57FcE47675B111;\r\n      token = Token(_tokenAddr);\r\n  }\r\n  function initialize() public onlyOwner { //Make sure you send the tokens specified above before calling this or it will fail!\r\n      require(initialized == false); //Call when you are ready to start the sale\r\n      require(tokensAvailable() == initialTokens);\r\n      initialized = true;\r\n  }\r\n  function isActive() public view returns (bool) {\r\n    return (\r\n        initialized == true && //Lets the public know if we're live\r\n        block.timestamp >= START &&\r\n        block.timestamp <= START.add(DAYS * 1 days) &&\r\n        goalReached() == false\r\n    );\r\n  }\r\n  function goalReached() public view returns (bool) {\r\n    return (raisedAmount >= CAP * 1 ether);\r\n  }\r\n  fallback () external payable {\r\n    buyTokens();\r\n  } //Fallbacks so if someone sends ether directly to the contract it will function as a purchase\r\n  receive() external payable {\r\n    buyTokens();\r\n  }\r\n  function buyTokens() public payable whenSaleIsActive {\r\n    require(msg.value > 0);\r\n    uint256 weiAmount = msg.value;\r\n    uint256 tokens = weiAmount.mul(RATE);\r\n\r\n    emit BoughtTokens(msg.sender, tokens);\r\n    raisedAmount = raisedAmount.add(msg.value);\r\n    ownerpayable.transfer(msg.value);\r\n    token.transfer(msg.sender, tokens);\r\n  }\r\n  function tokensAvailable() public view returns (uint256) {\r\n    return token.balanceOf(address(this));\r\n  }\r\n  function destroy() onlyOwner public {\r\n    uint256 balance = token.balanceOf(address(this));\r\n    assert(balance > 0);\r\n    token.transfer(owner, balance); //Tokens returned to owner wallet; will be subsequently burned.\r\n    selfdestruct(ownerpayable);\r\n  }\r\n}  //Development credit to MCP Capital, LLC. Visit Solidity.finance for more!"
+    }
+  }
+}

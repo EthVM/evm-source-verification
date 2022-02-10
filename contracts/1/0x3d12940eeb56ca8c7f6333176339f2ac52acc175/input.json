@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/AAAASpare.sol": {
+      "content": "// Dependency file: contracts/libraries/TransferHelper.sol\n\n//SPDX-License-Identifier: MIT\n\n// pragma solidity >=0.6.0;\n\nlibrary TransferHelper {\n    function safeApprove(address token, address to, uint value) internal {\n        // bytes4(keccak256(bytes('approve(address,uint256)')));\n        (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0x095ea7b3, to, value));\n        require(success && (data.length == 0 || abi.decode(data, (bool))), 'TransferHelper: APPROVE_FAILED');\n    }\n\n    function safeTransfer(address token, address to, uint value) internal {\n        // bytes4(keccak256(bytes('transfer(address,uint256)')));\n        (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0xa9059cbb, to, value));\n        require(success && (data.length == 0 || abi.decode(data, (bool))), 'TransferHelper: TRANSFER_FAILED');\n    }\n\n    function safeTransferFrom(address token, address from, address to, uint value) internal {\n        // bytes4(keccak256(bytes('transferFrom(address,address,uint256)')));\n        (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0x23b872dd, from, to, value));\n        require(success && (data.length == 0 || abi.decode(data, (bool))), 'TransferHelper: TRANSFER_FROM_FAILED');\n    }\n\n    function safeTransferETH(address to, uint value) internal {\n        (bool success,) = to.call{value:value}(new bytes(0));\n        require(success, 'TransferHelper: ETH_TRANSFER_FAILED');\n    }\n}\n\n\n// Root file: contracts/AAAASpare.sol\n\npragma solidity >=0.5.16;\n// import \"contracts/libraries/TransferHelper.sol\";\n\ncontract AAAASpare {\n    address public owner;\n    mapping (address => bool) pools;\n    \n    constructor() public {\n        owner = msg.sender;\n    }\n    \n    function setValidPool(address _pool, bool _valid) external {\n        require(msg.sender == owner, \"FORBIDDEN\");\n        pools[_pool] = _valid;\n    }\n    \n    function take(address _token, uint _amount) external {\n        require(pools[msg.sender] = true, \"FORBIDDEN\");\n        TransferHelper.safeTransfer(_token, msg.sender, _amount);\n    }\n    \n    function withdraw(address _token, address _to, uint _amount) external {\n        require(msg.sender == owner, \"FORBIDDEN\");\n        TransferHelper.safeTransfer(_token, _to, _amount);\n    }\n}\n"
+    }
+  }
+}

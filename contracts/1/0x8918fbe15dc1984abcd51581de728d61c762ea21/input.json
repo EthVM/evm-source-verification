@@ -1,0 +1,38 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/EarninigsPools.sol": {
+      "content": "pragma solidity =0.6.6;\n\nimport './libraries/TransferHelper.sol';\nimport './libraries/SafeMath.sol';\nimport './interfaces/IERC20.sol';\n\ncontract EarningsPools {\n    using SafeMath for uint;\n    \n    mapping(address=>mapping(address=>uint)) public userEarningsValue;\n    mapping(address=>mapping(address=>uint)) public userTakeoutValue;\n    \n    address public owner;\n    \n    event e_dfbtc_earning_record(address indexed _user, address indexed tokenAddress, uint addValue, uint _createTime);\n    event e_dfbtc_takeout_record(address indexed _user, address indexed tokenAddress, uint outValue, uint _createTime);\n    \n    uint private unlocked = 1;\n    modifier lock() {\n        require(unlocked == 1, 'dfbtc: LOCKED');\n        unlocked = 0;\n        _;\n        unlocked = 1;\n    }\n    \n    modifier onlyOnwer {\n        require(owner == msg.sender, \"dfbtc: The caller must be onwer!!!\");\n        _;\n    }\n    \n    constructor() public {\n        owner = msg.sender;\n    }\n    \n    function setOwner(address newOwner) public onlyOnwer {\n        owner = newOwner;\n    }\n    \n    function addTokenToPools(address[] memory _userList, uint[] memory _valueList, address tokenAddress) public onlyOnwer lock {\n        for(uint i=0; i<_userList.length; i++){\n            userEarningsValue[_userList[i]][tokenAddress] = userEarningsValue[_userList[i]][tokenAddress].add(_valueList[i]);\n            emit e_dfbtc_earning_record(_userList[i], tokenAddress, _valueList[i], now);\n        }\n    }\n    \n    function getEarnings(address tokenAddress, uint transferValue) public lock {\n        require(userEarningsValue[msg.sender][tokenAddress] >= transferValue, \"dfbtc: More than the number that can be collected!\");\n        require(IERC20(tokenAddress).balanceOf(address(this)) >= transferValue, \"dfbtc: The pool of funds is insufficient!\");\n\n        userEarningsValue[msg.sender][tokenAddress] = userEarningsValue[msg.sender][tokenAddress].sub(transferValue);\n        userTakeoutValue[msg.sender][tokenAddress] = userTakeoutValue[msg.sender][tokenAddress].add(transferValue);\n        TransferHelper.safeTransfer(tokenAddress, msg.sender, transferValue);\n        emit e_dfbtc_takeout_record(msg.sender, tokenAddress, transferValue, now);\n    }\n    \n    function getBlockTime() public view returns(uint){\n        return now;\n    }\n}"
+    },
+    "browser/interfaces/IERC20.sol": {
+      "content": "pragma solidity >=0.5.0;\n\ninterface IERC20 {\n    event Approval(address indexed owner, address indexed spender, uint value);\n    event Transfer(address indexed from, address indexed to, uint value);\n\n    function name() external view returns (string memory);\n    function symbol() external view returns (string memory);\n    function decimals() external view returns (uint8);\n    function totalSupply() external view returns (uint);\n    function balanceOf(address owner) external view returns (uint);\n    function allowance(address owner, address spender) external view returns (uint);\n\n    function approve(address spender, uint value) external returns (bool);\n    function transfer(address to, uint value) external returns (bool);\n    function transferFrom(address from, address to, uint value) external returns (bool);\n}\n"
+    },
+    "browser/libraries/SafeMath.sol": {
+      "content": "pragma solidity =0.6.6;\n\n// a library for performing overflow-safe math, courtesy of DappHub (https://github.com/dapphub/ds-math)\n\nlibrary SafeMath {\n  function mul(uint256 _a, uint256 _b) internal pure returns (uint256 c) {\n    if (_a == 0) {\n      return 0;\n    }\n\n    c = _a * _b;\n    require(c / _a == _b, \"mul error!!\");\n    return c;\n  }\n\n  function div(uint256 _a, uint256 _b) internal pure returns (uint256) {\n    return _a / _b;\n  }\n\n  function sub(uint256 _a, uint256 _b) internal pure returns (uint256) {\n    require(_b <= _a, \"sub error!!\");\n    return _a - _b;\n  }\n\n  function add(uint256 _a, uint256 _b) internal pure returns (uint256 c) {\n    c = _a + _b;\n    require(c >= _a, \"add error!!\");\n    return c;\n  }\n}\n"
+    },
+    "browser/libraries/TransferHelper.sol": {
+      "content": "// SPDX-License-Identifier: GPL-3.0-or-later\n\npragma solidity >=0.6.6;\n\n// helper methods for interacting with ERC20 tokens and sending ETH that do not consistently return true/false\nlibrary TransferHelper {\n  function safeApprove(\n    address token,\n    address to,\n    uint256 value\n  ) internal {\n    // bytes4(keccak256(bytes('approve(address,uint256)')));\n    (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0x095ea7b3, to, value));\n    require(\n      success && (data.length == 0 || abi.decode(data, (bool))),\n      'TransferHelper::safeApprove: approve failed'\n    );\n  }\n\n  function safeTransfer(\n    address token,\n    address to,\n    uint256 value\n  ) internal {\n    // bytes4(keccak256(bytes('transfer(address,uint256)')));\n    (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0xa9059cbb, to, value));\n    require(\n      success && (data.length == 0 || abi.decode(data, (bool))),\n      'TransferHelper::safeTransfer: transfer failed'\n    );\n  }\n\n  function safeTransferFrom(\n    address token,\n    address from,\n    address to,\n    uint256 value\n  ) internal {\n    // bytes4(keccak256(bytes('transferFrom(address,address,uint256)')));\n    (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0x23b872dd, from, to, value));\n    require(\n      success && (data.length == 0 || abi.decode(data, (bool))),\n      'TransferHelper::transferFrom: transferFrom failed'\n    );\n  }\n}\n"
+    }
+  }
+}

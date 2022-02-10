@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "StablePoolProxy.sol": {
+      "content": "// SPDX-License-Identifier: MIT\r\npragma solidity ^0.5.16;\r\n\r\ncontract StablePoolProxy  {\r\n\r\n    address public owner;\r\n    address public implementation;\r\n        \r\n    constructor(address _impl) public {\r\n        owner = msg.sender;\r\n        implementation = _impl;\r\n    }\r\n\r\n    function setImplementation(address _newImpl) public {\r\n        require(msg.sender == owner);\r\n\r\n        implementation = _newImpl;\r\n    }\r\n   \r\n    function() external {\r\n        address impl = implementation;\r\n        assembly {\r\n            let ptr := mload(0x40)\r\n \r\n            // (1) copy incoming call data\r\n            calldatacopy(ptr, 0, calldatasize())\r\n \r\n             // (2) forward call to logic contract\r\n            let result := delegatecall(gas(), impl, ptr, calldatasize(), 0, 0)\r\n            let size := returndatasize()\r\n \r\n            // (3) retrieve return data\r\n            returndatacopy(ptr, 0, size)\r\n \r\n            // (4) forward return data back to caller\r\n            switch result\r\n            case 0 { revert(ptr, size) }\r\n            default { return(ptr, size) }\r\n        }   \r\n    }\r\n}"
+    }
+  }
+}

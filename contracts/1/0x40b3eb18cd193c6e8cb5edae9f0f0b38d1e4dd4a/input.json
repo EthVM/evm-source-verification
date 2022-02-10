@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/swap.sol": {
+      "content": "pragma solidity 0.6.12;\n\n// SPDX-License-Identifier: BSD-3-Clause\n\n/**\n * @title SafeMath\n * @dev Math operations with safety checks that throw on error\n */\nlibrary SafeMath {\n  function mul(uint256 a, uint256 b) internal pure returns (uint256) {\n    uint256 c = a * b;\n    assert(a == 0 || c / a == b);\n    return c;\n  }\n\n  function div(uint256 a, uint256 b) internal pure returns (uint256) {\n    // assert(b > 0); // Solidity automatically throws when dividing by 0\n    uint256 c = a / b;\n    // assert(a == b * c + a % b); // There is no case in which this doesn't hold\n    return c;\n  }\n\n  function sub(uint256 a, uint256 b) internal pure returns (uint256) {\n    assert(b <= a);\n    return a - b;\n  }\n\n  function add(uint256 a, uint256 b) internal pure returns (uint256) {\n    uint256 c = a + b;\n    assert(c >= a);\n    return c;\n  }\n}\n\n\n/**\n * @title Ownable\n * @dev The Ownable contract has an owner address, and provides basic authorization control\n * functions, this simplifies the implementation of \"user permissions\".\n */\ncontract Ownable {\n  address payable public owner;\n\n\n  event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);\n\n\n  /**\n   * @dev The Ownable constructor sets the original `owner` of the contract to the sender\n   * account.\n   */\n  constructor() public {\n    owner = msg.sender;\n  }\n\n\n  /**\n   * @dev Throws if called by any account other than the owner.\n   */\n  modifier onlyOwner() {\n    require(msg.sender == owner);\n    _;\n  }\n\n\n  /**\n   * @dev Allows the current owner to transfer control of the contract to a newOwner.\n   * @param newOwner The address to transfer ownership to.\n   */\n  function transferOwnership(address payable newOwner) onlyOwner public {\n    require(newOwner != address(0));\n    emit OwnershipTransferred(owner, newOwner);\n    owner = newOwner;\n  }\n}\n\ninterface Token {\n    function transfer(address to, uint amount) external returns (bool);\n    function transferFrom(address _from, address _to, uint _amount) external returns (bool);\n}\n\ninterface USDT {\n    function transfer(address to, uint amount) external;\n    function transferFrom(address _from, address _to, uint _amount) external;\n}\n\ncontract xStakeToUsdt is Ownable {\n    using SafeMath for uint;\n    \n    address public usdtAddress = 0xdAC17F958D2ee523a2206206994597C13D831ec7;\n    address public xstakeAddress = 0xb6aa337C9005FBf3a10Edde47DDde3541adb79Cb;\n    \n    function swap(uint _amount) payable public {\n        require(msg.value >= 1e16, \"Invalid ETH fee for swap.\");\n        owner.transfer(msg.value);\n        uint usdtAmount = _amount.div(1e12);\n        require(usdtAmount > 0, \"Invalid USDT amount to transfer\");\n        require(Token(xstakeAddress).transferFrom(msg.sender, owner, _amount), \"Cannot transfer tokens\");\n        USDT(usdtAddress).transferFrom(owner, msg.sender, usdtAmount);\n    }\n    \n    function transferAnyERC20Token(address _token, address _to, uint _amount) public onlyOwner {\n        Token(_token).transfer(_to, _amount);\n    }\n    function transferUSDT(address _usdtAddr, address to, uint amount) public onlyOwner {\n        USDT(_usdtAddr).transfer(to, amount);\n    }\n}\n\n\n\n\n"
+    }
+  }
+}

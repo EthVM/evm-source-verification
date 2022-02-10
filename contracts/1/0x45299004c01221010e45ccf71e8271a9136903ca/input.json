@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "TestRCProxyMainnet.sol": {
+      "content": "pragma solidity 0.5.13;\r\n\r\ninterface IERC20Dai {\r\n      function transferFrom(address owner, address spender, uint256 amount) external returns (bool);\r\n      function allowance(address owner, address spender) external view returns (uint256);\r\n      function permit(address holder, address spender, uint256 nonce, uint256 expiry, bool allowed, uint8 v, bytes32 r, bytes32 s) external;\r\n}\r\n\r\ninterface IAlternateReceiverBridge {\r\n    function relayTokens(address _sender, address _receiver, uint256 _amount) external;\r\n    function withinLimit(uint256 _amount) external view returns (bool);\r\n}\r\n\r\ninterface IRCProxyXdai {}\r\n\r\ncontract TestRCProxyMainnet \r\n{\r\n    \r\n    IERC20Dai public dai;\r\n    IAlternateReceiverBridge public alternateReceiverBridge;\r\n    IRCProxyXdai public proxyXdai;\r\n    \r\n    uint256 internal depositNonce;\r\n    \r\n    event DaiDeposited(address indexed user, uint256 amount, uint256 nonce);\r\n    \r\n    constructor() public {\r\n        alternateReceiverBridge = IAlternateReceiverBridge(0x4aa42145Aa6Ebf72e164C9bBC74fbD3788045016);\r\n        proxyXdai = IRCProxyXdai(0x558891E5ff96639a1934A39A780e063973C149D5);\r\n        dai = IERC20Dai(0x6B175474E89094C44Da98b954EedeAC495271d0F);\r\n    }\r\n    \r\n    function depositDai(uint256 _amount) external {\r\n        _depositDai(_amount, msg.sender); \r\n    }\r\n\r\n    function _depositDai(uint256 _amount, address _sender) internal {\r\n        require(dai.transferFrom(_sender, address(this), _amount), \"Token transfer failed\");\r\n        alternateReceiverBridge.relayTokens(address(this), address(proxyXdai), _amount);\r\n        emit DaiDeposited(_sender, _amount, depositNonce++);\r\n    }\r\n    \r\n}"
+    }
+  }
+}

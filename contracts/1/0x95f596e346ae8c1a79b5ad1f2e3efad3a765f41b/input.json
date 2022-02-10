@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "Wrapper.sol": {
+      "content": "pragma solidity ^0.5.1;\r\n\r\ncontract Ownable{\r\n    address private _owner;\r\n\r\n    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);\r\n\r\n    constructor () internal {\r\n        _owner = msg.sender;\r\n        emit OwnershipTransferred(address(0), msg.sender);\r\n    }\r\n\r\n    function owner() public view returns (address) {\r\n        return _owner;\r\n    }\r\n\r\n    modifier onlyOwner() {\r\n        require(isOwner(), \"Ownable: caller is not the owner\");\r\n        _;\r\n    }\r\n\r\n    function isOwner() public view returns (bool) {\r\n        return msg.sender == _owner;\r\n    }\r\n\r\n    function transferOwnership(address newOwner) public onlyOwner {\r\n        _transferOwnership(newOwner);\r\n    }\r\n\r\n    function _transferOwnership(address newOwner) internal {\r\n        require(newOwner != address(0), \"Ownable: new owner is the zero address\");\r\n        emit OwnershipTransferred(_owner, newOwner);\r\n        _owner = newOwner;\r\n    }\r\n}\r\n\r\ncontract UndgToken {\r\n  function setAddressToExcludeRecipients (address addr) public;\r\n  function setAddressToExcludeSenders (address addr) public;\r\n  function removeAddressFromExcludes (address addr) public;\r\n  function changePercentOfTax(uint percent) public;\r\n  function changeServiceWallet(address addr) public;\r\n}\r\n\r\n\r\ncontract Wrapper is Ownable {\r\n    \r\n    address public serviceWallet = 0x40118E5489d9D43C6711C437268A48ab935c2DD6;\r\n    uint public percentTax = 4;\r\n    \r\n    UndgToken UNDG = UndgToken(0xA5959E9412d27041194c3c3bcBE855faCE2864F7);\r\n \r\n    function setAddressToExcludeRecipients (address addr) public onlyOwner {\r\n        UNDG.setAddressToExcludeRecipients(addr);\r\n    }\r\n\r\n    function setAddressToExcludeSenders (address addr) public onlyOwner {\r\n        UNDG.setAddressToExcludeSenders(addr);\r\n    }\r\n\r\n    function removeAddressFromExcludes (address addr) public onlyOwner {\r\n        UNDG.removeAddressFromExcludes(addr);\r\n    }\r\n    \r\n    function changePercentOfTax(uint percent) public onlyOwner {\r\n        require(percent <= 10, \"Max tax 10%\");\r\n        UNDG.changePercentOfTax(percent);\r\n        percentTax = percent;\r\n    }\r\n\r\n    function changeServiceWallet(address addr) public onlyOwner {\r\n        UNDG.changeServiceWallet(addr);\r\n        serviceWallet = addr;\r\n    }\r\n}"
+    }
+  }
+}

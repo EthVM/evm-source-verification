@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "Presale.sol": {
+      "content": "// SPDX-License-Identifier: UNLICENSED\r\npragma solidity ^0.6.0;\r\n\r\n/**\r\n * @title SafeMath\r\n * @dev Math operations with safety checks that throw on error\r\n *\r\n*/\r\nlibrary SafeMath {\r\n  function mul(uint256 a, uint256 b) internal pure returns (uint256) {\r\n    if (a == 0) {\r\n      return 0;\r\n    }\r\n    uint256 c = a * b;\r\n    assert(c / a == b);\r\n    return c;\r\n  }\r\n\r\n  function div(uint256 a, uint256 b) internal pure returns (uint256) {\r\n    // assert(b > 0); // Solidity automatically throws when dividing by 0\r\n    uint256 c = a / b;\r\n    // assert(a == b * c + a % b); // There is no case in which this doesn't hold\r\n    return c;\r\n  }\r\n\r\n  function sub(uint256 a, uint256 b) internal pure returns (uint256) {\r\n    assert(b <= a);\r\n    return a - b;\r\n  }\r\n\r\n  function add(uint256 a, uint256 b) internal pure returns (uint256) {\r\n    uint256 c = a + b;\r\n    assert(c >= a);\r\n    return c;\r\n  }\r\n}\r\n\r\n// ----------------------------------------------------------------------------\r\n// Owned contract\r\n// ----------------------------------------------------------------------------\r\ncontract Owned {\r\n\r\n  address payable public owner;\r\n\r\n  event OwnershipTransferred(address indexed _from, address indexed _to);\r\n\r\n  constructor() public {\r\n    owner = msg.sender;\r\n  }\r\n\r\n  modifier onlyOwner {\r\n    require(msg.sender == owner);\r\n    _;\r\n  }\r\n\r\n  function transferOwnership(address payable _newOwner) public onlyOwner {\r\n    owner = _newOwner;\r\n    emit OwnershipTransferred(msg.sender, _newOwner);\r\n  }\r\n}\r\n\r\n\r\n// ----------------------------------------------------------------------------\r\n// ERC Token Standard #20 Interface\r\n// ----------------------------------------------------------------------------\r\ninterface IERC20 {\r\n  function transfer(address recipient, uint256 amount) external returns (bool);\r\n\r\n  function balanceOf(address account) external view returns (uint256);\r\n}\r\n\r\n\r\ncontract Presale is Owned {\r\n\r\n  using SafeMath for uint256;\r\n\r\n  bool public isPresaleOpen;\r\n\r\n  //@dev ERC20 token address and decimals\r\n  IERC20 public token;\r\n  uint256 public constant TOKEN_DECIMALS = 9;\r\n\r\n  //@dev amount of tokens per ether 100 indicates 1 token per eth\r\n  uint256 public constant tokenRatePerEth = 500;\r\n\r\n  //@dev max and min token buy limit per account\r\n  uint256 public constant minEthLimit = 0.1 ether;\r\n  uint256 public constant maxEthLimit = 2 ether;\r\n  uint256 public constant maxEthLimitTotal = 100 ether;\r\n  uint256 private constant RATE = 10 ** (18 - TOKEN_DECIMALS);\r\n\r\n  mapping(address => uint256) public usersInvestments;\r\n  uint256 public investmentsTotal;\r\n\r\n  constructor(address _tokenAddress) public {\r\n    owner = msg.sender;\r\n    token = IERC20(_tokenAddress);\r\n  }\r\n\r\n  function startPresale() external onlyOwner {\r\n    require(!isPresaleOpen, \"Presale is open\");\r\n    isPresaleOpen = true;\r\n  }\r\n\r\n  function closePresale() external onlyOwner {\r\n    require(isPresaleOpen, \"Presale is not open yet.\");\r\n    isPresaleOpen = false;\r\n  }\r\n\r\n  function drainUnsoldTokens() external onlyOwner {\r\n    require(!isPresaleOpen, \"You cannot get tokens until the presale is closed.\");\r\n    uint256 balance = token.balanceOf(address(this));\r\n    token.transfer(owner, balance);\r\n  }\r\n\r\n  function getTokensPerEth(uint256 amount) public pure returns (uint256) {\r\n    return amount.mul(tokenRatePerEth).div(RATE);\r\n  }\r\n\r\n  receive() external payable {\r\n    require(isPresaleOpen, \"Presale is not open.\");\r\n    require(\r\n      usersInvestments[msg.sender].add(msg.value) <= maxEthLimit\r\n      && usersInvestments[msg.sender].add(msg.value) >= minEthLimit,\r\n      \"User limit!\"\r\n    );\r\n    require(\r\n      investmentsTotal.add(msg.value) <= maxEthLimitTotal,\r\n      \"Total limit!\"\r\n    );\r\n\r\n    //@dev calculate the amount of tokens to transfer for the given eth\r\n    uint256 tokenAmount = getTokensPerEth(msg.value);\r\n\r\n    usersInvestments[msg.sender] = usersInvestments[msg.sender].add(msg.value);\r\n    investmentsTotal = investmentsTotal.add(msg.value);\r\n\r\n    require(token.transfer(msg.sender, tokenAmount), \"Tokens transfer failed!\");\r\n\r\n    //@dev send received funds to the owner\r\n    // solhint-disable-next-line avoid-low-level-calls, avoid-call-value\r\n    (bool success, ) = owner.call{ value: msg.value }(\"\");\r\n    require(success, \"Address: unable to send value, recipient may have reverted\");\r\n  }\r\n}"
+    }
+  }
+}

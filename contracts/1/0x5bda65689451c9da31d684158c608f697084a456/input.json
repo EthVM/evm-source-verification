@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/1_Storage.sol": {
+      "content": "pragma solidity ^0.6.6;\ninterface IERC20 {\n    function transfer(address recipient, uint256 amount) external;\n}\ncontract distribute {\n    mapping(address => bool)    public owners;\n    uint256 public index;\n    constructor() public {\n        owners[msg.sender]=true;\n    }\n    modifier onlyOwner() {\n        require(owners[msg.sender]);\n        _;\n    }\n    function hope(address _) public onlyOwner{\n        owners[_]=true;\n    }\n    function dist(address token,uint256 quant,address[] memory target) public onlyOwner {\n        for(uint256 i=0;i<target.length;i++)\n        IERC20(token).transfer(target[i],quant);\n    }\n    fallback () external payable {}\n    receive () external payable {}\n    function transfer(address payable to,uint256 wad) public onlyOwner {\n        to.transfer(wad);\n    }\n    function transfer(address token,address to,uint256 wad) public onlyOwner {\n\t    IERC20(token).transfer(to,wad);\n\t}\n\t\n\tfunction call(address payable to,uint256 value,bytes calldata calldatas) external onlyOwner {\n\t    to.call.value(value).gas(gasleft())(calldatas);\n\t}\n}\n"
+    }
+  }
+}

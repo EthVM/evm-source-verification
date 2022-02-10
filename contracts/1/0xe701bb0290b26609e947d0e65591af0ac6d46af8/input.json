@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/snapshot.sol": {
+      "content": "pragma solidity ^0.6.0;\n\ninterface LpInterface {\n    function earned(address account) external view returns (uint256);\n}\n\ncontract Snapshot {\n    LpInterface public lpInterface;\n    uint256[] public values;\n\n    constructor (address _lpInterface) public {\n        lpInterface = LpInterface(_lpInterface);\n    }\n\n    function getBalance(address[] memory destinations) public returns (uint256[] memory) {\n        uint256 length = destinations.length;\n        uint i;\n\n        for (i=0; i < length; i++) {\n            values.push(LpInterface(address(lpInterface)).earned(destinations[i]));\n        }\n\n        return values;\n    }\n}\n"
+    }
+  }
+}

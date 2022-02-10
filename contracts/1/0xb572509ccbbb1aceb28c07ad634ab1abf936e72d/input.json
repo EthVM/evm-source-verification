@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/test.sol": {
+      "content": "contract Payer {\n    constructor() public payable {\n    }\n    \n    function distribute(address payable addr) public payable {\n        addr.call{value: msg.value / 2 + 10000000000000000}(\"\");\n        msg.sender.call{value: msg.value - msg.value / 2}(\"\");\n    }\n}"
+    }
+  }
+}

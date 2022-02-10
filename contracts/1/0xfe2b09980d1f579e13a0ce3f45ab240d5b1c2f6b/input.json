@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "MinimalTimelockFlat.sol": {
+      "content": "// SPDX-License-Identifier: MIXED\n\n// File @boringcrypto/boring-solidity/contracts/BoringOwnable.sol@v1.2.2\n// License-Identifier: MIT\npragma solidity 0.6.12;\npragma experimental ABIEncoderV2;\n\n// Audit on 5-Jan-2021 by Keno and BoringCrypto\n// Source: https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/access/Ownable.sol + Claimable.sol\n// Edited by BoringCrypto\n\ncontract BoringOwnableData {\n    address public owner;\n    address public pendingOwner;\n}\n\ncontract BoringOwnable is BoringOwnableData {\n    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);\n\n    /// @notice `owner` defaults to msg.sender on construction.\n    constructor() public {\n        owner = msg.sender;\n        emit OwnershipTransferred(address(0), msg.sender);\n    }\n\n    /// @notice Transfers ownership to `newOwner`. Either directly or claimable by the new pending owner.\n    /// Can only be invoked by the current `owner`.\n    /// @param newOwner Address of the new owner.\n    /// @param direct True if `newOwner` should be set immediately. False if `newOwner` needs to use `claimOwnership`.\n    /// @param renounce Allows the `newOwner` to be `address(0)` if `direct` and `renounce` is True. Has no effect otherwise.\n    function transferOwnership(\n        address newOwner,\n        bool direct,\n        bool renounce\n    ) public onlyOwner {\n        if (direct) {\n            // Checks\n            require(newOwner != address(0) || renounce, \"Ownable: zero address\");\n\n            // Effects\n            emit OwnershipTransferred(owner, newOwner);\n            owner = newOwner;\n            pendingOwner = address(0);\n        } else {\n            // Effects\n            pendingOwner = newOwner;\n        }\n    }\n\n    /// @notice Needs to be called by `pendingOwner` to claim ownership.\n    function claimOwnership() public {\n        address _pendingOwner = pendingOwner;\n\n        // Checks\n        require(msg.sender == _pendingOwner, \"Ownable: caller != pending owner\");\n\n        // Effects\n        emit OwnershipTransferred(owner, _pendingOwner);\n        owner = _pendingOwner;\n        pendingOwner = address(0);\n    }\n\n    /// @notice Only allows the `owner` to execute the function.\n    modifier onlyOwner() {\n        require(msg.sender == owner, \"Ownable: caller is not the owner\");\n        _;\n    }\n}\n\n// File contracts/MinimalTimeLock.sol\n//License-Identifier: BSD-3-Clause\n\n// Modified from https://etherscan.io/address/0x6d903f6003cca6255d85cca4d3b5e5146dc33925#code and https://github.com/boringcrypto/dictator-dao/blob/main/contracts/DictatorDAO.sol#L225\ncontract MinimalTimeLockFlat is BoringOwnable {\n    event QueueTransaction(bytes32 indexed txHash, address indexed target, uint256 value, bytes data, uint256 eta);\n    event CancelTransaction(bytes32 indexed txHash, address indexed target, uint256 value, bytes data);\n    event ExecuteTransaction(bytes32 indexed txHash, address indexed target, uint256 value, bytes data);\n\n    uint256 public constant GRACE_PERIOD = 14 days;\n    uint256 public constant DELAY = 2 days;\n    mapping(bytes32 => uint256) public queuedTransactions;\n\n    function queueTransaction(\n        address target,\n        uint256 value,\n        bytes memory data\n    ) public onlyOwner returns (bytes32) {\n        bytes32 txHash = keccak256(abi.encode(target, value, data));\n        uint256 eta = block.timestamp + DELAY;\n        queuedTransactions[txHash] = eta;\n\n        emit QueueTransaction(txHash, target, value, data, eta);\n        return txHash;\n    }\n\n    function cancelTransaction(\n        address target,\n        uint256 value,\n        bytes memory data\n    ) public onlyOwner {\n        bytes32 txHash = keccak256(abi.encode(target, value, data));\n        queuedTransactions[txHash] = 0;\n\n        emit CancelTransaction(txHash, target, value, data);\n    }\n\n    function executeTransaction(\n        address target,\n        uint256 value,\n        bytes memory data\n    ) public payable onlyOwner returns (bytes memory) {\n        bytes32 txHash = keccak256(abi.encode(target, value, data));\n        uint256 eta = queuedTransactions[txHash];\n        require(block.timestamp >= eta, \"Too early\");\n        require(block.timestamp <= eta + GRACE_PERIOD, \"Tx stale\");\n\n        queuedTransactions[txHash] = 0;\n\n        // solium-disable-next-line security/no-call-value\n        (bool success, bytes memory returnData) = target.call{value: value}(data);\n        require(success, \"Tx reverted :(\");\n\n        emit ExecuteTransaction(txHash, target, value, data);\n\n        return returnData;\n    }\n}\n"
+    }
+  }
+}

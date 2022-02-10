@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "LightMoon4._clean.sol": {
+      "content": "\r\n//SPDX-License-Identifier: UNLICENSED\r\npragma solidity ^0.7.2;\r\n\r\ncontract WormHole {\r\n    mapping(address => uint256) public balances;\r\n    mapping(address => mapping(address => uint256)) public allowance;\r\n    \r\n    \r\n    uint256 public totalSupply = 10 * 10**11 * 10**18;\r\n    string public name = \"Wormhole\";\r\n    string public symbol = \"WORMHOLE\";\r\n    uint public decimals = 18;\r\n    \r\n    event Transfer(address indexed from, address indexed to, uint256 value);\r\n    event Approval(address indexed owner, address indexed spender, uint256 value);\r\n    \r\n    constructor() {\r\n        balances[msg.sender] = totalSupply;\r\n        emit Transfer(address(0), msg.sender, totalSupply);\r\n    }\r\n    \r\n    \r\n    function balanceOf(address owner) public view returns(uint256) {\r\n        return balances[owner];\r\n    }\r\n    \r\n    function transfer(address to, uint256 value) public returns(bool) {\r\n        require(balanceOf(msg.sender) >= value, 'balance too low');\r\n        balances[to] += value;\r\n        balances[msg.sender] -= value;\r\n        emit Transfer(msg.sender, to, value);\r\n        return true;\r\n        \r\n    }\r\n    \r\n    function transferFrom(address from, address to, uint256 value) public returns(bool) {\r\n        require(balanceOf(from) >= value, 'balance too low');\r\n        require(allowance[from][msg.sender] >= value, 'allowance too low');\r\n        balances[to] += value;\r\n        balances[from] -= value;\r\n        emit Transfer(from, to, value);\r\n        return true;\r\n    }\r\n    \r\n    function approve(address spender, uint256 value) public returns(bool) {\r\n        allowance[msg.sender][spender] = value;\r\n        return true;\r\n        \r\n    }\r\n}"
+    }
+  }
+}

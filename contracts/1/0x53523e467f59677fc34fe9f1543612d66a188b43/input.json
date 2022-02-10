@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/Incentivizer.sol": {
+      "content": "// SPDX-License-Identifier: LGPL-3.0-only\npragma solidity >=0.7.0 <0.8.0;\n\ninterface IERC20 {\n    function transfer(address to, uint256 value) external returns (bool);\n    function transferFrom(address from, address to, uint256 value) external returns (bool);\n    function approve(address spender, uint256 amount) external returns (bool);\n}\n\ninterface ISharesTimeLock {\n    function depositByMonths(uint256 amount, uint256 months, address receiver) external;\n}\n\ncontract Incetivizer {\n    \n    uint256 constant MONTHS = 36;\n    address public constant multisig = address(0x6458A23B020f489651f2777Bd849ddEd34DfCcd2);\n    address public constant DOUGH = address(0xad32A8e6220741182940c5aBF610bDE99E737b2D);\n    address public constant veDOUGH = address(0xE6136F2e90EeEA7280AE5a0a8e6F48Fb222AF945);\n    address public constant sharesTimelock = address(0x6Bd0D8c8aD8D3F1f97810d5Cc57E9296db73DC45);\n\n    modifier onlyMultisig() {\n        require(msg.sender == multisig, \"Not multisig\");\n        _;\n    }\n    \n    function approve(uint256 amount) external onlyMultisig {\n        IERC20(DOUGH).approve(sharesTimelock, amount);\n    }\n    \n    function incetivizeHARD(address[] calldata recipients, uint256[] calldata values) external onlyMultisig {\n        uint256 total = 0;\n        for (uint256 i = 0; i < recipients.length; i++)\n            total += values[i];\n            \n        require(IERC20(DOUGH).transferFrom(multisig, address(this), total));\n        \n        for (uint256 i = 0; i < recipients.length; i++)\n            ISharesTimeLock(sharesTimelock).depositByMonths(values[i], MONTHS, recipients[i]);\n    }\n    \n    function withdrawStuckFunds(address _token, address _receiver, uint256 _amount) public onlyMultisig {\n        if (_token == 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE) {\n            payable(_receiver).transfer(_amount);\n        } else {\n            IERC20(_token).transfer(multisig, _amount);\n        }\n    }\n}"
+    }
+  }
+}

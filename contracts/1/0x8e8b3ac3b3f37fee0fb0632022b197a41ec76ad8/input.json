@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/contract.sol": {
+      "content": "/**\r\n    COMMENTS\r\n*/\r\n\r\npragma solidity ^0.6.6;\r\n\r\ncontract splitter {\r\n\r\n  address[] recipients = [0x2D925F20FcFDB9FAfdB5D70788E12434805Ab35c,\r\n    0x3aaEbD14360bD4871ba2586eFb5d1d22244Edc5E,\r\n    0xa8b9f6D7B86F25354D6A843f135E12E8c9eD500a\r\n    ];\r\n\r\n\r\n\r\n  event donation(address _from, uint _amount);\r\n\r\n  constructor() public {\r\n\r\n  }\r\n\r\n  modifier onlyowner {\r\n     require(msg.sender == recipients[0] || msg.sender == recipients[1] || msg.sender == recipients[2]);\r\n    _;\r\n  }\r\n  \r\n  receive() external payable {\r\n      \r\n  }\r\n\r\n  fallback() external payable {\r\n      \r\n  }\r\n\r\n  function Payout() external {\r\n//    uint balance = (address(this).balance) - 10000000000000000;\r\n    uint balance = (address(this).balance);\r\n    require(balance > 0);\r\n    uint splitAmount1 = balance*4/10;\r\n    uint splitAmount2 = balance*3/10;\r\n    payable(recipients[0]).transfer(splitAmount1);\r\n    payable(recipients[1]).transfer(splitAmount2);\r\n    payable(recipients[2]).transfer(splitAmount2);\r\n  }\r\n\r\n}"
+    }
+  }
+}

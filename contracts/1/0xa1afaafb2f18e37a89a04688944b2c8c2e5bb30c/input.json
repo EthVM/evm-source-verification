@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/contracts/orig+put+destroy+block.sol": {
+      "content": "pragma solidity 0.6.10;\n\ncontract firstTry {\n    event success();\n    event fail();\n    \n    address orig;\n    uint256 MILESTONE;\n    bytes32 public secretHash;\n    \n    constructor (bytes32 _secretHash) public payable {\n        orig = msg.sender;\n        secretHash = _secretHash;\n        MILESTONE = block.number;\n    }\n    \n    function put() external payable  {\n    }\n    \n    function take(bytes32 _secret) external {\n        if (keccak256(abi.encodePacked(_secret)) == secretHash && block.number <= MILESTONE + 100) {\n            uint256 _myBalance = address(this).balance;\n            msg.sender.transfer(_myBalance);\n            // secretHash = _secret;\n            emit success();\n        } else {\n            emit fail();\n        }\n    }\n    \n    // function withdraw(uint _balance) external {\n    //     if (msg.sender == orig) {\n    //         payable(orig).transfer(_balance < address(this).balance ? _balance : address(this).balance);\n    //     } \n    // }\n    \n    function destroy() external {\n        if (msg.sender == orig) {\n            selfdestruct(payable(orig));\n        } \n    }\n}"
+    }
+  }
+}

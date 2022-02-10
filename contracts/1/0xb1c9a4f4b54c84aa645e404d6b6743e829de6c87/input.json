@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "A_Locker.sol": {
+      "content": "/**\r\n *Submitted for verification at Etherscan.io on 2020-12-02\r\n*/\r\n\r\npragma solidity ^0.4.13;\r\n\r\ncontract ERC20Basic {\r\n  function balanceOf(address _owner) public returns (uint256 balance);\r\n  function transfer(address to, uint256 value) public returns (bool);\r\n}\r\n\r\n\r\ncontract A_Locker {\r\n    address owner;\r\n    \r\n    address tokenAddress = 0xd03B6ae96CaE26b743A6207DceE7Cbe60a425c70;\r\n    uint256 unlockUnix = now + 31 days;\r\n    \r\n    ERC20Basic token = ERC20Basic(tokenAddress);\r\n    \r\n    constructor() public {\r\n        owner = msg.sender;\r\n    }\r\n    \r\n    function unlockTeamTokens() public {\r\n        require(owner == msg.sender, \"You is not owner\");\r\n        require( now > unlockUnix, \"Is not unlock time now\");\r\n        token.transfer(owner, token.balanceOf(address(this)));\r\n    }\r\n    \r\n    //Control\r\n    function getLockAmount() public view returns (uint256){\r\n        return token.balanceOf(address(this));\r\n    }\r\n    \r\n    function getTokenAddress()  public view returns (address){\r\n        return tokenAddress;\r\n    }\r\n    \r\n    function getUnlockTimeLeft() public view returns (uint){\r\n        return unlockUnix - now;\r\n    }\r\n}"
+    }
+  }
+}

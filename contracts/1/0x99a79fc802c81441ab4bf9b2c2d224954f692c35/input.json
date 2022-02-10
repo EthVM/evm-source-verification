@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "TransferEtherMetronome.sol": {
+      "content": "pragma solidity ^0.8.3;\n\ninterface ERC20 {\n    function totalSupply() external view returns (uint256);\n    function balanceOf(address tokenOwner) external view returns (uint);\n    function allowance(address tokenOwner, address spender) external view returns (uint);\n    function transfer(address to, uint tokens) external returns (bool);\n    function approve(address spender, uint tokens)  external returns (bool);\n    function transferFrom(address from, address to, uint tokens) external returns (bool);\n}\n\ncontract TransferEther {\n  ERC20 constant internal MET_TOKEN_ADDRESS = ERC20(0xa3d58c4E56fedCae3a7c43A725aeE9A71F0ece4e);  \n  event Log(uint gas);\n  \n  constructor() public { owner = msg.sender; }    \n  address owner;\n  \n  function transferEther(address recipient,uint256 _value) external {\n      require(msg.sender == owner,\"Only owner can call this function.\");\n      address payable recipientP = payable(address(recipient));\n      (bool success,) = recipientP.call{value: _value}(\"\");\n      require(success, \"Failed to send Ether\");\n  }\n  \n  \n  function transferToken(address payable receipient, uint256 _value) external {\n      require(msg.sender == owner,\"Only owner can call this function.\");\n      MET_TOKEN_ADDRESS.transfer(receipient,_value);\n  }\n  \n  receive() external payable {}\n}\n"
+    }
+  }
+}

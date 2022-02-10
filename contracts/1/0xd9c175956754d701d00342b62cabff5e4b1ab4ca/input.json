@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/ExampleCoin.sol": {
+      "content": "// SPDX-License-Identifier: MIT\n\npragma solidity >=0.5.0 <0.7.0;\ncontract ExampleCoin {\n   address public minter;\n\n   mapping (address => uint) public balances;\n   \n   event Sent(address from, address to, uint amount);\n\n   constructor() public {\n      minter = msg.sender;\n      }\n   function mint(address receiver, uint amount) public {\n      require(msg.sender == minter);\n      require(amount < 1e60);\n      balances[receiver] += amount;\n   }\n\n   function send(address receiver, uint amount) public {\n      require(amount <= balances[msg.sender], \"Insufficient balance.\");\n      balances[msg.sender] -= amount;\n      balances[receiver] += amount;\n      emit Sent(msg.sender, receiver, amount);\n   }\n}"
+    }
+  }
+}

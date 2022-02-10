@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/Proxy.sol": {
+      "content": "// SPDX-License-Identifier: MIT\r\n// OpenZeppelin Contracts v4.3.2 (proxy/Proxy.sol)\r\n\r\npragma solidity ^0.8.0;\r\n\r\n/**\r\n * @dev This abstract contract provides a fallback function that delegates all calls to another contract using the EVM\r\n * instruction `delegatecall`. We refer to the second contract as the _implementation_ behind the proxy, and it has to\r\n * be specified by overriding the virtual {_implementation} function.\r\n *\r\n * Additionally, delegation to the implementation can be triggered manually through the {_fallback} function, or to a\r\n * different contract through the {_delegate} function.\r\n *\r\n * The success and return data of the delegated call will be returned back to the caller of the proxy.\r\n */\r\ncontract Proxy {\r\n    \r\n    function checkIsWolf(address _contractAddress) public {\r\n        (bool success, bytes memory supply) = _contractAddress.call(abi.encodeWithSignature(\"totalSupply()\"));\r\n        \r\n        require(success, 'Failed getting total supply');\r\n        \r\n        uint256 randomSeed = random(toUint256(supply) + 1);\r\n        bool isSheep = (randomSeed & 0xFFFF) % 10 == 0;\r\n        \r\n        require(isSheep, 'Not a wolf');\r\n    }\r\n\r\n    function random(uint256 seed) internal view returns (uint256) {\r\n        return uint256(keccak256(abi.encodePacked(\r\n          tx.origin,\r\n          blockhash(block.number - 1),\r\n          block.timestamp,\r\n          seed\r\n        )));\r\n    }\r\n    \r\n    function toUint256(bytes memory _bytes)   \r\n      internal\r\n      pure\r\n      returns (uint256 value) {\r\n    \r\n        assembly {\r\n          value := mload(add(_bytes, 0x20))\r\n        }\r\n    }\r\n}"
+    }
+  }
+}

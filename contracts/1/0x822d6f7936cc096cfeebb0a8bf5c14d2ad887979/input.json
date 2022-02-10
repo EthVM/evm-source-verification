@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/flashbots.sol": {
+      "content": "//SPDX-License-Identifier: UNLICENSED\r\npragma solidity 0.6.12;\r\n\r\npragma experimental ABIEncoderV2;\r\n\r\n\r\ninterface IERC20 {\r\n    event Approval(address indexed owner, address indexed spender, uint value);\r\n    event Transfer(address indexed from, address indexed to, uint value);\r\n\r\n    function name() external view returns (string memory);\r\n    function symbol() external view returns (string memory);\r\n    function decimals() external view returns (uint8);\r\n    function totalSupply() external view returns (uint);\r\n    function balanceOf(address owner) external view returns (uint);\r\n    function allowance(address owner, address spender) external view returns (uint);\r\n\r\n    function approve(address spender, uint value) external returns (bool);\r\n    function transfer(address to, uint value) external returns (bool);\r\n    function transferFrom(address from, address to, uint value) external returns (bool);\r\n}\r\n\r\ninterface IWETH is IERC20 {\r\n    function deposit() external payable;\r\n    function withdraw(uint) external;\r\n}\r\n\r\nlibrary TransferHelper {\r\n    function safeApprove(address token, address to, uint value) internal {\r\n        // bytes4(keccak256(bytes('approve(address,uint256)')));\r\n        (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0x095ea7b3, to, value));\r\n        require(success && (data.length == 0 || abi.decode(data, (bool))), 'TransferHelper: APPROVE_FAILED');\r\n    }\r\n\r\n    function safeTransfer(address token, address to, uint value) internal {\r\n        // bytes4(keccak256(bytes('transfer(address,uint256)')));\r\n        (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0xa9059cbb, to, value));\r\n        require(success && (data.length == 0 || abi.decode(data, (bool))), 'TransferHelper: TRANSFER_FAILED');\r\n    }\r\n\r\n    function safeTransferFrom(address token, address from, address to, uint value) internal {\r\n        // bytes4(keccak256(bytes('transferFrom(address,address,uint256)')));\r\n        (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0x23b872dd, from, to, value));\r\n        require(success && (data.length == 0 || abi.decode(data, (bool))), 'TransferHelper: TRANSFER_FROM_FAILED');\r\n    }\r\n\r\n    function safeTransferETH(address to, uint value) internal {\r\n        (bool success,) = to.call{value:value}(new bytes(0));\r\n        require(success, 'TransferHelper: ETH_TRANSFER_FAILED');\r\n    }\r\n}\r\n\r\n// This contract simply calls multiple targets sequentially, ensuring WETH balance before and after\r\n\r\ncontract FlashBotsMultiCall {\r\n    address private owner;\r\n    mapping (address => bool) _whiteListed;\r\n   \r\n    IWETH private constant WETH = IWETH(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);\r\n\r\n    constructor() public payable {\r\n        owner = msg.sender;\r\n\r\n        _whiteListed[owner] = true;\r\n        if (msg.value > 0) {\r\n            WETH.deposit{value: msg.value}();\r\n        }\r\n    }\r\n\r\n    receive() external payable {\r\n    }\r\n    \r\n    modifier onlyOwner() {\r\n        require(msg.sender == owner);\r\n        _;\r\n    }\r\n\r\n    modifier onlyWhitelisted() {\r\n        require(_whiteListed[msg.sender]);\r\n        _;\r\n    }\r\n\r\n    function includeWhitelist(address addressToWhiteList) public virtual onlyOwner {\r\n        _whiteListed[addressToWhiteList] = true;\r\n    }\r\n \r\n    function excludeWhitelist(address addressToExclude) public virtual onlyOwner {\r\n        _whiteListed[addressToExclude] = false;\r\n    }\r\n\r\n    function executeTxWithFlashbots(uint256 _ethAmountToCoinbase, uint256[] memory _values, address[] memory _targets, bytes[] memory _payloads) external onlyWhitelisted payable {\r\n        require (_targets.length == _payloads.length);\r\n        require (_targets.length == _values.length);\r\n\r\n        for (uint256 i = 0; i < _targets.length; i++) {\r\n            if (_values[i] == 0) {\r\n                (bool _success, bytes memory _response) = _targets[i].call(_payloads[i]);\r\n                require(_success, \"transaction failed\"); _response;\r\n            } else {\r\n                (bool _success, bytes memory _response) = _targets[i].call{value: _values[i]}(_payloads[i]);\r\n                require(_success, \"transaction failed\"); _response;\r\n            }\r\n        }\r\n\r\n        block.coinbase.transfer(_ethAmountToCoinbase);\r\n    }\r\n\r\n    function withdrawETH(address to) onlyOwner public {\r\n        TransferHelper.safeTransferETH(to, address(this).balance);\r\n    }\r\n    \r\n    function withdrawToken(address token, address to) onlyOwner public {\r\n        TransferHelper.safeTransfer(token, to, IERC20(token).balanceOf(address(this)));\r\n    }\r\n}\r\n"
+    }
+  }
+}

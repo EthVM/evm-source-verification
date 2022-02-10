@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "Staker.sol": {
+      "content": "// SPDX-License-Identifier: MIT\r\npragma solidity ^0.7.0;\r\n\r\nlibrary SafeMath {\r\n  function mul(uint256 a, uint256 b) internal pure returns (uint256) {\r\n    if (a == 0) return 0;\r\n    uint256 c = a * b;\r\n    assert(c / a == b);\r\n    return c;\r\n  }\r\n\r\n  function div(uint256 a, uint256 b) internal pure returns (uint256) {\r\n    uint256 c = a / b;\r\n    return c;\r\n  }\r\n\r\n  function sub(uint256 a, uint256 b) internal pure returns (uint256) {\r\n    assert(b <= a);\r\n    return a - b;\r\n  }\r\n\r\n  function add(uint256 a, uint256 b) internal pure returns (uint256) {\r\n    uint256 c = a + b;\r\n    assert(c >= a);\r\n    return c;\r\n  }\r\n}\r\n\r\ninterface ERC20Basic {\r\n  function balanceOf(address who) external view returns (uint256 balance);\r\n\r\n  function transfer(address to, uint256 value) external returns (bool trans1);\r\n\r\n  function allowance(address owner, address spender) external view returns (uint256 remaining);\r\n\r\n  function transferFrom(\r\n    address from,\r\n    address to,\r\n    uint256 value\r\n  ) external returns (bool trans);\r\n\r\n  function approve(address spender, uint256 value) external returns (bool hello);\r\n\r\n  event Approval(address indexed owner, address indexed spender, uint256 value);\r\n  event Transfer(address indexed from, address indexed to, uint256 value);\r\n}\r\n\r\ncontract Staker {\r\n  using SafeMath for uint256;\r\n\r\n  ERC20Basic public TKN;\r\n  uint256[4] periods = [30 days, 90 days, 180 days, 360 days];\r\n  uint256[4] rates = [1020, 1050, 1150, 1400];\r\n  uint256[4] bonuses = [2, 10, 75, 400];\r\n  uint256[4] amounts = [200000 ether, 500000 ether, 1000000 ether, 2500000 ether];\r\n  struct Stake {\r\n    uint256 start;\r\n    uint8 period;\r\n    uint256 passed;\r\n  }\r\n  mapping(address => Stake) public stakes;\r\n\r\n  function stake(uint8 _period) public {\r\n    require(stakes[msg.sender].start == 0, \"Already staking\");\r\n    require(_period < 4, \"Invalid period, must be from 0 to 3\");\r\n\r\n    require(TKN.transferFrom(msg.sender, address(this), amounts[_period]), \"Transfer failed, check allowance\");\r\n    stakes[msg.sender] = Stake({passed: 0, start: block.timestamp, period: _period});\r\n  }\r\n\r\n  function unstake() public {\r\n    require(stakes[msg.sender].start != 0, \"Not staking\");\r\n    Stake storage _s = stakes[msg.sender];\r\n    uint8 _t = _s.period;\r\n    require(block.timestamp >= _s.start + periods[_t] * (1 + _s.passed), \"Period not passed yet\");\r\n\r\n    uint256 amount = amounts[_t];\r\n    for (uint256 i = 0; i <= _s.passed; i++) amount = amount.mul(rates[_t] + bonuses[_t] * i).div(1000);\r\n    require(TKN.transfer(msg.sender, amount), \"Transfer failed, check contract balance\");\r\n    delete stakes[msg.sender];\r\n  }\r\n\r\n  function prolong() public {\r\n    require(stakes[msg.sender].start != 0, \"Not staking\");\r\n    Stake storage _s = stakes[msg.sender];\r\n    require(block.timestamp >= _s.start + periods[_s.period] * (1 + _s.passed), \"Period not passed yet\");\r\n\r\n    _s.passed++;\r\n  }\r\n\r\n  constructor (ERC20Basic _token) {\r\n    TKN = ERC20Basic(_token);\r\n  }\r\n}"
+    }
+  }
+}

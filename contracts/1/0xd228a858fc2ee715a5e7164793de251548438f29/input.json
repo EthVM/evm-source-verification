@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "VGTGRedeemV1.sol": {
+      "content": "pragma solidity ^0.4.24;\r\n\r\n\r\n// ----------------------------------------------------------------------------\r\n// MAINNET VGTG Redeem Contract for Video Games Token GOLD - VGTG\r\n// Author: VGTG Development Team\r\n// Ver 1.0\r\n//\r\n// Deployed to : 0xd228a858fc2ee715a5e7164793de251548438f29\r\n// Symbol      : VGTG\r\n// Name        : VGTGToken\r\n// Total supply: 250000000\r\n// Decimals    : 18\r\n// Details of Contract : Users will be able to Redeem VGTG tokens by sending a small Ether amount to contract\r\n//\t\t\t\t\t\t We are not sending to user for free beacuse we only want active traders to buy and use the token.\r\n//\t\t\t\t\t\t Users can redeem tokens by paying fraction of actual price.\r\n// ----------------------------------------------------------------------------\r\n\r\n\r\ncontract SafeMath {\r\n\r\n    function safeAdd(uint a, uint b) public pure returns (uint c) {\r\n        c = a + b;\r\n        require(c >= a);\r\n    }\r\n\r\n    function safeSub(uint a, uint b) public pure returns (uint c) {\r\n        require(b <= a);\r\n        c = a - b;\r\n    }\r\n\r\n    function safeMul(uint a, uint b) public pure returns (uint c) {\r\n        c = a * b;\r\n        require(a == 0 || c / a == b);\r\n    }\r\n\r\n    function safeDiv(uint a, uint b) public pure returns (uint c) {\r\n        require(b > 0);\r\n        c = a / b;\r\n    }\r\n}\r\n\r\ncontract Owned {\r\n\r\n    address public owner;\r\n    address public newOwner;\r\n\r\n    event OwnershipTransferred(address indexed _from, address indexed _to);\r\n\r\n    constructor() public {\r\n        owner = msg.sender;\r\n    }\r\n\r\n    modifier onlyOwner {\r\n        require(msg.sender == owner);\r\n        _;\r\n    }\r\n\r\n    function transferOwnership(address _newOwner) public onlyOwner {\r\n        newOwner = _newOwner;\r\n    }\r\n\r\n    function acceptOwnership() public {\r\n        require(msg.sender == newOwner);\r\n        emit OwnershipTransferred(owner, newOwner);\r\n        owner = newOwner;\r\n        newOwner = address(0);\r\n    }\r\n}\r\n\r\ncontract VGTGToken is Owned, SafeMath {\r\n    \r\n   mapping(address => uint256) balances;\r\n   mapping(address => mapping(address => uint)) allowed;\r\n   //uint _totalSupply;\r\n    \r\n   event Transfer(address indexed from, address indexed to, uint tokens);\r\n\r\n   function balanceOf(address tokenOwner) public constant returns (uint balance);\r\n\r\n   // To release tokens to the address that have send ether.\r\n   function releaseTokens(address _receiver, uint _amount) public;\r\n\r\n   // To take back tokens after refunding ether.\r\n   function refundTokens(address _receiver, uint _amount) public;\r\n   \r\n   function transfer(address to, uint tokens) public returns (bool);\r\n   \r\n   function transferFrom(address from, address to, uint tokens) public returns (bool success);\r\n\r\n}\r\n\r\ncontract VGTGRedeemV1 {\r\n\r\n   uint public redeemStart;\r\n   uint public redeemEnd;\r\n   uint public tokenRate;\r\n   VGTGToken public token;   \r\n   uint public fundingGoal;\r\n   uint public tokensRedeemed;\r\n   uint public etherRaised;\r\n   address public owner;\r\n   uint decimals = 18;\r\n\r\n   event BuyTokens(address buyer, uint etherAmount);\r\n   event Transfer(address indexed from, address indexed to, uint tokens);\r\n   event BuyerBalance(address indexed buyer, uint buyermoney);\r\n   event TakeTokensBack(address ownerAddress, uint quantity );\r\n   \r\n   modifier onlyOwner {\r\n      require(msg.sender == owner);\r\n      _;\r\n   }\r\n\r\n   \r\n\r\n   constructor( uint _tokenRate, address _tokenAddress, uint _fundingGoal) public {\r\n\r\n      require( _tokenRate != 0 &&\r\n      _tokenAddress != address(0) &&\r\n      _fundingGoal != 0);\r\n     \r\n      redeemStart = now;\r\n      redeemStart = block.timestamp;\r\n      \r\n      redeemEnd = redeemStart + 4 weeks;\r\n      tokenRate = _tokenRate;\r\n      token = VGTGToken(_tokenAddress);\r\n      fundingGoal = _fundingGoal;\r\n      owner = msg.sender;\r\n   }\r\n\r\n   function () public payable {\r\n      buy();\r\n   }\r\n\r\n   function buy() public payable {\r\n\r\n      emit BuyTokens( msg.sender , msg.value);\r\n\t  \r\n      require(msg.sender!=owner);\r\n      require(etherRaised < fundingGoal);\r\n      require(now < redeemEnd && now > redeemStart);\r\n      uint tokensToGet;\r\n      uint etherUsed = msg.value;\r\n      tokensToGet = etherUsed * tokenRate;\r\n\r\n      owner.transfer(etherUsed);\r\n      \r\n      // transfer tokens\r\n      token.transfer(msg.sender, tokensToGet);\r\n      \r\n      emit BuyerBalance(msg.sender, tokensToGet);\r\n      \r\n      tokensRedeemed += tokensToGet;\r\n      etherRaised += etherUsed;\r\n   }\r\n   \r\n   function setRedeemEndDate(uint time) public onlyOwner {\r\n        require(time>0);\r\n        redeemEnd = time;\r\n   }\r\n   \r\n   function setFundingGoal(uint goal) public onlyOwner {\r\n        fundingGoal = goal;\r\n   }\r\n   \r\n   function setTokenRate(uint tokenEthMultiplierRate) public onlyOwner {\r\n        tokenRate = tokenEthMultiplierRate;\r\n   }\r\n   \r\n   function takeTokensBackAfterRedeemOver(uint quantity) public onlyOwner {\r\n        token.transfer(owner, quantity);\r\n        emit TakeTokensBack(owner, quantity);\r\n   }\r\n }"
+    }
+  }
+}

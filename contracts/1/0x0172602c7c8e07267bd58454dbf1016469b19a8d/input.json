@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/CreamETH2Proxy.sol": {
+      "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.6.11;\n\ninterface PoolInterface {\n    function swapExactAmountIn(address, uint, address, uint, uint) external returns (uint, uint);\n    function swapExactAmountOut(address, uint, address, uint, uint) external returns (uint, uint);\n}\n\ninterface TokenInterface {\n    function balanceOf(address) external view returns (uint);\n    function allowance(address, address) external view returns (uint);\n    function approve(address, uint) external returns (bool);\n    function transfer(address, uint) external returns (bool);\n    function transferFrom(address, address, uint) external returns (bool);\n    function deposit() external payable;\n    function withdraw(uint) external;\n}\n\ncontract CreamETH2Proxy {\n\n    TokenInterface public WETH;\n    TokenInterface public CRETH2;\n    PoolInterface public POOL;\n\n    constructor(address _WETH, address _CRETH2, address _POOL) public {\n        WETH = TokenInterface(_WETH);\n        CRETH2 = TokenInterface(_CRETH2);\n        POOL = PoolInterface(_POOL);\n    }\n\n    function swapExactAmountIn(\n        uint minAmountOut,\n        uint maxPrice\n    ) external payable returns (uint tokenAmountOut, uint spotPriceAfter) {\n        WETH.deposit{value: msg.value}();\n        if (WETH.allowance(address(this), address(POOL)) > 0) {\n            WETH.approve(address(POOL), 0);\n        }\n        WETH.approve(address(POOL), msg.value);\n\n        (tokenAmountOut, spotPriceAfter) = POOL.swapExactAmountIn(\n                                    address(WETH),\n                                    msg.value,\n                                    address(CRETH2),\n                                    minAmountOut,\n                                    maxPrice\n                                );\n\n        transferAll(CRETH2, tokenAmountOut);\n        transferAll(WETH, WETH.balanceOf(address(this)));\n        return (tokenAmountOut, spotPriceAfter);\n    }\n\n    function swapExactAmountOut(\n        uint tokenAmountOut,\n        uint maxPrice\n    ) external payable returns (uint tokenAmountIn, uint spotPriceAfter) {\n        WETH.deposit{value: msg.value}();\n        if (WETH.allowance(address(this), address(POOL)) > 0) {\n            WETH.approve(address(POOL), 0);\n        }\n        WETH.approve(address(POOL), msg.value);\n\n        (tokenAmountIn, spotPriceAfter) = POOL.swapExactAmountOut(\n                                            address(WETH),\n                                            msg.value,\n                                            address(CRETH2),\n                                            tokenAmountOut,\n                                            maxPrice\n                                        );\n\n        transferAll(CRETH2, tokenAmountOut);\n        transferAll(WETH, WETH.balanceOf(address(this)));\n        return (tokenAmountIn, spotPriceAfter);\n    }\n\n    function transferAll(TokenInterface token, uint amount) internal returns(bool) {\n        if (amount == 0) {\n            return true;\n        }\n\n        if (address(token) == address(WETH)) {\n            WETH.withdraw(amount);\n            (bool xfer,) = msg.sender.call{value: amount}(\"\");\n            require(xfer, \"ERR_ETH_FAILED\");\n        } else {\n            require(token.transfer(msg.sender, amount), \"ERR_TRANSFER_FAILED\");\n        }\n    }\n\n    receive() external payable {\n        assert(msg.sender == address(WETH)); // only accept ETH via fallback from the WETH contract\n    }\n}\n"
+    }
+  }
+}

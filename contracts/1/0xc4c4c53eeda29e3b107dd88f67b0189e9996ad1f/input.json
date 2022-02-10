@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/3_Ballot.sol": {
+      "content": "pragma solidity ^0.6.12;\n\npragma experimental ABIEncoderV2;\n\n\ninterface IReferralFeeReceiver {\n    function freezeEpoch(address mooniswap) external;\n\n    function trade(address mooniswap, address[] memory path) external;\n}\n\ncontract RewardsClaimer {\n\n    struct FeeItem {\n        address mooniswap;\n        address[] pathToken0;\n        address[] pathToken1;\n    }\n\n    IReferralFeeReceiver private constant referralFeeReceiver = IReferralFeeReceiver(0x2eeA44E40930b1984F42078E836c659A12301E40);\n\n    function unwrapReferralFeeReceiverNoFreeze(FeeItem[] memory items) external returns (bool[] memory success, bytes[] memory data) {\n        success = new bool[](items.length * 2);\n        data = new bytes[](items.length * 2);\n        for (uint i = 0; i < items.length; i++) {\n            (success[i * 2], data[i * 2]) = address(referralFeeReceiver).call(abi.encodeWithSelector(\n                    referralFeeReceiver.trade.selector,\n                    items[i].mooniswap,\n                    items[i].pathToken0\n                ));\n            (success[(i * 2) + 1], data[(i * 2) + 1]) = address(referralFeeReceiver).call(abi.encodeWithSelector(\n                    referralFeeReceiver.trade.selector,\n                    items[i].mooniswap,\n                    items[i].pathToken1\n                ));\n        }\n    }\n\n    function unwrapReferralFeeReceiver(FeeItem[] memory items) external {\n        for (uint i = 0; i < items.length; i++) {\n            try referralFeeReceiver.freezeEpoch(items[i].mooniswap) {\n            } catch {\n                continue;\n            }\n            try referralFeeReceiver.trade(items[i].mooniswap, items[i].pathToken0) {\n            } catch {}\n            try referralFeeReceiver.trade(items[i].mooniswap, items[i].pathToken1) {\n            } catch {}\n        }\n    }\n\n    function freezeEpoch(address[] memory mooniswaps) external returns (bool[] memory success, bytes[] memory data) {\n        success = new bool[](mooniswaps.length);\n        data = new bytes[](mooniswaps.length);\n        for (uint i = 0; i < mooniswaps.length; i++) {\n            (success[i], data[i]) = address(referralFeeReceiver).call(abi.encodeWithSelector(\n                    referralFeeReceiver.freezeEpoch.selector,\n                    mooniswaps[i]\n                ));\n        }\n    }\n\n}\n"
+    }
+  }
+}

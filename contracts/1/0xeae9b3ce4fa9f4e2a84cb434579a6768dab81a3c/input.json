@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 999999
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "LnConfig.sol": {
+      "content": "// SPDX-License-Identifier: MIT\r\npragma solidity ^0.6.12;\r\n\r\ncontract LnAdmin {\r\n    address public admin;\r\n    address public candidate;\r\n\r\n    constructor(address _admin) public {\r\n        require(_admin != address(0), \"admin address cannot be 0\");\r\n        admin = _admin;\r\n        emit AdminChanged(address(0), _admin);\r\n    }\r\n\r\n    function setCandidate(address _candidate) external onlyAdmin {\r\n        address old = candidate;\r\n        candidate = _candidate;\r\n        emit CandidateChanged(old, candidate);\r\n    }\r\n\r\n    function becomeAdmin() external {\r\n        require(msg.sender == candidate, \"Only candidate can become admin\");\r\n        address old = admin;\r\n        admin = candidate;\r\n        emit AdminChanged(old, admin);\r\n    }\r\n\r\n    modifier onlyAdmin {\r\n        require((msg.sender == admin), \"Only the contract admin can perform this action\");\r\n        _;\r\n    }\r\n\r\n    event CandidateChanged(address oldCandidate, address newCandidate);\r\n    event AdminChanged(address oldAdmin, address newAdmin);\r\n}\r\n\r\ncontract LnConfig is LnAdmin {\r\n    mapping(bytes32 => uint) internal mUintConfig;\r\n\r\n    constructor(address _admin) public LnAdmin(_admin) {}\r\n\r\n    //some configue keys\r\n    bytes32 public constant BUILD_RATIO = \"BuildRatio\"; // percent, base 10e18\r\n\r\n    function getUint(bytes32 key) external view returns (uint) {\r\n        return mUintConfig[key];\r\n    }\r\n\r\n    function setUint(bytes32 key, uint value) external onlyAdmin {\r\n        mUintConfig[key] = value;\r\n        emit SetUintConfig(key, value);\r\n    }\r\n\r\n    function deleteUint(bytes32 key) external onlyAdmin {\r\n        delete mUintConfig[key];\r\n        emit SetUintConfig(key, 0);\r\n    }\r\n\r\n    function batchSet(bytes32[] calldata names, uint[] calldata values) external onlyAdmin {\r\n        require(names.length == values.length, \"Input lengths must match\");\r\n\r\n        for (uint i = 0; i < names.length; i++) {\r\n            mUintConfig[names[i]] = values[i];\r\n            emit SetUintConfig(names[i], values[i]);\r\n        }\r\n    }\r\n\r\n    event SetUintConfig(bytes32 key, uint value);\r\n}"
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/HegicOptionsData.sol": {
+      "content": "// SPDX-License-Identifier: MIT\npragma solidity >=0.6.12;\npragma experimental ABIEncoderV2;\n\nenum State {Inactive, Active, Exercised, Expired}\nenum OptionType {Invalid, Put, Call}\n\nstruct Option {\n    State state;\n    address payable holder;\n    uint256 strike;\n    uint256 amount;\n    uint256 lockedAmount;\n    uint256 premium;\n    uint256 expiration;\n    OptionType optionType;\n}\n\ninterface IHegicPool {\n    function totalBalance() external view returns (uint256 amount);\n\n    function availableBalance() external view returns (uint256 amount);\n}\n\ninterface IHegicOptions {\n\n    function pool() external view returns (address poolAddress);\n\n    function unlockAll(uint256[] calldata optionsIDs) external;\n\n    function options(uint256) external view returns (Option memory);\n\n}\n\ncontract HegicOptionsDataHelper {\n    \n    function getUnlockableOptionsCount(address optionpool,uint256 limit) public view returns (uint256 count) {\n        count = 0;\n        for(uint i=0;i<limit;i++) {\n            if(_totalUnlock(optionpool,limit))\n               ++count;\n        }\n    }\n\n    function GetUnlockableOptions(address optionpool,uint256 limit) public view returns (uint256[] memory unlockableIDS) {\n        unlockableIDS = new uint256[](getUnlockableOptionsCount(optionpool,limit));\n        uint256 index = 0;\n        for(uint i=0;i<limit;i++){\n            if(_totalUnlock(optionpool,limit))\n               unlockableIDS[index] = i;\n               index++;\n        }\n    }\n    \n    function _totalUnlock(address hegic, uint256 optionID) internal view returns (bool) {\n        Option memory option = IHegicOptions(hegic).options(optionID);\n        // if one of the options is not active or not expired, do not continue\n        if (option.state != State.Active || option.expiration >= block.timestamp) {\n                return false;\n        }\n        return true;\n    }\n\n}"
+    }
+  }
+}

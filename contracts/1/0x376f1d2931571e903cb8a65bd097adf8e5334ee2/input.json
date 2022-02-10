@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/uTrade.sol": {
+      "content": "pragma solidity ^0.6.0;\n\nabstract contract ERC20 {\n  function transferFrom(address from, address to, uint256 value) public virtual returns (bool);\n}\n\ncontract uTrade{\n    \n    address public owner; \n    \n    uint public price = 10000;\n    \n    constructor() public{\n        owner=msg.sender;\n    }\n    \n    address public ucash = 0x92e52a1A235d9A103D970901066CE910AAceFD37; \n    \n    receive() external payable{\n    }\n    \n    function trade(uint amount) public{\n        uint ethAmount = amount*price;\n        require(msg.sender.balance>=ethAmount,\"not enough ETH left in contract\");\n        ERC20(ucash).transferFrom(msg.sender,owner,amount);\n        msg.sender.transfer(ethAmount);\n    }\n}"
+    }
+  }
+}

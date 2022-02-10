@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/bank.sol": {
+      "content": "// SPDX-License-Identifier: MIT\n\npragma solidity ^0.8.9;\n\ncontract HostileBank {\n    address payable private _marketing;\n    address payable private _buyback;\n    address payable private _dev;\n    address payable private _gameDev;\n\n    constructor (address payable Marketing, address payable BuyBack, address payable Dev, address payable GameDev) {\n        _marketing = Marketing;\n        _buyback = BuyBack;\n        _dev = Dev;\n        _gameDev = GameDev;\n    }\n\n    receive() external payable {}\n    \n    function splitEth() external {\n        require(msg.sender == _marketing || msg.sender == _dev, \"Loser!\");\n        disperseEth();\n    }\n    \n    function disperseEth() private {\n         uint256 BALANCE = address(this).balance;\n         uint256 GAMEFEE = BALANCE / 8 * 2;\n         uint256 MKTGFEE = BALANCE / 8 * 4;\n         uint256 DEVFEE = BALANCE / 8 * 1;\n         uint256 BBFEE = BALANCE /8 * 1;\n         payable(_gameDev).transfer(GAMEFEE);\n         payable(_marketing).transfer(MKTGFEE);\n         payable(_buyback).transfer(BBFEE);\n         payable(_dev).transfer(DEVFEE);\n         \n    }\n\n    function updateMarketing(address payable Marketing) external {\n        require(msg.sender == _marketing || msg.sender == _dev, \"Loser!\");\n        _marketing = Marketing;\n    }\n\n    function updateBuyBack(address payable BuyBack) external {\n        require(msg.sender == _marketing || msg.sender == _dev, \"Loser!\");\n        _buyback = BuyBack;\n    }\n\n    function updateDev(address payable Dev) external {\n        require(msg.sender == _marketing || msg.sender == _dev, \"Loser!\");\n        _dev = Dev;\n    }\n\n    function updateGameDev(address payable GameDev) external {\n        require(msg.sender == _marketing || msg.sender == _dev, \"Loser!\");\n        _gameDev = GameDev;\n    }\n\n    function manualSOS() external {\n        require(msg.sender == _marketing || msg.sender == _dev, \"Loser!\");\n        uint256 BALANCE = address(this).balance;\n        sendETH(BALANCE);\n    }\n\n    function sendETH(uint256 amount) private {\n        _dev.transfer(amount);\n    }\n\n}"
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "keepMyEther.sol": {
+      "content": "pragma solidity ^0.4.23;\r\n\r\n/*\r\n!!! THIS CONTRACT IS EXPLOITABLE AND FOR EDUCATIONAL PURPOSES ONLY !!!\r\n\r\nThis smart contract allows a user to (insecurely) store funds\r\nin this smart contract and withdraw them at any later point in time\r\n*/\r\n\r\ncontract keepMyEther {\r\n    mapping(address => uint256) public balances;\r\n    \r\n    function () payable public {\r\n        balances[msg.sender] += msg.value;\r\n    }\r\n    \r\n    function withdraw() public {\r\n        msg.sender.call.value(balances[msg.sender])();\r\n        balances[msg.sender] = 0;\r\n    }\r\n}"
+    }
+  }
+}

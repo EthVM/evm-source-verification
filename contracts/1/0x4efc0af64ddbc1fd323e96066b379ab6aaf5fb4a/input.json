@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/distributor.sol": {
+      "content": "// SPDX-License-Identifier: MIT\npragma solidity 0.8.6;\n\n/// author: niveyno\n\ncontract Splitter {\n    address private _wallet1 = 0x9dB8922f8044d4cFE9C361b53C149fD5D63d90f9;\n    address private _wallet2 = 0x4502F16e0Aa869EA9AAdC7f941e3dE472Af94100;\n\n    fallback() external payable {\n        bool success = false;\n        (success,) = _wallet1.call{value : msg.value * 95 / 100}(\"\");\n        require(success, \"Failed to send1\");\n\n        bool success2 = false;\n        (success2,) = _wallet2.call{value : msg.value * 5 / 100}(\"\");\n        require(success2, \"Failed to send2\");\n    }\n}\n"
+    }
+  }
+}

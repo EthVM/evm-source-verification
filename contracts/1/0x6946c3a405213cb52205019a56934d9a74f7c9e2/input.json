@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/Deployer.sol": {
+      "content": "pragma solidity ^0.6.0;\n\ninterface ERC20 {\n    function totalSupply() external view returns (uint256 supply);\n\n    function balanceOf(address _owner) external view returns (uint256 balance);\n\n    function transfer(address _to, uint256 _value) external returns (bool success);\n\n    function transferFrom(address _from, address _to, uint256 _value)\n        external\n        returns (bool success);\n\n    function approve(address _spender, uint256 _value) external returns (bool success);\n\n    function allowance(address _owner, address _spender) external view returns (uint256 remaining);\n\n    function decimals() external view returns (uint256 digits);\n\n    event Approval(address indexed _owner, address indexed _spender, uint256 _value);\n}\n\n\nabstract contract GasTokenInterface is ERC20 {\n    function free(uint256 value) public virtual returns (bool success);\n\n    function freeUpTo(uint256 value) public virtual returns (uint256 freed);\n\n    function freeFrom(address from, uint256 value) public virtual returns (bool success);\n\n    function freeFromUpTo(address from, uint256 value) public virtual returns (uint256 freed);\n}\n\n\ncontract Deloyer {\n    GasTokenInterface public constant gasToken = GasTokenInterface(0x0000000000b3F879cb30FE243b4Dfee438691c04);\n\n    event ContractCreated(address);\n    \n    modifier burnGas(uint _amount) {\n        uint gst2Amount = _amount;\n\n        if (_amount == 0) {\n            gst2Amount = (gasleft() + 14154) / (2 * 24000 - 6870);\n            gst2Amount = gst2Amount - (gst2Amount / 8); // 12.5% less because of gaslimit != gas_used\n        }\n\n        if (gasToken.balanceOf(address(this)) >= gst2Amount) {\n            gasToken.free(gst2Amount);\n        }\n\n        _;\n    }\n    \n    function deploy(bytes memory _data) public burnGas(0) {\n        address contractAddr;\n        \n         assembly {\n            contractAddr := create(0, add(_data, 32), mload(_data))\n        }\n        \n        emit ContractCreated(contractAddr);\n    }\n}"
+    }
+  }
+}

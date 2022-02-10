@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/token.sol": {
+      "content": "pragma solidity ^0.6.0;\r\n \r\n/**\r\nERC20 Token\r\n \r\nSymbol          : IOI\r\nName            : IOI Token\r\nTotal supply    : 100000000\r\nDecimals        : 6\r\n \r\n*/\r\n \r\nabstract contract ERC20Interface {\r\n  string public name;\r\n string public symbol;\r\n  uint8 public decimals;\r\n  uint256 public totalSupply;\r\n function balanceOf(address _owner) public view virtual returns (uint256 balance);\r\n  function transfer(address _to, uint256 _value) public virtual returns (bool success);\r\n  function transferFrom(address _from, address _to, uint256 _value) public virtual returns (bool success);\r\n  function approve(address _spender, uint256 _value) public virtual returns (bool success);\r\n function allowance(address _owner, address _spender) public view virtual returns (uint256 remaining);\r\n  event Transfer(address indexed _from, address indexed _to, uint256 _value);\r\n  event Approval(address indexed _owner, address indexed _spender, uint256 _value);\r\n}\r\n \r\n \r\ncontract Owned {\r\n address public owner;\r\n address public newOwner;\r\n \r\n event OwnershipTransferred(address indexed _from, address indexed _to);\r\n \r\n constructor () public {\r\n   owner = msg.sender;\r\n }\r\n \r\n modifier onlyOwner {\r\n   require(msg.sender == owner);\r\n   _;\r\n }\r\n \r\n function transferOwnership(address _newOwner) public onlyOwner {\r\n   newOwner = _newOwner;\r\n }\r\n \r\n function acceptOwnership() public {\r\n   require(msg.sender == newOwner);\r\n   emit OwnershipTransferred(owner, newOwner);\r\n   owner = newOwner;\r\n   newOwner = address(0);\r\n }\r\n}\r\n \r\n \r\nabstract contract TokenRecipient {\r\n function receiveApproval(address _from, uint256 _value, address _token, bytes memory _extraData) public virtual;\r\n}\r\n \r\n \r\ncontract Token is ERC20Interface, Owned {\r\n \r\n mapping (address => uint256) _balances;\r\n mapping (address => mapping (address => uint256)) _allowed;\r\n \r\n event Burn(address indexed from, uint256 value);\r\n  function balanceOf(address _owner) public view override returns (uint256 balance) {\r\n   return _balances[_owner];\r\n }\r\n \r\n function transfer(address _to, uint256 _value) public override returns (bool success) {\r\n   _transfer(msg.sender, _to, _value);\r\n   return true;\r\n }\r\n \r\n function transferFrom(address _from, address _to, uint256 _value) public override returns (bool success) {\r\n   require(_value <= _allowed[_from][msg.sender]);\r\n   _allowed[_from][msg.sender] -= _value;\r\n   _transfer(_from, _to, _value);\r\n   return true;\r\n }\r\n \r\n function approve(address _spender, uint256 _value) public override returns (bool success) {\r\n   _allowed[msg.sender][_spender] = _value;\r\n   emit Approval(msg.sender, _spender, _value);\r\n   return true;\r\n }\r\n \r\n function allowance(address _owner, address _spender) public view override returns (uint256 remaining) {\r\n   return _allowed[_owner][_spender];\r\n }\r\n \r\n  function transferAnyERC20Token(address tokenAddress, uint tokens) public onlyOwner returns (bool success) {\r\n   return ERC20Interface(tokenAddress).transfer(owner, tokens);\r\n }\r\n \r\n  function approveAndCall(address _spender, uint256 _value, bytes memory _extraData) public returns (bool success) {\r\n   TokenRecipient spender = TokenRecipient(_spender);\r\n   approve(_spender, _value);\r\n   spender.receiveApproval(msg.sender, _value, address(this), _extraData);\r\n   return true;\r\n }\r\n \r\n function burn(uint256 _value) public returns (bool success) {\r\n   require(_balances[msg.sender] >= _value);\r\n   _balances[msg.sender] -= _value;\r\n   totalSupply -= _value;\r\n   emit Burn(msg.sender, _value);\r\n   return true;\r\n }\r\n \r\n  function burnFrom(address _from, uint256 _value) public returns (bool success) {\r\n   require(_balances[_from] >= _value);\r\n   require(_value <= _allowed[_from][msg.sender]);\r\n   _balances[_from] -= _value;\r\n   _allowed[_from][msg.sender] -= _value;\r\n   totalSupply -= _value;\r\n   emit Burn(_from, _value);\r\n   return true;\r\n }\r\n \r\n  function _transfer(address _from, address _to, uint _value) internal {\r\n \r\n   require(_to != address(0x0));\r\n  \r\n   require(_balances[_from] >= _value);\r\n  \r\n   require(_balances[_to] + _value > _balances[_to]);\r\n  \r\n   uint previousBalances = _balances[_from] + _balances[_to];\r\n  \r\n   _balances[_from] -= _value;\r\n  \r\n   _balances[_to] += _value;\r\n   emit Transfer(_from, _to, _value);\r\n \r\n   assert(_balances[_from] + _balances[_to] == previousBalances);\r\n }\r\n \r\n}\r\n \r\ncontract IOIToken is Token {\r\n \r\n constructor(string memory _name, string memory _symbol, uint8 _decimals, uint256 _initialSupply) public {\r\n   name = _name;\r\n   symbol = _symbol;\r\n   decimals = _decimals;\r\n   totalSupply = _initialSupply * 10 ** uint256(decimals);\r\n   _balances[msg.sender] = totalSupply;\r\n }\r\n \r\n  fallback() external payable {\r\n   revert();\r\n }\r\n \r\n  receive() external payable{\r\n   revert();\r\n }\r\n \r\n}\r\n \r\ncontract IOI is IOIToken {\r\n \r\n constructor() IOIToken (\"IOI Token \", \"IOI\", 6, 100000000) public {}\r\n \r\n}\r\n"
+    }
+  }
+}

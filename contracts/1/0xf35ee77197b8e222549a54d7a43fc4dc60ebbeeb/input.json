@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/LiquidationKeeper.sol": {
+      "content": "pragma solidity ^0.6.12;\n\n\ninterface IKeep3rV1 {\n    function isKeeper(address) external returns (bool);\n    function worked(address keeper) external;\n}\n\ninterface IYaLINK {\n    function over(uint) external view returns (uint);\n    function rebalance() external;\n}\n\ninterface IWethStrategy {\n    function repayAmount() external view returns (uint);\n    function repay() external;\n}\n\ncontract YearnLiquidationKeep3r {\n    modifier upkeep() {\n        require(KP3R.isKeeper(msg.sender), \"::isKeeper: keeper is not registered\");\n        _;\n        KP3R.worked(msg.sender);\n    }\n    \n    \n    IYaLINK public constant YALINK = IYaLINK(0x29E240CFD7946BA20895a7a02eDb25C210f9f324);\n    IWethStrategy public constant WETH = IWethStrategy(0x39AFF7827B9D0de80D86De295FE62F7818320b76);\n    IKeep3rV1 public constant KP3R = IKeep3rV1(0x1cEB5cB57C4D4E2b2433641b95Dd330A33185A44);\n    \n    uint public constant YALINKMIN = 10000000000;\n    uint public constant WETHMIN = 10000000000000000000000;\n    \n    function yaLINKDebt() external view returns (uint) {\n        return YALINK.over(0);\n    }\n    \n    function wethDebt() external view returns (uint) {\n        return WETH.repayAmount();\n    }\n    \n    function workable() public view returns (bool) {\n        return (YALINK.over(0) > YALINKMIN || WETH.repayAmount() > WETHMIN);\n    }\n    \n    function work() external upkeep {\n        require(workable(), \"YearnLiquidationKeep3r::work: !workable()\");\n        if (YALINK.over(0) > YALINKMIN) {\n            YALINK.rebalance();\n        }\n        if (WETH.repayAmount() > WETHMIN) {\n            WETH.repay();\n        }\n    }\n    \n    function workForFree() external {\n        require(workable(), \"YearnLiquidationKeep3r::work: !workable()\");\n        if (YALINK.over(0) > YALINKMIN) {\n            YALINK.rebalance();\n        }\n        if (WETH.repayAmount() > WETHMIN) {\n            WETH.repay();\n        }\n    }\n}"
+    }
+  }
+}

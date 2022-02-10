@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/abc123.sol": {
+      "content": "// SPDX-License-Identifier: MIT\r\npragma solidity ^0.6.10;\r\n\r\n\r\n\r\n// Uniswap example\r\ninterface IUniswap {\r\n    function getPair(address tokenA, address tokenB) external view returns (address pair);\r\n    function getAmountsOut(uint amountIn, address[] memory path) external view returns (uint[] memory amounts);\r\n    function swapExactETHForTokens(uint amountOutMin, address[] calldata path, address to, uint deadline)\r\n      external\r\n      payable\r\n      returns (uint[] memory amounts);\r\n      function swapExactTokensForETH(uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline)\r\n  external\r\n  returns (uint[] memory amounts);\r\n  function WETH() external pure returns (address);\r\n    }\r\n    \r\n\r\ninterface UniswapV2Pair {\r\n    function getReserves() external view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast);\r\n}\r\n\r\ncontract DefiProj {\r\n    IUniswap uniswap;\r\n    constructor () public {\r\n        uniswap = IUniswap(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D);\r\n    }\r\n\r\n    function swapETHforTokens(uint amountOutMin, address token, address to, uint deadline) external returns (uint, uint) {\r\n        address[] memory path = new address[](2);\r\n        \r\n        path[0] = uniswap.WETH();\r\n        path[1] = token;\r\n        \r\n        uniswap.swapExactETHForTokens(\r\n            amountOutMin,\r\n            path,\r\n            address(this),\r\n            deadline\r\n            );\r\n    }\r\n    \r\n    \r\n}"
+    }
+  }
+}

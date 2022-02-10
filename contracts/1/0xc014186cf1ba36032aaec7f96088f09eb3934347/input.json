@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "WCX.sol": {
+      "content": "pragma solidity >= 0.5.0;\r\n\r\ncontract SafeMath {\r\n    function safeAdd(uint256 x, uint256 y) internal returns(uint256) {\r\n        uint256 z = x + y;\r\n        assert((z >= x) && (z >= y));\r\n        return z;\r\n    }\r\n\r\n    function safeSubtract(uint256 x, uint256 y) internal returns(uint256) {\r\n        assert(x >= y);\r\n        uint256 z = x - y;\r\n        return z;\r\n    }\r\n\r\n    function safeMult(uint256 x, uint256 y) internal returns(uint256) {\r\n        uint256 z = x * y;\r\n        assert((x == 0)||(z/x == y));\r\n        return z;\r\n    }\r\n\r\n}\r\n\r\ncontract Token {\r\n    uint256 public totalSupply;\r\n    function balanceOf(address _owner) view public returns  (uint256 balance);\r\n    function transfer(address _to, uint256 _value) public returns (bool success);\r\n    function transferFrom(address _from, address _to, uint256 _value) public returns (bool success);\r\n    function approve(address _spender, uint256 _value) public returns (bool success);\r\n    function allowance(address _owner, address _spender) view public returns (uint256 remaining);\r\n    event Transfer(address indexed _from, address indexed _to, uint256 _value);\r\n    event Approval(address indexed _owner, address indexed _spender, uint256 _value);\r\n\r\n}\r\n\r\n\r\ncontract StandardToken is Token , SafeMath {\r\n\r\n    bool public status = true;\r\n    modifier on() {\r\n        require(status == true);\r\n        _;\r\n    }\r\n\r\n    function transfer(address _to, uint256 _value) on public returns (bool success) {\r\n        require(!frozenAccount[msg.sender]);\r\n        require(!frozenAccount[_to]);\r\n        if (balances[msg.sender] >= _value && _value > 0 && _to != address(0)) {\r\n            balances[msg.sender] -= _value;\r\n            balances[_to] = safeAdd(balances[_to],_value);\r\n            emit Transfer(msg.sender, _to, _value);\r\n            return true;\r\n        } else {\r\n            return false;\r\n        }\r\n    }\r\n\r\n    function transferFrom(address _from, address _to, uint256 _value) on public returns (bool success) {\r\n        require(!frozenAccount[_from]);\r\n        require(!frozenAccount[_to]);\r\n        if (balances[_from] >= _value && allowed[_from][msg.sender] >= _value && _value > 0) {\r\n            balances[_to] = safeAdd(balances[_to],_value);\r\n            balances[_from] = safeSubtract(balances[_from],_value);\r\n            allowed[_from][msg.sender] = safeSubtract(allowed[_from][msg.sender],_value);\r\n            emit Transfer(_from, _to, _value);\r\n            return true;\r\n        } else {\r\n            return false;\r\n        }\r\n    }\r\n\r\n    function balanceOf(address _owner) on view public returns (uint256 balance) {\r\n        return balances[_owner];\r\n    }\r\n\r\n    function approve(address _spender, uint256 _value) on public returns (bool success) {\r\n        allowed[msg.sender][_spender] = _value;\r\n        emit Approval(msg.sender, _spender, _value);\r\n        return true;\r\n    }\r\n\r\n    function allowance(address _owner, address _spender) on view public returns (uint256 remaining) {\r\n        return allowed[_owner][_spender];\r\n    }\r\n    \r\n    mapping (address => bool) public frozenAccount;\r\n    mapping (address => uint256) balances;\r\n    mapping (address => mapping (address => uint256)) allowed;\r\n}\r\n\r\n\r\n\r\ncontract WCX is StandardToken {\r\n    string public name = \"WeCoOwn Rewards\";\r\n    uint8 public decimals = 18;\r\n    string public symbol = \"WCX\";\r\n    bool private init =true;\r\n    \r\n    event Mint(address indexed to, uint value);\r\n    event Burn(address indexed burner, uint256 value);\r\n    event FrozenFunds(address target, bool frozen);\r\n    \r\n    \r\n    function turnon() controller public {\r\n        status = true;\r\n    }\r\n    function turnoff() controller public {\r\n        status = false;\r\n    }\r\n    constructor() public {\r\n        require(init==true);\r\n        totalSupply = 100000000000*10**18;\r\n        balances[0x528FE8Abf74CB2799D709585208fCF87CD505DCE] = totalSupply;\r\n        init = false;\r\n    }\r\n    address public controllerAddress = 0x528FE8Abf74CB2799D709585208fCF87CD505DCE;\r\n\r\n    modifier controller () {\r\n        require(msg.sender == controllerAddress);\r\n        _;\r\n    }\r\n    \r\n    function mint(address _to, uint256 _amount) on controller public returns (bool) {\r\n        totalSupply = safeAdd(totalSupply, _amount);\r\n        balances[_to] = safeAdd(balances[_to], _amount);\r\n\r\n        emit Mint(_to, _amount);\r\n        emit Transfer(msg.sender, _to, _amount);\r\n        return true;\r\n    }\r\n    \r\n    function burn(uint256 _value) on public returns (bool success) {\r\n        require(balances[msg.sender] >= _value);   // Check if the sender has enough\r\n        balances[msg.sender] = safeSubtract(balances[msg.sender],_value);\r\n        totalSupply = safeSubtract(totalSupply,_value);\r\n        emit Burn(msg.sender, _value);\r\n        return true;\r\n    }\r\n    \r\n   \r\n    function freezeAccount(address target, bool freeze) on controller public {\r\n        frozenAccount[target] = freeze;\r\n        emit FrozenFunds(target, freeze);\r\n    }\r\n}"
+    }
+  }
+}

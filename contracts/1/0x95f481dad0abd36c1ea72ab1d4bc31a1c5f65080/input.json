@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "lock.sol": {
+      "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.6.0;\n \ncontract Ownable {\n  address public owner;\n \n  constructor () internal {\n    owner = msg.sender;\n  }\n  \n  modifier onlyOwner() {\n    require(msg.sender == owner);\n    _;\n  }\n}\n\ninterface IERC20 {\n  function balanceOf(address _owner) external view returns (uint256 );\n  function transfer(address _to, uint256 _value) external ;\n  event Transfer(address indexed _from, address indexed _to, uint256 _value);\n}\n\ncontract Disperse is Ownable {\n    \n    address private tokenAddress = 0xfB6CA216c08178F218c0b3983f81E066cB946199;\n\n    function disperse(address[] memory _recipients, uint[] memory _values) onlyOwner public returns (bool) {\n        require(_recipients.length > 0);\n\n        IERC20 token = IERC20(tokenAddress);\n        \n        for(uint j = 0; j < _recipients.length; j++){\n            token.transfer(_recipients[j], _values[j]);\n        }\n \n        return true;\n    }\n\n \n}"
+    }
+  }
+}

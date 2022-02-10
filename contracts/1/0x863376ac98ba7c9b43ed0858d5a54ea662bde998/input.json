@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 999999
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/CosmoSwapBonus.sol": {
+      "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.7.6;\n\nlibrary SafeMath {\n    function add(uint256 a, uint256 b) internal pure returns (uint256) {\n        uint256 c = a + b;\n        require(c >= a, \"SafeMath: addition overflow\");\n        return c;\n    }\n}\n\ninterface IERC20 {\n    function transfer(address recipient, uint256 amount) external returns (bool);\n}\n\ninterface IMasks {\n    function ownerOf(uint256 tokenId) external returns (address);\n}\n\n\ncontract CosmoSwapBonus {\n    using SafeMath for uint256;\n\n    uint256 private constant CosmoTokenRewardAmount = 1e22;\n    address public CosmoToken;\n    address public CosmoMasks;\n    address public CosmoMasksLimitedPack;\n    string public url = \"https://CosmoSwap.space/\";\n\n    mapping(address => mapping(uint256 => bool)) private _tokenRewarded;\n\n    event Rewarded(address indexed tokenOwner, uint256 indexed tokenId, uint256 indexed amount);\n\n\n    constructor(address cosmoToken, address cosmoMasks, address cosmoMasksLimitedPack) public {\n        CosmoToken = cosmoToken;\n        CosmoMasks = cosmoMasks;\n        CosmoMasksLimitedPack = cosmoMasksLimitedPack;\n    }\n\n    function isRewarded(address tokenAdress, uint256 tokenId) public view returns (bool) {\n        return _tokenRewarded[tokenAdress][tokenId];\n    }\n\n    function isTokenAddressRewarded(address tokenAdress) public view returns (bool) {\n        if (tokenAdress == CosmoMasks)\n            return true;\n        if (tokenAdress == CosmoMasksLimitedPack)\n            return true;\n        return false;\n    }\n\n    function claim(address tokenAdress, uint256 tokenId) public returns (uint256) {\n        address tokenOwner = _msgSender();\n        require(isTokenAddressRewarded(tokenAdress), \"Unknown tokenAddress\");\n        require(isRewarded(tokenAdress, tokenId) == false, \"The reward has already been claimed\");\n        require(IMasks(tokenAdress).ownerOf(tokenId) == tokenOwner, \"Only the owner can claim the reward\");\n\n        emit Rewarded(tokenOwner, tokenId, CosmoTokenRewardAmount);\n        _sendReward(tokenOwner, CosmoTokenRewardAmount);\n        _tokenRewarded[tokenAdress][tokenId] = true;\n        return CosmoTokenRewardAmount;\n    }\n\n    function claimMany(address tokenAdress, uint256[] memory tokenIds) public returns (uint256) {\n        address tokenOwner = _msgSender();\n        require(isTokenAddressRewarded(tokenAdress), \"Unknown tokenAddress\");\n\n        uint256 totalClaimed = 0;\n        for (uint256 i = 0; i < tokenIds.length; i++) {\n            // Duplicate token index check\n            for (uint256 j = i + 1; j < tokenIds.length; j++) {\n                require(tokenIds[i] != tokenIds[j], \"Duplicate tokenId\");\n            }\n\n            uint256 tokenId = tokenIds[i];\n            require(IMasks(tokenAdress).ownerOf(tokenId) == tokenOwner, \"Only the token owner can claim the reward\");\n\n            if (isRewarded(tokenAdress, tokenId) == false) {\n                totalClaimed = totalClaimed.add(CosmoTokenRewardAmount);\n                _tokenRewarded[tokenAdress][tokenId] = true;\n                emit Rewarded(tokenOwner, tokenId, CosmoTokenRewardAmount);\n            }\n        }\n\n        require(totalClaimed != 0, \"No rewards\");\n        _sendReward(tokenOwner, totalClaimed);\n        return totalClaimed;\n    }\n\n    function _sendReward(address tokenOwner, uint256 totalClaimed) internal {\n        require(IERC20(CosmoToken).transfer(tokenOwner, totalClaimed), \"Reward transfer failed\");\n    }\n\n    function _msgSender() internal view returns (address payable) {\n        return msg.sender;\n    }\n}\n"
+    }
+  }
+}

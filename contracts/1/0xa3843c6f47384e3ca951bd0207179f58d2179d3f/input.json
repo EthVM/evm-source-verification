@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/TransferOfAuthority.sol": {
+      "content": "// SPDX-License-Identifier: MIT\n\npragma solidity ^0.8.0;\n\ncontract PonderwareTransferOfAuthority {\n\n    // ponderware is destroying the private key controlling the MooncatRescue contract\n    // due to the outcome of the vote contract: 0x1916F482BB9F3523a489791Ae3d6e052b362C777\n\n    // This contract, if confirmed, represents a public transfer of the official ponderware address.\n\n    // To ensure confirmation and get ponderware's new address, call the `whereIsPonderware` function\n\n    address immutable oldPonderwareAddress;\n    address payable immutable newPonderwareAddress;\n\n    bool confirmedByOld = false;\n    bool confirmedByNew = false;\n    bool transferVoid = false;\n\n    modifier addressIsAuthorized {\n        require((msg.sender == oldPonderwareAddress) || (msg.sender == newPonderwareAddress), \"Unauthorized\");\n        _;\n    }\n\n    modifier transferIsNotVoid {\n        require(!transferVoid, \"Transfer Of Authority Void\");\n        _;\n    }\n\n    modifier transferIsConfirmed {\n        require((confirmedByOld && confirmedByNew), \"Not Confirmed\");\n        _;\n    }\n\n    constructor(address payable newPonderwareAddress_) {\n        oldPonderwareAddress = msg.sender;\n        newPonderwareAddress = newPonderwareAddress_;\n    }\n\n    receive() external payable {\n        newPonderwareAddress.transfer(msg.value);\n    }\n\n    function voidTransfer () public transferIsNotVoid addressIsAuthorized {\n        require(!confirmedByOld, \"Already Confirmed\");\n        transferVoid = true;\n    }\n\n    function confirm () public transferIsNotVoid addressIsAuthorized {\n        if (msg.sender == newPonderwareAddress){\n            confirmedByNew = true;\n        } else {\n            require(confirmedByNew, \"New Not Confirmed\");\n            confirmedByOld = true;\n        }\n    }\n\n    function whereIsPonderware() public view transferIsNotVoid transferIsConfirmed returns (address) {\n        return newPonderwareAddress;\n    }\n\n}"
+    }
+  }
+}

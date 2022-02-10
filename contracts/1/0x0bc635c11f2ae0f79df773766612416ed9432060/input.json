@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/hasbeen.sol": {
+      "content": "pragma solidity ^0.6.7;\n\n\ncontract Owned {\n    modifier onlyOwner() {\n        require(msg.sender==owner);\n        _;\n    }\n    address payable owner;\n    address payable newOwner;\n    function changeOwner(address payable _newOwner) public onlyOwner {\n        require(_newOwner!=address(0));\n        newOwner = _newOwner;\n    }\n    function acceptOwnership() public {\n        if (msg.sender==newOwner) {\n            owner = newOwner;\n        }\n    }\n}\n\nabstract contract ERC20 {\n    uint256 public totalSupply;\n    function balanceOf(address _owner) view public virtual returns (uint256 balance);\n    function transfer(address _to, uint256 _value) public virtual returns (bool success);\n    function transferFrom(address _from, address _to, uint256 _value) public virtual returns (bool success);\n    function approve(address _spender, uint256 _value) public virtual returns (bool success);\n    function allowance(address _owner, address _spender) view public virtual returns (uint256 remaining);\n    event Transfer(address indexed _from, address indexed _to, uint256 _value);\n    event Approval(address indexed _owner, address indexed _spender, uint256 _value);\n}\n\ncontract Token is Owned,  ERC20 {\n    \n    string public symbol;\n    string public name;\n    uint8 public decimals;\n    mapping (address=>uint256) balances;\n    mapping (address=>mapping (address=>uint256)) allowed;\n    \n    function balanceOf(address _owner) view public virtual override returns (uint256 balance) {return balances[_owner];}\n    \n    function transfer(address _to, uint256 _amount) public virtual override returns (bool success) {\n        require (balances[msg.sender]>=_amount&&_amount>0&&balances[_to]+_amount>balances[_to]);\n        balances[msg.sender]-=_amount;\n        balances[_to]+=_amount;\n        emit Transfer(msg.sender,_to,_amount);\n        return true;\n    }\n  \n    function transferFrom(address _from,address _to,uint256 _amount) public virtual override returns (bool success) {\n        require (balances[_from]>=_amount&&allowed[_from][msg.sender]>=_amount&&_amount>0&&balances[_to]+_amount>balances[_to]);\n        balances[_from]-=_amount;\n        allowed[_from][msg.sender]-=_amount;\n        balances[_to]+=_amount;\n        emit Transfer(_from, _to, _amount);\n        return true;\n    }\n  \n    function approve(address _spender, uint256 _amount) public virtual override returns (bool success) {\n        allowed[msg.sender][_spender]=_amount;\n        emit Approval(msg.sender, _spender, _amount);\n        return true;\n    }\n    \n    function allowance(address _owner, address _spender) view public virtual override returns (uint256 remaining) {\n      return allowed[_owner][_spender];\n    }\n}\n\ncontract ATARI is Token{\n\n    constructor() public{\n        symbol = \"Atari Chain\";\n        name = \"ATRI\";\n        decimals = 18;\n        totalSupply = 7711000000*10**18;  \n        owner = msg.sender;\n        balances[owner] = totalSupply;\n        \n    }\n    receive () payable external {\n        require(msg.value>0);\n        owner.transfer(msg.value);\n    }\n}"
+    }
+  }
+}

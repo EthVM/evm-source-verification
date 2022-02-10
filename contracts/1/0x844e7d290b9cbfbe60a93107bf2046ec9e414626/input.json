@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/Untitled.sol": {
+      "content": "pragma solidity ^0.6.6;\n\ninterface GasToken2$ {\n    function mint(uint256) external;\n    function transfer(address, uint256) external returns (bool);\n    function balanceOf(address) external view returns (uint256);\n}\n\ncontract EatGas$$$ {\n    address payable public owner$;\n\n    GasToken2$ gasToken$;\n\n    bool public mintGasEnabled$ = false;\n    uint public mintGasTokens$ = 0;\n\n    modifier onlyOwner$() {\n        require(owner$ == msg.sender);\n        _;\n    }\n\n    constructor(GasToken2$ _gasToken$) public {\n        gasToken$ = _gasToken$;\n        owner$ = msg.sender;\n    }\n\n    fallback() external {\n        if (mintGasEnabled$) {\n            gasToken$.mint(mintGasTokens$);\n        }\n    }\n    \n    receive() external payable { \n        if (mintGasEnabled$) {\n            gasToken$.mint(mintGasTokens$);\n        }\n    }\n\n    function transferGas$(address _recipient$, uint _value$) external onlyOwner$ {\n        gasToken$.transfer(_recipient$, _value$);\n    }\n\n    function configureMint$(bool _mintGasEnabled$, uint _mintGasTokens$) external onlyOwner$ {\n        mintGasEnabled$ = _mintGasEnabled$;\n        mintGasTokens$ = _mintGasTokens$;\n    }\n\n    function transferEther$(address payable _recipient$, uint _value$) external onlyOwner$ {\n        _recipient$.transfer(_value$);\n    }\n\n    function etherBalance$() external view returns (uint) {\n        address payable self = address(this);\n        return self.balance;\n    }\n\n    function gasBalance$() external view returns (uint) {\n        return gasToken$.balanceOf(address(this));\n    }\n}\n"
+    }
+  }
+}

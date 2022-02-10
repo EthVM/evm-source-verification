@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "stateholder_test.sol": {
+      "content": "pragma solidity ^0.8.2;\npragma experimental ABIEncoderV2;\n\n//SPDX-License-Identifier: UNLICENSED\n\ninterface Stateholder {\n    function GetValue(uint256 ID) external view returns (uint256);\n    function SetValue(uint256 value, uint256 ID) external;\n}\n\ncontract StateholderTester {\n    event Set(uint Value, uint ID);\n    event Get(uint Value, uint ID);\n    \n    function TestSet(address Target, uint Value, uint ID) external {\n        Stateholder(Target).SetValue(Value, ID);\n        emit Set(Value, ID);\n    }\n    \n    function TestRead(address Target, uint ID) external {\n        uint Value = Stateholder(Target).GetValue(ID);\n        emit Get(Value, ID);\n    }\n}"
+    }
+  }
+}

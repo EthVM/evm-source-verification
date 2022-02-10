@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/Untitled2.sol": {
+      "content": "// SPDX-License-Identifier: AGPLv3\r\npragma solidity =0.6.12;\r\npragma experimental ABIEncoderV2;\r\n\r\ninterface ITokenPermit {\r\n    function transferFrom(\r\n        address from,\r\n        address to,\r\n        uint256 value\r\n    ) external returns (bool);\r\n\r\n    function approve(address spender, uint256 value) external returns (bool);\r\n\r\n    function permit(\r\n        address owner,\r\n        address spender,\r\n        uint256 value,\r\n        uint256 deadline,\r\n        uint8 v,\r\n        bytes32 r,\r\n        bytes32 s\r\n    ) external;\r\n}\r\n\r\ninterface Vault {\r\n    function deposit(uint256 amount, address recipient)\r\n        external\r\n        returns (uint256);\r\n}\r\n\r\ncontract VaultPermitDeposit {\r\n    struct Permit {\r\n        address owner;\r\n        address spender;\r\n        uint256 value;\r\n        uint256 deadline;\r\n        uint8 v;\r\n        bytes32 r;\r\n        bytes32 s;\r\n    }\r\n\r\n    function approveNewVaultToken(address token, address vault)\r\n        external\r\n    {\r\n        ITokenPermit(token).approve(address(vault), type(uint256).max);\r\n    }\r\n\r\n    function deposit(address token, address vault, uint256 amount, Permit calldata permit)\r\n        external\r\n        returns (uint256)\r\n    {\r\n        ITokenPermit(token).permit(\r\n            permit.owner,\r\n            permit.spender,\r\n            permit.value,\r\n            permit.deadline,\r\n            permit.v,\r\n            permit.r,\r\n            permit.s\r\n        );\r\n        \r\n        ITokenPermit(token).transferFrom(permit.owner, address(this), amount);\r\n        return Vault(vault).deposit(amount, permit.owner);\r\n    }\r\n}"
+    }
+  }
+}

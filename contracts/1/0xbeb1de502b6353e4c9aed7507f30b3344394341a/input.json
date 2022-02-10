@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/NFT.sol": {
+      "content": "// SPDX-License-Identifier: UNLICENCED\n\npragma solidity ^0.8.4;\n\ninterface IERC721 {\n\n    function ownerOf(uint256 tokenId) external view returns (address owner);\n\n    function safeTransferFrom(\n        address from,\n        address to,\n        uint256 tokenId\n    ) external;\n\n    function isApprovedForAll(address owner, address operator) external view returns (bool);\n}\n\ncontract MultiSenderERC721 {\n\n   function send(address _token, address _to, uint256[] calldata _tokenIds) external {\n      require(_token != address(0), \"EMPTY_TOKEN\");\n      require(_to != address(0), \"EMPTY_TO\");\n      require(_tokenIds.length > 0, \"EMPTY_TOKEN_IDS\");\n      require(IERC721(_token).isApprovedForAll(msg.sender, address(this)), \"NOT_APPROVED_FOR_ALL\");\n\n      uint numberOfTokens = _tokenIds.length;\n      for (uint256 i = 0; i < numberOfTokens; i++) {\n          uint256 tokenId = _tokenIds[i];\n          IERC721(_token).safeTransferFrom(msg.sender, _to, tokenId);\n          assert(IERC721(_token).ownerOf(tokenId) == _to);\n      }\n   }\n}"
+    }
+  }
+}

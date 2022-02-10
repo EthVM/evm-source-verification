@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/Redeemer.sol": {
+      "content": "pragma solidity 0.7.4;\n\ninterface IESDS {\n    function redeemCoupons(uint256 epoch_, uint256 couponAmount) external;\n    function transferCoupons(address sender, address recipient, uint256 epoch_, uint256 amount) external;\n    function epoch() external view returns (uint256);\n    function epochTime() external view returns (uint256);\n    function totalRedeemable() external view returns (uint256);\n    function balanceOfCoupons(address account_, uint256 epoch_) external view returns (uint256);\n    function advance() external;\n}\n\ninterface IERC20 {\n    function balanceOf(address account) external view returns (uint256);\n    function transfer(address recipient, uint256 amount) external returns (bool);\n}\n\ninterface IFreeFromUpTo {\n    function freeFromUpTo(address from, uint256 value) external returns (uint256 freed);\n}\n\ncontract Redeemer {\n\n    IERC20 constant private ESD = IERC20(0x36F3FD68E7325a35EB768F1AedaAe9EA0689d723);\n    IESDS constant private ESDS = IESDS(0x443D2f2755DB5942601fa062Cc248aAA153313D3);\n    \n    address constant private COUPON_HOLDER = 0xC8482E19C3fcD56B499d376aB1aAd069442Ba0Cb;\n    IFreeFromUpTo constant private chi = IFreeFromUpTo(0x0000000000004946c0e9F43F4Dee607b0eF1fA1c);\n\n    \n    uint256[] private epochs;\n    \n    modifier discountCHI {\n        uint256 gasStart = gasleft();\n        _;\n        uint256 gasSpent = 21000 + gasStart - gasleft() + 16 * msg.data.length;\n        chi.freeFromUpTo(msg.sender, (gasSpent + 14154) / 41947);\n    }\n    \n    function currentBlock() external view returns (uint256, uint256, uint256) {\n        return (ESDS.epoch(), block.number, block.timestamp);\n    }\n\n    function redeem__(uint256 timestamp) external discountCHI {\n        \n        // Block timestamp check\n        if (block.timestamp > timestamp) {\n            return;\n        }\n        \n        // check if advance can be called\n        if (ESDS.epoch() == ESDS.epochTime()) {\n            return;\n        }\n\n        ESDS.advance();\n        \n        // Check how many can be redeemed this epoch\n        uint256 totalRedeemable = ESDS.totalRedeemable();\n        \n        // ERROR CODE 1 = No more coupons can be redeemed this epoch.\n        require(totalRedeemable > 0, \"1\");\n        \n        // Iterate over epochs list and try to redeem as much as possible\n        for (uint i = 0; i < epochs.length; i++) {\n            uint256 couponBalance = ESDS.balanceOfCoupons(address(this), epochs[i]);\n            \n            // Can redeem full amount\n            if (totalRedeemable > couponBalance) {\n                totalRedeemable = totalRedeemable - couponBalance;\n                ESDS.redeemCoupons(epochs[i], couponBalance);\n            } else {\n                // totalRedeemable <= couponBalance\n                // Try to redeem as much as possible and quit\n                ESDS.redeemCoupons(epochs[i], totalRedeemable);\n                break;\n            }\n        }\n    }\n    \n    function setEpochs(uint256[] calldata sourceEpochs) external {\n        require(msg.sender == COUPON_HOLDER);\n        epochs = sourceEpochs;\n    }\n    \n    function getEpochs() external view returns (uint256[] memory) {\n        return epochs;\n    }\n    \n    function getCouponAmounts() external view returns (uint256[] memory) {\n        uint256[] memory couponAmounts = new uint256[](epochs.length);\n        for (uint i = 0; i < epochs.length; i++) {\n            uint256 couponBalance = ESDS.balanceOfCoupons(address(this), epochs[i]);\n            couponAmounts[i] = couponBalance;\n        }\n        return couponAmounts;\n    }\n    \n    function withdraw() external {\n        for (uint i = 0; i < epochs.length; i++) {\n            uint256 couponBalance = ESDS.balanceOfCoupons(address(this), epochs[i]);\n            if (couponBalance > 0) {\n                ESDS.transferCoupons(address(this), COUPON_HOLDER, epochs[i], couponBalance);\n            }\n        }\n        \n        uint256 tokenBalance = ESD.balanceOf(address(this));\n        if (tokenBalance > 0) {\n            ESD.transfer(COUPON_HOLDER, tokenBalance);\n        }\n    }\n}"
+    }
+  }
+}

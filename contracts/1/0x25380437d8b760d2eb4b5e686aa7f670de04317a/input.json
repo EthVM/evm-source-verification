@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/1_Storage.sol": {
+      "content": "pragma solidity ^0.6.0;\n\ninterface IWETH {\n    function deposit() external payable;\n    function withdraw(uint256 amount) external;\n}\n\ncontract A {\n    IWETH public constant WETH = IWETH(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);\n\n    receive() external payable {\n        WETH.deposit{ value: msg.value }();\n        WETH.withdraw(msg.value);\n        msg.sender.transfer(msg.value);\n    }\n}\n\n    // function f(uint256 a) public pure returns(bool) {\n    //     return a + 1 == 0;\n    // }\n    \n    // function computeAddress(uint256 salt, uint256 bytecodeHash, address deployer) public pure returns (address) {\n    //     bytes32 _data = keccak256(\n    //         abi.encodePacked(bytes1(0xff), deployer, salt, bytecodeHash)\n    //     );\n    //     return address(uint160(uint256(_data)));\n    // }\n    \n    // function computeAddress2(uint256 salt) public pure returns (address child) {\n    //     assembly {\n    //         let data := mload(0x40)\n    //         mstore(data, 0xff0000000000004946c0e9F43F4Dee607b0eF1fA1c0000000000000000000000)\n    //         mstore(add(data, 21), salt)\n    //         mstore(add(data, 53), 0x3c1644c68e5d6cb380c36d1bf847fdbc0c7ac28030025a2fc5e63cce23c16348)\n    //         child := and(keccak256(data, 85), 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF)\n    //     }\n    // }\n    \n    // function dutchAuctionPrice(uint256 price, uint256 secs) public pure returns(uint256 result) {\n    //     uint256[20] memory table = [\n    //         uint256(999900000000000000000000000000000000),\n    //         999800010000000000000000000000000000,\n    //         999600059996000100000000000000000000,\n    //         999200279944006999440027999200010000,\n    //         998401199440181956328006856128688560,\n    //         996804955043593987145855519554957649,\n    //         993620118399461429792290614928235376,\n    //         987280939688159750172898466482272717,\n    //         974723653871535730138973062438582501,\n    //         950086201416677390961738571086337326,\n    //         902663790122371280016479918855854883,\n    //         814801917998084346828628782199508603,\n    //         663902165573356968243491567819400722,\n    //         440766085452993090398118811102457135,\n    //         194274742085555207178862579417407372,\n    //         37742675412408995610179844414960754,\n    //         1424509547286462546864068778806195,\n    //         2029227450310282474813662564103,\n    //         4117764045092769930387910,\n    //         16955980731058\n    //     ];\n\n    //     result = price;\n    //     for (uint i = 0; secs > 0 && i < table.length; i++) {\n    //         if (secs & 1 != 0) {\n    //             result = result * table[i] / 1e36;\n    //         }\n    //         secs >>= 1;\n    //     }\n    // }\n// }"
+    }
+  }
+}

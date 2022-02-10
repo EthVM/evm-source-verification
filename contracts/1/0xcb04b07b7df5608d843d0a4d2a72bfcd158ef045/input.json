@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "AmazonFinanceRewardPool.sol": {
+      "content": "pragma solidity ^0.4.24;\r\n// ----------------------------------------------------------------------------\r\n// @Name SafeMath\r\n// @Desc Math operations with safety checks that throw on error\r\n// https://github.com/OpenZeppelin/zeppelin-solidity/blob/master/contracts/math/SafeMath.sol\r\n// ----------------------------------------------------------------------------\r\nlibrary SafeMath {\r\n    function mul(uint256 a, uint256 b) internal pure returns (uint256) {\r\n        if (a == 0) {\r\n            return 0;\r\n        }\r\n        uint256 c = a * b;\r\n        assert(c / a == b);\r\n        return c;\r\n    }\r\n\r\n    function div(uint256 a, uint256 b) internal pure returns (uint256) {\r\n        return a / b;\r\n    }\r\n\r\n    function sub(uint256 a, uint256 b) internal pure returns (uint256) {\r\n        assert(b <= a);\r\n        return a - b;\r\n    }\r\n\r\n    function add(uint256 a, uint256 b) internal pure returns (uint256) {\r\n        uint256 c = a + b;\r\n        assert(c >= a);\r\n        return c;\r\n    }\r\n}\r\n// ----------------------------------------------------------------------------\r\n// @Name ERC20 interface\r\n// @Desc https://eips.ethereum.org/EIPS/eip-20\r\n// ----------------------------------------------------------------------------\r\ninterface IERC20 {\r\n    function totalSupply() external view returns (uint256);\r\n    function balanceOf(address account) external view returns (uint256);\r\n    function transfer(address recipient, uint256 amount) external returns (bool);\r\n    function allowance(address owner, address spender) external view returns (uint256);\r\n    function approve(address spender, uint256 amount) external returns (bool);\r\n    function transferFrom(address sender, address recipient, uint256 amount) external  returns (bool);\r\n    event Transfer(address indexed from, address indexed to, uint256 value);\r\n}\r\n// ----------------------------------------------------------------------------\r\n// @Name Ownable\r\n// ----------------------------------------------------------------------------\r\ncontract Ownable {\r\n    address public owner;\r\n\r\n    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);\r\n\r\n    constructor() public {\r\n        owner = msg.sender;\r\n    }\r\n\r\n    modifier onlyOwner() { require(msg.sender == owner); _; }\r\n\r\n    function transferOwnership(address _newOwner) external onlyOwner {\r\n        require(_newOwner != address(0));\r\n        emit OwnershipTransferred(owner, _newOwner);\r\n        owner = _newOwner;\r\n    }\r\n}\r\n// ----------------------------------------------------------------------------\r\n// @Name AmazonFinanceRewardPool\r\n// @Desc Contract Of Reward For Writing\r\n// ----------------------------------------------------------------------------\r\ncontract AmazonFinanceRewardPool is Ownable {\r\n    event eventChangeOwnerAddress(address previousOwner, address newOwner);\r\n    event eventChangeTokenCAEvent(address previousCA, address newCA);\r\n    event eventChangeRewardAmountEvent(uint256 indexed previousAmount, uint256 indexed newAmount);\r\n    event eventFundTransfer(address backer, uint256 amount);\r\n    event eventTokenWithdrawEvent(address withdrawAddress, uint256 amount);\r\n    \r\n    using SafeMath for uint256;\r\n\r\n    IERC20 private TOKEN_CONTRACT_ADDRESS;\r\n    address public OWNER_ADDRESS;\r\n    uint256 public REWARD_RATE;\r\n    \r\n    constructor() public {\r\n        TOKEN_CONTRACT_ADDRESS = IERC20(0x0B5aC384a35d029cDa75b8675ACe96Dfe670f54c);\r\n        REWARD_RATE = 5000000000000000000;\r\n        OWNER_ADDRESS = 0x9D2b30FB5EE941Cb59AE71Bb7Ef1C6f06dfeB6c7;\r\n    }\r\n    \r\n    function () payable public {\r\n        uint256 amount = msg.value;\r\n        amount = amount.mul(REWARD_RATE);\r\n        \r\n        require(amount <= TOKEN_CONTRACT_ADDRESS.balanceOf(this));\r\n    \r\n        address(OWNER_ADDRESS).transfer(msg.value);\r\n        tokenTransfer(amount);\r\n    }\r\n    \r\n    function withdrawToken(address _to, uint256 _amount) external onlyOwner {\r\n        require(TOKEN_CONTRACT_ADDRESS.transfer(_to, _amount));        \r\n        emit eventTokenWithdrawEvent(_to, _amount);\r\n    }\r\n\r\n    function changeTokenAddress(IERC20 _tokenCA) external onlyOwner {\r\n        require(_tokenCA != address(0));\r\n        emit eventChangeTokenCAEvent(TOKEN_CONTRACT_ADDRESS, _tokenCA);\r\n        TOKEN_CONTRACT_ADDRESS = _tokenCA;\r\n    }\r\n    \r\n    // 1 ETH : _amount Token\r\n    function changeRewardRate(uint256 _rate) external onlyOwner {\r\n        emit eventChangeRewardAmountEvent(REWARD_RATE, _rate);\r\n        REWARD_RATE = _rate;\r\n    }\r\n    \r\n    function changOwnerAddress(address _ownerAddress) external onlyOwner {\r\n        emit eventChangeOwnerAddress(OWNER_ADDRESS, _ownerAddress);\r\n        OWNER_ADDRESS = _ownerAddress;\r\n    }\r\n\r\n    function tokenTransfer(uint256 _amount) internal {\r\n        require(TOKEN_CONTRACT_ADDRESS.transfer(msg.sender, _amount));\r\n        emit eventFundTransfer(msg.sender, _amount);\r\n    }\r\n}"
+    }
+  }
+}

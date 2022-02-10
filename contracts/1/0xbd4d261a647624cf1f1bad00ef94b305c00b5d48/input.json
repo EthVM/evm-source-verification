@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "DSProxyCache.sol": {
+      "content": "pragma solidity >=0.4.23;\r\npragma experimental ABIEncoderV2;\r\n\r\ncontract DSProxyCache {\r\n    mapping(bytes32 => address) cache;\r\n\r\n    function read(bytes memory _code) public view returns (address) {\r\n        bytes32 hash = keccak256(_code);\r\n        return cache[hash];\r\n    }\r\n\r\n    function write(bytes memory _code) public returns (address target) {\r\n        assembly {\r\n            target := create(0, add(_code, 0x20), mload(_code))\r\n            switch iszero(extcodesize(target))\r\n            case 1 {\r\n                // throw if contract failed to deploy\r\n                revert(0, 0)\r\n            }\r\n        }\r\n        bytes32 hash = keccak256(_code);\r\n        cache[hash] = target;\r\n    }\r\n}"
+    }
+  }
+}

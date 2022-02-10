@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "BHDT.sol": {
+      "content": "pragma solidity ^0.4.26;\r\n\r\n\r\n// Math operations with safety checks that throw on error\r\nlibrary SafeMath {\r\n    \r\n    function add(uint256 a, uint256 b) internal pure returns (uint256) {\r\n        uint256 c = a + b;\r\n        require(c >= a);\r\n        return c;\r\n    }\r\n  \r\n    function sub(uint256 a, uint256 b) internal pure returns (uint256) {\r\n        require(b <= a);\r\n        return a - b;\r\n    }\r\n  \r\n}\r\n\r\n\r\n// Abstract contract for the full ERC 20 Token standard\r\ncontract ERC20 {\r\n    \r\n    function balanceOf(address _address) public view returns (uint256 balance);\r\n    \r\n    function transfer(address _to, uint256 _value) public returns (bool success);\r\n    \r\n    function transferFrom(address _from, address _to, uint256 _value) public returns (bool success);\r\n    \r\n    function approve(address _spender, uint256 _value) public returns (bool success);\r\n    \r\n    function allowance(address _owner, address _spender) public view returns (uint256 remaining);\r\n\r\n    event Transfer(address indexed _from, address indexed _to, uint256 _value);\r\n    \r\n    event Approval(address indexed _owner, address indexed _spender, uint256 _value);\r\n    \r\n}\r\n\r\n\r\n// Token contract\r\ncontract BHDT is ERC20 {\r\n    \r\n    string public name = \"Bounty Hunter DEX Token\";\r\n    string public symbol = \"BHDT\";\r\n    uint8 public decimals = 18;\r\n    // 总发行量1千个\r\n    uint256 public totalSupply = 1000 * 10**18;\r\n    mapping (address => uint256) public balances;\r\n    mapping (address => mapping (address => uint256)) public allowed;\r\n    \r\n    constructor() public {\r\n        balances[msg.sender] = totalSupply;\r\n    }\r\n    \r\n    function balanceOf(address _address) public view returns (uint256 balance) {\r\n        return balances[_address];\r\n    }\r\n    \r\n    function transfer(address _to, uint256 _value) public returns (bool success) {\r\n        require(_to != address(0));\r\n        require(balances[msg.sender] >= _value && _value > 0, \"Insufficient balance or zero amount\");\r\n        balances[msg.sender] = SafeMath.sub(balances[msg.sender], _value);\r\n        balances[_to] = SafeMath.add(balances[_to], _value);\r\n        emit Transfer(msg.sender, _to, _value);\r\n        return true;\r\n    }\r\n    \r\n    function approve(address _spender, uint256 _amount) public returns (bool success) {\r\n        require(_spender != address(0));\r\n        require((allowed[msg.sender][_spender] == 0) || (_amount == 0));\r\n        allowed[msg.sender][_spender] = _amount;\r\n        emit Approval(msg.sender, _spender, _amount);\r\n        return true;\r\n    }\r\n    \r\n    function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) {\r\n        require(_from != address(0) && _to != address(0));\r\n        require(balances[_from] >= _value && allowed[_from][msg.sender] >= _value && _value > 0, \"Insufficient balance or zero amount\");\r\n        balances[_from] = SafeMath.sub(balances[_from], _value);\r\n        balances[_to] = SafeMath.add(balances[_to], _value);\r\n        allowed[_from][msg.sender] = SafeMath.sub(allowed[_from][msg.sender], _value);\r\n        emit Transfer(_from, _to, _value);\r\n        return true;\r\n    }\r\n    \r\n    function allowance(address _owner, address _spender) public view returns (uint256 remaining) {\r\n        return allowed[_owner][_spender];\r\n    }\r\n    \r\n    \r\n}"
+    }
+  }
+}

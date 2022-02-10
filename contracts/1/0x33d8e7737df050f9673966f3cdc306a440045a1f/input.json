@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "NFTDrop.sol": {
+      "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.6.0;\n\ninterface IERC1155 {\n    function safeTransferFrom(\n        address from,\n        address to,\n        uint256 id,\n        uint256 amount,\n        bytes calldata data\n    ) external;\n}\n\ncontract NftDrop {\n    address public owner;\n    address public nftAddress;\n    uint256 public nftTokenId;\n    mapping(address => bool) redemptions;\n    bytes4 immutable onErc1155SuccessfulResult =\n        bytes4(\n            keccak256(\n                \"onERC1155Received(address,address,uint256,uint256,bytes)\"\n            )\n        );\n    event WithdrawArt(address withdrawnTo);\n\n    modifier onlyOwner() {\n        require(msg.sender == owner, \"must be owner\");\n        _;\n    }\n\n    constructor(address _nftAddress, uint256 _nftTokenId) public {\n        owner = msg.sender;\n        nftAddress = _nftAddress;\n        nftTokenId = _nftTokenId;\n    }\n\n    function redeemNft(\n        address address1,\n        bytes32 r,\n        bytes32 s,\n        uint8 v\n    ) public {\n        require(\n            (getSigner(address1, r, s, v) == owner),\n            \"must be signed by owner\"\n        );\n        require(!hasReedeemed(address1), \"already redeemed\");\n\n        redemptions[address1] = true;\n        IERC1155(nftAddress).safeTransferFrom(\n            address(this),\n            address1,\n            nftTokenId,\n            1,\n            \"\"\n        );\n        emit WithdrawArt(address1);\n    }\n\n    function getSigner(\n        address aCustomAddress,\n        bytes32 r,\n        bytes32 s,\n        uint8 v\n    ) public pure returns (address) {\n        bytes memory prefix = \"\\x19Ethereum Signed Message:\\n32\";\n        bytes32 hash = keccak256(abi.encodePacked(aCustomAddress));\n        bytes32 prefixedHash = keccak256(abi.encodePacked(prefix, hash));\n        return ecrecover(prefixedHash, v, r, s);\n    }\n\n    function hasReedeemed(address address1) public view returns (bool) {\n        return redemptions[address1];\n    }\n\n    function emergencyExecute(\n        address targetAddress,\n        bytes memory targetCallData\n    ) public onlyOwner returns (bool) {\n        (bool success, ) = targetAddress.call(targetCallData);\n        return success;\n    }\n\n    function supportsInterface(bytes4 interfaceID)\n        external\n        pure\n        returns (bool)\n    {\n        return interfaceID == 0x01ffc9a7 || interfaceID == 0x4e2312e0;\n    }\n\n    function onERC1155Received(\n        address operator,\n        address from,\n        uint256 id,\n        uint256 value,\n        bytes calldata data\n    ) external returns (bytes4) {\n        return onErc1155SuccessfulResult;\n    }\n}\n"
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/KepperFiHelper.sol": {
+      "content": "// SPDX-License-Identifier: MIT\n\n\n/**\n * KEEPERFI.COM\n * Optimized Dapp\n * Clean & tested code\n */\n\n\npragma solidity ^0.6.12;\n\nlibrary SafeMath {\n  \n    function add(uint a, uint b) internal pure returns (uint) {\n        uint c = a + b;\n        require(c >= a, \"add: +\");\n\n        return c;\n    }\n\n    function add(uint a, uint b, string memory errorMessage) internal pure returns (uint) {\n        uint c = a + b;\n        require(c >= a, errorMessage);\n\n        return c;\n    }\n\n  function sub(uint a, uint b) internal pure returns (uint) {\n        return sub(a, b, \"sub: -\");\n    }\n  function sub(uint a, uint b, string memory errorMessage) internal pure returns (uint) {\n        require(b <= a, errorMessage);\n        uint c = a - b;\n\n        return c;\n    }\n  function mul(uint a, uint b) internal pure returns (uint) {\n     if (a == 0) {\n            return 0;\n        }\n\n        uint c = a * b;\n        require(c / a == b, \"mul: *\");\n\n        return c;\n    }\n\n    function mul(uint a, uint b, string memory errorMessage) internal pure returns (uint) {\n      if (a == 0) {\n            return 0;\n        }\n\n        uint c = a * b;\n        require(c / a == b, errorMessage);\n\n        return c;\n    }\n function div(uint a, uint b) internal pure returns (uint) {\n        return div(a, b, \"div: /\");\n    }\n\n  function div(uint a, uint b, string memory errorMessage) internal pure returns (uint) {\n        // Solidity only automatically asserts when dividing by 0\n        require(b > 0, errorMessage);\n        uint c = a / b;\n        // assert(a == b * c + a % b); // There is no case in which this doesn't hold\n\n        return c;\n    }\n function mod(uint a, uint b) internal pure returns (uint) {\n        return mod(a, b, \"mod: %\");\n    }\n function mod(uint a, uint b, string memory errorMessage) internal pure returns (uint) {\n        require(b != 0, errorMessage);\n        return a % b;\n    }\n}\n\nlibrary Math {\n   function max(uint256 a, uint256 b) internal pure returns (uint256) {\n        return a >= b ? a : b;\n    }\n  function min(uint256 a, uint256 b) internal pure returns (uint256) {\n        return a < b ? a : b;\n    }\n  function average(uint256 a, uint256 b) internal pure returns (uint256) {\n        // (a + b) / 2 can overflow, so we distribute\n        return (a / 2) + (b / 2) + ((a % 2 + b % 2) / 2);\n    }\n}\n\ninterface IChainLinkFeed {\n    function latestAnswer() external view returns (int256);\n}\n\ninterface IKeeperFi {\n    function totalBonded() external view returns (uint);\n    function bonds(address keeper, address credit) external view returns (uint);\n    function votes(address keeper) external view returns (uint);\n}\n\ncontract KeeperFiHelper {\n    using SafeMath for uint;\n\n    IChainLinkFeed public constant FASTGAS = IChainLinkFeed(0x169E633A2D1E6c10dD91238Ba11c4A708dfEF37C);\n    IKeeperFi public constant KFI = IKeeperFi(0x4e59DFe7c5D34C498Cfe18f0b6dB10941d6E1A8a);\n\n    uint constant public BOOST = 50;\n    uint constant public BASE = 10;\n    uint constant public TARGETBOND = 300e18;\n\n    uint constant public PRICE = 10;\n\n    function getFastGas() external view returns (uint) {\n        return uint(FASTGAS.latestAnswer());\n    }\n\n    function bonds(address keeper) public view returns (uint) {\n        return KFI.bonds(keeper, address(KFI)).add(KFI.votes(keeper));\n    }\n\n    function getQuoteLimitFor(address origin, uint gasUsed) public view returns (uint) {\n        uint _min = gasUsed.mul(PRICE).mul(uint(FASTGAS.latestAnswer()));\n        uint _boost = _min.mul(BOOST).div(BASE); // increase by 2.5\n        uint _bond = Math.min(bonds(origin), TARGETBOND);\n        return Math.max(_min, _boost.mul(_bond).div(TARGETBOND));\n    }\n\n    function getQuoteLimit(uint gasUsed) external view returns (uint) {\n        return getQuoteLimitFor(tx.origin, gasUsed);\n    }\n}"
+    }
+  }
+}

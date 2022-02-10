@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/EthergyBridge.sol": {
+      "content": "// SPDX-License-Identifier: MIT\r\n\r\npragma solidity ^0.6.7;\r\n\r\n\r\ninterface IERC20 {\r\n    \r\n    function totalSupply() external view returns (uint256);\r\n\r\n\r\n    function balanceOf(address account) external view returns (uint256);\r\n\r\n\r\n    function transfer(address recipient, uint256 amount) external returns (bool);\r\n\r\n\r\n    function allowance(address owner, address spender) external view returns (uint256);\r\n    \r\n    function approve(address spender, uint256 amount) external returns (bool);\r\n\r\n    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);\r\n\r\n    function burn(address from, uint256 amount) external returns (bool);\r\n}\r\n\r\ninterface IXDaiBridge {\r\n    function relayTokens(address _receiver, uint256 _amount) external returns (bool);\r\n}\r\n\r\ncontract EthergyBridge{\r\n    \r\n    address public xdaiBridge = 0x4aa42145Aa6Ebf72e164C9bBC74fbD3788045016;\r\n    address public dai = 0x6B175474E89094C44Da98b954EedeAC495271d0F;\r\n    address public dao;\r\n    \r\n    event DAIBridge(address target, uint amount);\r\n    \r\n    constructor(address _dao) public\r\n    {\r\n        dao = _dao;\r\n    }\r\n\r\n\r\n    function bridge() external {\r\n        uint256 balance = IERC20(dai).balanceOf(address(this));\r\n        require(balance > 0, \"No sufficent DAI on the smart contract\");\r\n        IERC20(dai).approve(xdaiBridge, balance);\r\n        IXDaiBridge(xdaiBridge).relayTokens(dao, balance);\r\n        \r\n        emit DAIBridge(dao, balance);\r\n    }\r\n    \r\n}\r\n"
+    }
+  }
+}

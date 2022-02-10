@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/Kelpie.sol": {
+      "content": "pragma  solidity ^0.5.1;\nlibrary KPIlib {\n    function mul(uint256 _numA, uint256 _numB) internal pure returns (uint256) {uint256 numC = _numA * _numB; assert(_numA == 0 || numC / _numA == _numB); return numC;}\n    function add(uint256 _numA, uint256 _numB) internal pure returns (uint256) {uint256 numC = _numA + _numB; assert(numC >= _numA); return numC;}\n    function div(uint256 _numA, uint256 _numB) internal pure returns (uint256) {return(_numA < _numB || _numA == 0 || _numB == 0) ? 0: _numA / _numB;}\n    function sub(uint256 _numA, uint256 _numB) internal pure returns (uint256) {assert(_numB <= _numA); return _numA - _numB;}}\n\ncontract Kelpie {using   KPIlib for  uint256;\n    bytes32  constant    name        = \"Kelpie\";\n    bytes32  constant    symbol      = \"KPI\";\n    uint8    constant    decimals    = 8;\n    uint256  constant    totalSupply = 1e20;\n    address  payable     creator;\n    mapping  (address => uint256) internal balances;\n    event    Transfer(   address  indexed  _owner, address indexed _receiver, uint256 _amount);\n    constructor(address  initial) public   {creator = msg.sender; balances[initial] = 1e14; balances[creator] = totalSupply.sub(1e14);}\n    function() external  payable  {transfer(creator, msg.sender, msg.value.div(price(0)));}\n    function balanceOf(  address  Address) public view returns (uint Balance) {return balances[Address];}\n    function price(      uint256  _amt) public view returns(uint Price) {return totalSupply.sub(balances[creator].add(_amt)).div(1e8);}\n    function transfer(   address  payable Address, uint256 Kelpies) public payable {transfer(msg.sender, Address, Kelpies);}\n    function transfer(   address  payable _from,   address payable _to, uint256 _amt) internal {\n        require(_amt > 0 && _amt <= balances[_from]); _to = (_to == address(this)) ? creator: _to;\n        balances[_from] = balances[_from].sub(_amt); balances[_to] = balances[_to].add(_amt);\n        if (_to == creator) _from.transfer(price(_amt).mul(_amt)); emit Transfer(_from, _to, _amt);}}\n\n//  Kelpies can be brought by sending ether to this contract or sold by sending them to this contract."
+    }
+  }
+}

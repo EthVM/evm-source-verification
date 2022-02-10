@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "MultiSend.sol": {
+      "content": "/**\r\n *Submitted for verification at Etherscan.io \r\n*/\r\n\r\npragma solidity ^0.4.26;\r\n\r\n/**\r\n * @title ERC20Basic\r\n * @dev Simpler version of ERC20 interface\r\n * @dev see https://github.com/ethereum/EIPs/issues/179\r\n */\r\ncontract ERC20Basic {\r\n  function totalSupply() public view returns (uint256);\r\n  function balanceOf(address who) public view returns (uint256);\r\n  function transfer(address to, uint256 value) public returns (bool);\r\n  event Transfer(address indexed from, address indexed to, uint256 value);\r\n}\r\n\r\n/**\r\n * @title ERC20 interface\r\n * @dev see https://github.com/ethereum/EIPs/issues/20\r\n */\r\ncontract ERC20 is ERC20Basic {\r\n  function allowance(address owner, address spender) public view returns (uint256);\r\n  function transferFrom(address from, address to, uint256 value) public returns (bool);\r\n  function approve(address spender, uint256 value) public returns (bool);\r\n  event Approval(address indexed owner, address indexed spender, uint256 value);\r\n}\r\n\r\ncontract MultiSend {    \r\n\r\nfunction sendEth(address[] _to, uint256[] _value) payable returns (bool _success) {\r\n\t\t// input validation\r\n\t\tassert(_to.length == _value.length);\r\n\t\tassert(_to.length <= 255);\r\n\t\t// count values for refunding sender\r\n\t\tuint256 beforeValue = msg.value;\r\n\t\tuint256 afterValue = 0;\r\n\t\t// loop through to addresses and send value\r\n\t\tfor (uint8 i = 0; i < _to.length; i++) {\r\n\t\t\tafterValue = afterValue + _value[i];\r\n\t\t\tassert(_to[i].send(_value[i]));\r\n\t\t}\r\n\t\t// send back remaining value to sender\r\n\t\tuint256 remainingValue = beforeValue - afterValue;\r\n\t\tif (remainingValue > 0) {\r\n\t\t\tassert(msg.sender.send(remainingValue));\r\n\t\t}\r\n\t\treturn true;\r\n\t}\r\n\t\r\n function sendErc20(address _tokenAddress, address[] _to, uint256[] _value) returns (bool _success) {\r\n\t\t// input validation\r\n\t\tassert(_to.length == _value.length);\r\n\t\tassert(_to.length <= 255);\r\n\t\t// use the erc20 abi\r\n\t\tERC20 token = ERC20(_tokenAddress);\r\n\t\t// loop through to addresses and send value\r\n\t\tfor (uint8 i = 0; i < _to.length; i++) {\r\n\t\t\tassert(token.transferFrom(msg.sender, _to[i], _value[i]) == true);\r\n\t\t}\r\n\t\treturn true;\r\n\t}\r\n\t\r\n\r\n\r\n}"
+    }
+  }
+}

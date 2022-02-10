@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "RuneProtocolERC20.sol": {
+      "content": "// SPDX-License-Identifier: UNLICENSED\r\npragma solidity =0.7.0;\r\n\r\n// File: libraries/SafeMath.sol';\r\n\r\npragma solidity =0.7.0;\r\n\r\n// a library for performing overflow-safe math, courtesy of DappHub (https://github.com/dapphub/ds-math)\r\n\r\nlibrary SafeMath {\r\n    function add(uint x, uint y) internal pure returns (uint z) {\r\n        require((z = x + y) >= x, 'ds-math-add-overflow');\r\n    }\r\n\r\n    function sub(uint x, uint y) internal pure returns (uint z) {\r\n        require((z = x - y) <= x, 'ds-math-sub-underflow');\r\n    }\r\n\r\n    function mul(uint x, uint y) internal pure returns (uint z) {\r\n        require(y == 0 || (z = x * y) / y == x, 'ds-math-mul-overflow');\r\n    }\r\n}\r\n\r\n\r\ncontract RuneProtocolERC20 {\r\n    using SafeMath for uint;\r\n\r\n    string public constant name = 'RuneProtocol LP Token';\r\n    string public constant symbol = 'RLP';\r\n    uint8 public constant decimals = 18;\r\n    uint  public totalSupply;\r\n    mapping(address => uint) public balanceOf;\r\n    mapping(address => mapping(address => uint)) public allowance;\r\n\r\n    bytes32 public DOMAIN_SEPARATOR;\r\n    // keccak256(\"Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)\");\r\n    bytes32 public constant PERMIT_TYPEHASH = 0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9;\r\n    mapping(address => uint) public nonces;\r\n\r\n    event Approval(address indexed owner, address indexed spender, uint value);\r\n    event Transfer(address indexed from, address indexed to, uint value);\r\n\r\n    constructor() public {\r\n        uint chainId;\r\n        assembly {\r\n            chainId := chainid()\r\n        }\r\n        DOMAIN_SEPARATOR = keccak256(\r\n            abi.encode(\r\n                keccak256('EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)'),\r\n                keccak256(bytes(name)),\r\n                keccak256(bytes('1')),\r\n                chainId,\r\n                address(this)\r\n            )\r\n        );\r\n    }\r\n\r\n    function _mint(address to, uint value) internal {\r\n        totalSupply = totalSupply.add(value);\r\n        balanceOf[to] = balanceOf[to].add(value);\r\n        emit Transfer(address(0), to, value);\r\n    }\r\n\r\n    function _burn(address from, uint value) internal {\r\n        balanceOf[from] = balanceOf[from].sub(value);\r\n        totalSupply = totalSupply.sub(value);\r\n        emit Transfer(from, address(0), value);\r\n    }\r\n\r\n    function _approve(address owner, address spender, uint value) private {\r\n        allowance[owner][spender] = value;\r\n        emit Approval(owner, spender, value);\r\n    }\r\n\r\n    function _transfer(address from, address to, uint value) private {\r\n        balanceOf[from] = balanceOf[from].sub(value);\r\n        balanceOf[to] = balanceOf[to].add(value);\r\n        emit Transfer(from, to, value);\r\n    }\r\n\r\n    function approve(address spender, uint value) external returns (bool) {\r\n        _approve(msg.sender, spender, value);\r\n        return true;\r\n    }\r\n\r\n    function transfer(address to, uint value) external returns (bool) {\r\n        _transfer(msg.sender, to, value);\r\n        return true;\r\n    }\r\n\r\n    function transferFrom(address from, address to, uint value) external returns (bool) {\r\n        if (allowance[from][msg.sender] != uint(-1)) {\r\n            allowance[from][msg.sender] = allowance[from][msg.sender].sub(value);\r\n        }\r\n        _transfer(from, to, value);\r\n        return true;\r\n    }\r\n\r\n    function permit(address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) external {\r\n        require(deadline >= block.timestamp, 'RuneProtocol: EXPIRED');\r\n        bytes32 digest = keccak256(\r\n            abi.encodePacked(\r\n                '\\x19\\x01',\r\n                DOMAIN_SEPARATOR,\r\n                keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, value, nonces[owner]++, deadline))\r\n            )\r\n        );\r\n        address recoveredAddress = ecrecover(digest, v, r, s);\r\n        require(recoveredAddress != address(0) && recoveredAddress == owner, 'RuneProtocol: INVALID_SIGNATURE');\r\n        _approve(owner, spender, value);\r\n    }\r\n}"
+    }
+  }
+}

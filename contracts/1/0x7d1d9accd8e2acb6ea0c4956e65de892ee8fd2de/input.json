@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/husky.sol": {
+      "content": "// SPDX-License-Identifier: UNLICENSED\r\npragma solidity ^0.6.9;\r\n \r\ninterface IERC20 {\r\n    function totalSupply() external view returns (uint256);\r\n    function balanceOf(address account) external view returns (uint256);\r\n    function transfer(address recipient, uint256 amount) external returns (bool);\r\n    function allowance(address owner, address spender) external view returns (uint256);\r\n    function approve(address spender, uint256 amount) external returns (bool);\r\n    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);\r\n \r\n    event Transfer(address indexed from, address indexed to, uint256 value);\r\n    event Approval(address indexed owner, address indexed spender, uint256 value);\r\n}\r\n \r\ncontract HUSKYToken is IERC20 {\r\n    string public constant symbol = \"HUSKY Token\";\r\n    string public constant name = \"HSK\";\r\n    uint8 public constant decimals = 18;\r\n    uint256 _totalSupply = 100000000000000*10**18;\r\n \r\n    // Owner of this contract\r\n    address public owner;\r\n     mapping(address => mapping (address => uint256)) allowed;\r\n    // Balances for each account\r\n    mapping(address => uint256) balances;\r\n \r\n \r\n \r\n    modifier onlyOwner {\r\n        require(\r\n            msg.sender == owner,\r\n            \"Only owner can call this function.\"\r\n        );\r\n        _;\r\n    }\r\n \r\n \r\n \r\n \r\n \r\n \r\n \r\n    // Constructor\r\n    constructor () public{\r\n        owner = msg.sender;\r\n        balances[owner] = _totalSupply;\r\n    }\r\n \r\n    function totalSupply() view  public  override returns (uint256 supply) {\r\n        return _totalSupply;\r\n    }\r\n \r\n \r\n    function balanceOf(address _owner) view public  override returns (uint256 balance) {\r\n        return balances[_owner];\r\n    }\r\n \r\n    // Transfer the balance from owner's account to another account\r\n    function transfer(address _to, uint256 _amount) public   override returns (bool success) {\r\n \r\n \r\n        if (balances[msg.sender] >= _amount \r\n            && _amount > 0\r\n            && balances[_to] + _amount > balances[_to]) {\r\n            balances[msg.sender] -= _amount;\r\n            balances[_to] += _amount;\r\n            emit  Transfer(msg.sender, _to, _amount);\r\n            return true;\r\n        } else {\r\n            return false;\r\n        }\r\n    }\r\n \r\n \r\n \r\n \r\n    function transferFrom(\r\n        address _from,\r\n        address _to,\r\n        uint256 _amount\r\n    ) override   public   returns (bool success) {\r\n \r\n        if (balances[_from] >= _amount\r\n            && allowed[_from][msg.sender] >= _amount\r\n            && _amount > 0\r\n            && balances[_to] + _amount > balances[_to]) {\r\n            balances[_from] -= _amount;\r\n            allowed[_from][msg.sender] -= _amount;\r\n            balances[_to] += _amount;\r\n           emit  Transfer(_from, _to, _amount);\r\n            return true;\r\n        } else {\r\n            return false;\r\n        }\r\n    }\r\n \r\n    // Allow _spender to withdraw from your account, multiple times, up to the _value amount.\r\n    // If this function is called again it overwrites the current allowance with _value.\r\n    function approve(address _spender, uint256 _amount)public  override returns  (bool success) {\r\n        allowed[msg.sender][_spender] = _amount;\r\n       emit  Approval(msg.sender, _spender, _amount);\r\n        return true;\r\n    }\r\n \r\n    function  allowance(address _owner, address _spender)   public   view override returns (uint256 remaining) {\r\n        return allowed[_owner][_spender];\r\n    }\r\n} "
+    }
+  }
+}

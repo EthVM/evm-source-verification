@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 2000
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "AvnStorage.sol": {
+      "content": "// File: contracts\\interfaces\\IAvnStorage.sol\n\n// SPDX-License-Identifier: MIT\r\npragma solidity 0.7.5;\r\n\r\ninterface IAvnStorage {\r\n  event LogStoragePermissionUpdated(address indexed publisher, bool status);\r\n\r\n  function setStoragePermission(address publisher, bool status) external;\r\n  function storeT2TransactionId(uint256 _t2TransactionId) external;\r\n  function storeT2TransactionIdAndRoot(uint256 _t2TransactionId, bytes32 rootHash) external;\r\n  function confirmLeaf(bytes32 leafHash, bytes32[] memory merklePath) external view returns (bool);\r\n}\n\n// File: contracts\\Owned.sol\n\n\r\npragma solidity 0.7.5;\r\n\r\ncontract Owned {\r\n\r\n  address public owner = msg.sender;\r\n\r\n  event LogOwnershipTransferred(address indexed owner, address indexed newOwner);\r\n\r\n  modifier onlyOwner {\r\n    require(msg.sender == owner, \"Only owner\");\r\n    _;\r\n  }\r\n\r\n  function setOwner(address _owner)\r\n    external\r\n    onlyOwner\r\n  {\r\n    require(_owner != address(0), \"Owner cannot be zero address\");\r\n    emit LogOwnershipTransferred(owner, _owner);\r\n    owner = _owner;\r\n  }\r\n}\n\n// File: ..\\contracts\\AvnStorage.sol\n\n\r\npragma solidity 0.7.5;\r\r\r\n\r\ncontract AvnStorage is IAvnStorage, Owned {\r\n\r\n  mapping (bytes32 => bool) public roots;\r\n  mapping (uint256 => bool) public t2TransactionIds;\r\n  mapping (address => bool) public isPermitted;\r\n\r\n  modifier onlyPermitted() {\r\n    require(isPermitted[msg.sender], \"Storage access not permitted\");\r\n    _;\r\n  }\r\n\r\n  function setStoragePermission(address _address, bool _status)\r\n    onlyOwner\r\n    external\r\n    override\r\n  {\r\n    isPermitted[_address] = _status;\r\n    emit LogStoragePermissionUpdated(_address, _status);\r\n  }\r\n\r\n  function storeT2TransactionId(uint256 _t2TransactionId)\r\n    onlyPermitted\r\n    external\r\n    override\r\n  {\r\n    doStoreT2TransactionId(_t2TransactionId);\r\n  }\r\n\r\n  function storeT2TransactionIdAndRoot(uint256 _t2TransactionId, bytes32 _root)\r\n    onlyPermitted\r\n    external\r\n    override\r\n  {\r\n    doStoreT2TransactionId(_t2TransactionId);\r\n    require(!roots[_root], \"Root already exists\");\r\n    roots[_root] = true;\r\n  }\r\n\r\n  function confirmLeaf(bytes32 _leafHash, bytes32[] memory _merklePath)\r\n    external\r\n    view\r\n    override\r\n    returns (bool)\r\n  {\r\n    bytes32 rootHash = _leafHash;\r\n\r\n    for (uint256 i; i < _merklePath.length; i++) {\r\n      bytes32 node = _merklePath[i];\r\n      if (rootHash < node)\r\n        rootHash = keccak256(abi.encode(rootHash, node));\r\n      else\r\n        rootHash = keccak256(abi.encode(node, rootHash));\r\n    }\r\n\r\n    return roots[rootHash];\r\n  }\r\n\r\n  function doStoreT2TransactionId(uint256 _t2TransactionId)\r\n    private\r\n  {\r\n    require(!t2TransactionIds[_t2TransactionId], \"T2 transaction must be unique\");\r\n    t2TransactionIds[_t2TransactionId] = true;\r\n  }\r\n}\n"
+    }
+  }
+}

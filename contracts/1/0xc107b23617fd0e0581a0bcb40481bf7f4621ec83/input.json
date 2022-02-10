@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "swap.sol": {
+      "content": "pragma solidity =0.6.6;\n\ninterface IUniswapV2Pair {\n    function swap(uint amount0Out, uint amount1Out, address to, bytes calldata data) external;\n}\n\nlibrary SafeMath {\n    function add(uint x, uint y) internal pure returns (uint z) {\n        require((z = x + y) >= x, 'ds-math-add-overflow');\n    }\n\n    function sub(uint x, uint y) internal pure returns (uint z) {\n        require((z = x - y) <= x, 'ds-math-sub-underflow');\n    }\n\n    function mul(uint x, uint y) internal pure returns (uint z) {\n        require(y == 0 || (z = x * y) / y == x, 'ds-math-mul-overflow');\n    }\n}\n\n\ncontract Swap  {\n     using SafeMath for uint;\n\n    address public factory = address(0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f);\n    \n    modifier ensure(uint deadline) {\n        require(deadline >= block.timestamp, 'UniswapV2Router: EXPIRED');\n        _;\n    }\n\n    function sortTokens(address tokenA, address tokenB) internal pure returns (address token0, address token1) {\n        require(tokenA != tokenB, 'UniswapV2Library: IDENTICAL_ADDRESSES');\n        (token0, token1) = tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);\n        require(token0 != address(0), 'UniswapV2Library: ZERO_ADDRESS');\n    }\n\n    function pairFor(address tokenA, address tokenB) internal view returns (address pair) {\n        (address token0, address token1) = sortTokens(tokenA, tokenB);\n        pair = address(uint(keccak256(abi.encodePacked(\n                hex'ff',\n                factory,\n                keccak256(abi.encodePacked(token0, token1)),\n                hex'96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f' // init code hash\n            ))));\n    }\n\n    function safeTransferFrom(\n        address token,\n        address from,\n        address to,\n        uint256 value\n    ) internal {\n        // bytes4(keccak256(bytes('transferFrom(address,address,uint256)')));\n        (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0x23b872dd, from, to, value));\n        require(\n            success && (data.length == 0 || abi.decode(data, (bool))),\n            'TransferHelper::transferFrom: transferFrom failed'\n        );\n    }\n\n    function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut) internal pure returns (uint amountOut) {\n        require(amountIn > 0, 'UniswapV2Library: INSUFFICIENT_INPUT_AMOUNT');\n        require(reserveIn > 0 && reserveOut > 0, 'UniswapV2Library: INSUFFICIENT_LIQUIDITY');\n        uint amountInWithFee = amountIn.mul(997);\n        uint numerator = amountInWithFee.mul(reserveOut);\n        uint denominator = reserveIn.mul(1000).add(amountInWithFee);\n        amountOut = numerator / denominator;\n    }\n\n    function swapTokensForTokens(\n        uint amountIn,\n        address[] memory path,\n        uint _reserveIn,\n        uint _reserveOut,\n        address to,\n        uint deadline\n    )  public ensure(deadline) returns (uint amountOut) {\n        amountOut = getAmountOut(amountIn, _reserveIn, _reserveOut);\n        safeTransferFrom(\n            path[0], msg.sender, pairFor(path[0], path[1]), amountIn\n        );\n        _swap(amountOut, path, to);\n    }\n\n    function _swap(uint amountOut, address[] memory path, address to) internal  {\n        (address input, address output) = (path[0], path[1]);\n        (address token0,) = sortTokens(input, output);\n        (uint amount0Out, uint amount1Out) = input == token0 ? (uint(0), amountOut) : (amountOut, uint(0));\n        IUniswapV2Pair(pairFor(input, output)).swap(\n            amount0Out, amount1Out, to, new bytes(0)\n        );\n    }\n\n\n}\n"
+    }
+  }
+}

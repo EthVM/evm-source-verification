@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 999999
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/Deploy.sol": {
+      "content": "// SPDX-License-Identifier: MIT\r\npragma solidity 0.6.12;\r\n\r\ninterface IERC20 {\r\n    function totalSupply() external view returns (uint256);\r\n    function balanceOf(address account) external view returns (uint256);\r\n}\r\n\r\n/// @notice A library for performing overflow-/underflow-safe math,\r\n/// updated with awesomeness from of DappHub (https://github.com/dapphub/ds-math).\r\nlibrary BoringMath {\r\n    function add(uint256 a, uint256 b) internal pure returns (uint256 c) {\r\n        require((c = a + b) >= b, \"BoringMath: Add Overflow\");\r\n    }\r\n\r\n    function sub(uint256 a, uint256 b) internal pure returns (uint256 c) {\r\n        require((c = a - b) <= a, \"BoringMath: Underflow\");\r\n    }\r\n\r\n    function mul(uint256 a, uint256 b) internal pure returns (uint256 c) {\r\n        require(b == 0 || (c = a * b) / b == a, \"BoringMath: Mul Overflow\");\r\n    }\r\n}\r\n\r\ninterface IAggregator {\r\n    function latestAnswer() external view returns (int256 answer);\r\n}\r\n\r\n/// @title xSUSHIOracle\r\n/// @author BoringCrypto\r\n/// @notice Oracle used for getting the price of xSUSHI based on Chainlink SUSHI price\r\n/// @dev\r\ncontract xSUSHIOracleV1 is IAggregator {\r\n    using BoringMath for uint256;\r\n\r\n    IERC20 public immutable sushi;\r\n    IERC20 public immutable bar;\r\n    IAggregator public immutable sushiOracle;\r\n\r\n    constructor (IERC20 sushi_, IERC20 bar_, IAggregator sushiOracle_) public {\r\n        sushi = sushi_;\r\n        bar = bar_;\r\n        sushiOracle = sushiOracle_;\r\n    }\r\n\r\n    // Calculates the lastest exchange rate\r\n    // Uses sushi rate and xSUSHI conversion\r\n    function latestAnswer() external view override returns (int256) {\r\n        return int256(\r\n            uint256(sushiOracle.latestAnswer())\r\n                .mul(sushi.balanceOf(address(bar)))\r\n                / bar.totalSupply()\r\n        );\r\n    }\r\n}\r\n"
+    }
+  }
+}

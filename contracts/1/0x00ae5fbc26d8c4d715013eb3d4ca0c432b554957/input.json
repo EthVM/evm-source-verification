@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/BulkReserves.sol": {
+      "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.6.2;\npragma experimental ABIEncoderV2;\n\ninterface IUniswapV2Pair {\n    function getReserves() external view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast);\n}\n\ncontract BulkReserves {\n    function getReserves(\n        address[] calldata pairs\n    ) external view returns(uint[][] memory reserves ) {\n        reserves = new uint[][](pairs.length);\n        for (uint i; i < pairs.length; i++) {\n            reserves[i] = new uint[](3);\n            (reserves[i][0],reserves[i][1],reserves[i][2]) = IUniswapV2Pair(pairs[i]).getReserves();\n        }\n    }\n}"
+    }
+  }
+}

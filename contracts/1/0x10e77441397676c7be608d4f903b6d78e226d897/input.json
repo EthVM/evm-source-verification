@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/YFS.sol": {
+      "content": "pragma solidity 0.6.0;\r\n\r\ncontract POS {\r\n\r\n    string public constant name = \"YFS Staking\";\r\n    string public constant symbol = \"YFS\";\r\n    uint8 public constant decimals = 18;  \r\n    uint256 tokenRate = 833;\r\n    \r\n\r\n\r\n    event Approval(address indexed tokenOwner, address indexed spender, uint tokens);\r\n    event Transfer(address indexed from, address indexed to, uint tokens);\r\n    event Burn(address indexed burner, uint256 value);\r\n    event ownerShipTransferred(address owner,address newOwner);\r\n\r\n\r\n    mapping(address => uint256) balances;\r\n\r\n    mapping(address => mapping (address => uint256)) allowed;\r\n    \r\n    uint256 totalSupply_ =  2999011;\r\n    address owner;\r\n\r\n    using SafeMath for uint256;\r\n\r\n\r\n   constructor() public {  \r\n\ttotalSupply_ = totalSupply_ **(uint256(decimals));\r\n\tbalances[msg.sender] = totalSupply_;\r\n\towner = msg.sender;\r\n    }  \r\n\r\n    function totalSupply() public view returns (uint256) {\r\n\treturn totalSupply_;\r\n    }\r\n    \r\n    function balanceOf(address tokenOwner) public view returns (uint) {\r\n        return balances[tokenOwner];\r\n    }\r\n   \r\n    \r\n    \r\n    // function to change token rate\r\n    function setRate(uint256  _tokenRate) public onlyOwner returns (uint8) {\r\n     tokenRate= _tokenRate;\r\n}\r\n    function transfer(address receiver, uint numTokens) public returns (bool) {\r\n        require(numTokens <= balances[msg.sender],\"Not enough tokens\");\r\n        balances[msg.sender] = balances[msg.sender].sub(numTokens);\r\n        balances[receiver] = balances[receiver].add(numTokens);\r\n        emit Transfer(msg.sender, receiver, numTokens);\r\n        return true;\r\n    }\r\n\r\n    function approve(address delegate, uint numTokens) public returns (bool) {\r\n        allowed[msg.sender][delegate] = numTokens;\r\n        emit Approval(msg.sender, delegate, numTokens);\r\n        return true;\r\n    }\r\n\r\n    function allowance(address _owner, address delegate) public view returns (uint) {\r\n        return allowed[_owner][delegate];\r\n    }\r\n\r\n    function transferFrom(address _owner, address delegate, uint numTokens) public returns (bool) {\r\n        require(numTokens <= balances[_owner],\"InSufficient balance!!\");    \r\n        require(numTokens <= allowed[_owner][msg.sender],\"The input is more than allo\");\r\n    \r\n        balances[_owner] = balances[_owner].sub(numTokens);\r\n        allowed[_owner][msg.sender] = allowed[_owner][msg.sender].sub(numTokens);\r\n        balances[delegate] = balances[delegate].add(numTokens);\r\n        emit Transfer(_owner, delegate, numTokens);\r\n        return true;\r\n    }\r\n    \r\n    modifier onlyOwner()\r\n    {\r\n        if(msg.sender == owner)\r\n        _;\r\n    }\r\n    \r\n    function buy(address buyer) public payable {\r\n        require(tx.origin == buyer,\"Buyer is not an external account\"); // to ensure buyer is an EOA\r\n        uint256 tokenUnitsToBuy; // smallest units of token purchased\r\n        tokenUnitsToBuy = (msg.value*tokenRate);\r\n        balances[owner] =  balances[owner].add(msg.value);\r\n        balances[buyer] =  balances[buyer].add(tokenUnitsToBuy);\r\n        balances[owner] =  balances[owner].sub(tokenUnitsToBuy);\r\n     \r\n      \r\n    }\r\n    //Fallback needs to be checked as it gives warning: Consider adding a receive ether function\r\n    fallback () external payable {\r\n        buy(msg.sender);\r\n    }\r\n    \r\n    receive () external payable\r\n    {\r\n        \r\n    }\r\n    \r\n    function mint() public onlyOwner returns(uint256)  \r\n    {\r\n    \r\n        balances[msg.sender] += 1;\r\n        totalSupply_ += 1;\r\n        return totalSupply_;\r\n        \r\n    }\r\n    \r\n    function burn(uint256 _value) onlyOwner public \r\n    {\r\n        _burn(msg.sender, _value);\r\n    }\r\n    function _burn(address _who, uint256 _value) internal\r\n    {\r\n         require(_value <= balances[_who],\"the address has not enough tokens to burn\");\r\n         balances[_who] = balances[_who].sub(_value);\r\n         totalSupply_ = totalSupply_.sub(_value);\r\n         emit Burn(_who, _value);\r\n         emit Transfer(_who, address(0), _value);\r\n    }\r\n    \r\n    function transferOwnerShip(address newOwner) onlyOwner public\r\n    {\r\n    require(newOwner != address(0),\"Null address reported\");\r\n    owner= newOwner;\r\n    emit ownerShipTransferred(owner, newOwner);\r\n    }\r\n}\r\n    library SafeMath { \r\n    function sub(uint256 a, uint256 b) internal pure returns (uint256) {\r\n      assert(b <= a);\r\n      return a - b;\r\n    }\r\n    \r\n    function add(uint256 a, uint256 b) internal pure returns (uint256) {\r\n      uint256 c = a + b;\r\n      assert(c >= a);\r\n      return c;\r\n    }\r\n}"
+    }
+  }
+}

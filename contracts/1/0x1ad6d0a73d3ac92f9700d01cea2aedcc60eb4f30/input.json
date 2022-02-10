@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "multiEditItems.sol": {
+      "content": "// SPDX-License-Identifier: UNLICENSED\r\npragma solidity ^0.8.11;\r\n\r\ninterface Inventory {\r\n        function changeFeaturesForItem(\r\n        uint256 _tokenId,\r\n        uint8 _feature1,\r\n        uint8 _feature2,\r\n        uint8 _feature3,\r\n        uint8 _feature4,\r\n        uint8 _equipmentPosition\r\n    ) external;\r\n}\r\n\r\ncontract multiEditItems {\r\n    address admin;\r\n    Inventory inv = Inventory(0x9680223F7069203E361f55fEFC89B7c1A952CDcc);\r\n\r\n    constructor() {\r\n        admin = msg.sender;\r\n    }\r\n\r\n    function execute(\r\n        uint256[] memory _tokenIds,\r\n        uint8 _feature1,\r\n        uint8 _feature2,\r\n        uint8 _feature3,\r\n        uint8 _feature4,\r\n        uint8 _equipmentPosition\r\n    ) public {\r\n        require(msg.sender == admin, \"Not admin\");\r\n\r\n        for(uint i = 0; i < _tokenIds.length; i++) {\r\n            inv.changeFeaturesForItem(\r\n                _tokenIds[i],\r\n                _feature1,\r\n                _feature2,\r\n                _feature3,\r\n                _feature4,\r\n                _equipmentPosition\r\n            );\r\n        }\r\n    }\r\n}"
+    }
+  }
+}

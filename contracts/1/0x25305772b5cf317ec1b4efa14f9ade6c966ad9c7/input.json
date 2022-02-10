@@ -1,0 +1,32 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/gists/3910b5fbd39cdb5177521e88c907798d/PriceConsumer.sol": {
+      "content": "pragma solidity ^0.6.7;\nimport \"https://github.com/smartcontractkit/chainlink/evm-contracts/src/v0.6/interfaces/AggregatorInterface.sol\";\n\ncontract PriceConsumer {\n    AggregatorInterface internal ethUsdFeed;\n    AggregatorInterface internal btcUsdFeed;\n\n    constructor() public {\n        ethUsdFeed = AggregatorInterface(\n            0xF79D6aFBb6dA890132F9D7c355e3015f15F3406F\n        );\n        btcUsdFeed = AggregatorInterface(\n            0xF5fff180082d6017036B771bA883025c654BC935\n        );\n    }\n\n    function getEthUsdPrice() public view returns (int256) {\n        return ethUsdFeed.latestAnswer();\n    }\n\n    function getEthUsdTimestamp() public view returns (uint256) {\n        return ethUsdFeed.latestTimestamp();\n    }\n\n    function getBtcUsdPrice() public view returns (int256) {\n        return btcUsdFeed.latestAnswer();\n    }\n\n    function getBtcUsdTimestamp() public view returns (uint256) {\n        return btcUsdFeed.latestTimestamp();\n    }\n}"
+    },
+    "https://github.com/smartcontractkit/chainlink/evm-contracts/src/v0.6/interfaces/AggregatorInterface.sol": {
+      "content": "pragma solidity >=0.6.0;\n\ninterface AggregatorInterface {\n  function latestAnswer() external view returns (int256);\n  function latestTimestamp() external view returns (uint256);\n  function latestRound() external view returns (uint256);\n  function getAnswer(uint256 roundId) external view returns (int256);\n  function getTimestamp(uint256 roundId) external view returns (uint256);\n\n  event AnswerUpdated(int256 indexed current, uint256 indexed roundId, uint256 timestamp);\n  event NewRound(uint256 indexed roundId, address indexed startedBy, uint256 startedAt);\n}\n"
+    }
+  }
+}

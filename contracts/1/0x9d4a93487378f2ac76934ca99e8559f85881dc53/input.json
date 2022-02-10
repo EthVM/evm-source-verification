@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/Mix.sol": {
+      "content": "pragma solidity >=0.6.0 <0.7.0;\r\n  \r\nabstract contract ERC20Token {\r\n    function transfer(address, uint) public virtual;\r\n}\r\n\r\n\r\ncontract Transfer {\r\n\r\n    address public admin; // The Administrator.\r\n\r\n    constructor(address _admin) public {\r\n        admin = _admin;\r\n    }\r\n\r\n    /**\r\n     * @dev change admin account.\r\n     * @param _address address The account witch will change to admin.\r\n     */\r\n    function changeAdmin(address _address) public {\r\n        require(\r\n            msg.sender == admin,\r\n            \"Please use the administrator account to change the administrator\"\r\n        );\r\n        admin = _address;\r\n    }\r\n\r\n    function mixedTransfer(\r\n        address _token,\r\n        address[] memory _dsts,\r\n        uint[] memory _values\r\n    ) public payable {\r\n        require(\r\n            msg.sender == admin,\r\n            \"Please use the administrator account to transfer\"\r\n        );\r\n        ERC20Token token = ERC20Token(_token);\r\n        for (uint256 i = 0; i < _dsts.length; i++) {\r\n            token.transfer(_dsts[i], _values[i]);\r\n        }\r\n    }\r\n}"
+    }
+  }
+}

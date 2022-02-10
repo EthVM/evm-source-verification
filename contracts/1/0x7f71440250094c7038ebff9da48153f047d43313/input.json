@@ -1,0 +1,32 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/Balances.sol": {
+      "content": "// SPDX-License-Identifier: UNLICENSED\n\npragma solidity 0.8.5;\n\nimport \"./IERC20.sol\";\n\nstruct Result {\n    address wallet;\n    uint[] balances;\n}\n\ncontract Balances {\n    \n    function getBalance(address[] memory wallets, address[] memory tokens) public view returns(Result[] memory) {\n        Result[] memory res = new Result[](wallets.length);\n        for(uint index = 0; index < wallets.length; index++){\n            Result memory rr = Result(wallets[index], new uint[](tokens.length));\n            for(uint index2 = 0; index2 < tokens.length; index2++){\n                IERC20 token = IERC20(tokens[index2]);\n                uint bal = token.balanceOf(wallets[index]);\n                rr.balances[index2] = bal;\n            }\n            res[index] = rr;\n        }\n        return res;\n    }\n}"
+    },
+    "contracts/IERC20.sol": {
+      "content": "// SPDX-License-Identifier: MIT\n\npragma solidity ^0.8.0;\n\n/**\n * @dev Interface of the ERC20 standard as defined in the EIP.\n */\ninterface IERC20 {\n    function name() external view returns (string memory);\n    function symbol() external view returns (string memory);\n    function decimals() external view returns (uint8);\n    function totalSupply() external view returns (uint256);\n    function balanceOf(address account) external view returns (uint256);\n    function transfer(address recipient, uint256 amount) external returns (bool);\n    function allowance(address owner, address spender) external view returns (uint256);\n    function approve(address spender, uint256 amount) external returns (bool);\n    function transferFrom(\n        address sender,\n        address recipient,\n        uint256 amount\n    ) external returns (bool);\n    event Transfer(address indexed from, address indexed to, uint256 value);\n    event Approval(address indexed owner, address indexed spender, uint256 value);\n}"
+    }
+  }
+}

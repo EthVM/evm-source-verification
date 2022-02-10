@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/Early.sol": {
+      "content": "pragma solidity ^0.6.0;\r\n// SPDX-License-Identifier: UNLICENSED\r\n\r\n/**\r\n * @title SafeMath\r\n * @dev Math operations with safety checks that throw on error\r\n *\r\n*/\r\n\r\nlibrary SafeMath {\r\n  function mul(uint256 a, uint256 b) internal pure returns (uint256) {\r\n    if (a == 0) {\r\n      return 0;\r\n    }\r\n    uint256 c = a * b;\r\n    assert(c / a == b);\r\n    return c;\r\n  }\r\n\r\n  function div(uint256 a, uint256 b) internal pure returns (uint256) {\r\n    // assert(b > 0); // Solidity automatically throws when dividing by 0\r\n    uint256 c = a / b;\r\n    // assert(a == b * c + a % b); // There is no case in which this doesn't hold\r\n    return c;\r\n  }\r\n\r\n  function sub(uint256 a, uint256 b) internal pure returns (uint256) {\r\n    assert(b <= a);\r\n    return a - b;\r\n  }\r\n\r\n  function add(uint256 a, uint256 b) internal pure returns (uint256) {\r\n    uint256 c = a + b;\r\n    assert(c >= a);\r\n    return c;\r\n  }\r\n\r\n  function ceil(uint a, uint m) internal pure returns (uint r) {\r\n    return (a + m - 1) / m * m;\r\n  }\r\n}\r\n\r\n// ----------------------------------------------------------------------------\r\n// Owned contract\r\n// ----------------------------------------------------------------------------\r\ncontract Owned {\r\n    address payable public owner;\r\n\r\n    event OwnershipTransferred(address indexed _from, address indexed _to);\r\n\r\n    constructor() public {\r\n        owner = msg.sender;\r\n    }\r\n\r\n    modifier onlyOwner {\r\n        require(msg.sender == owner);\r\n        _;\r\n    }\r\n\r\n    function transferOwnership(address payable _newOwner) public onlyOwner {\r\n        owner = _newOwner;\r\n        emit OwnershipTransferred(msg.sender, _newOwner);\r\n    }\r\n}\r\n\r\n\r\n// ----------------------------------------------------------------------------\r\n// ERC Token Standard #20 Interface\r\n// ----------------------------------------------------------------------------\r\ninterface IToken {\r\n    function transfer(address to, uint256 tokens) external returns (bool success);\r\n    function setTokenLock (uint256 lockedTokens, address purchaser) external;\r\n}\r\n\r\n\r\ncontract EarlyBirds is Owned {\r\n    using SafeMath for uint256;\r\n    address public tokenAddress;\r\n    bool public saleOpen;\r\n    uint256 public perUserLimit = 10 ether;\r\n    \r\n    struct USER{\r\n        uint256 amount;\r\n        bool whiteListed;\r\n    }\r\n    mapping (address => USER) users;\r\n\r\n    constructor() public {\r\n        owner = msg.sender;\r\n    }\r\n    \r\n    function setTokenAddress(address _tokenAddress) external onlyOwner{\r\n        require(tokenAddress == address(0), \"Already connected to a token address\");\r\n        tokenAddress = _tokenAddress;\r\n    }\r\n    \r\n    function startSale() external onlyOwner{\r\n        require(!saleOpen, \"Sale is already open\");\r\n        saleOpen = true;\r\n    }\r\n    \r\n    function closeSale() external onlyOwner{\r\n        require(saleOpen, \"Sale is not open\");\r\n        saleOpen = false;\r\n    }\r\n\r\n    receive() external payable{\r\n        require(saleOpen, \"Sale is not open\");\r\n        require(users[msg.sender].whiteListed, \"User is not whitelisted\");\r\n        require(msg.value >= 0.1 ether, \"Min investment allowed is 0.1 ether\");\r\n        require(users[msg.sender].amount.add(msg.value) <= perUserLimit, \"Only max 10 ethers are allowed per user\");\r\n        \r\n        users[msg.sender].amount = users[msg.sender].amount.add(msg.value);\r\n        \r\n        uint256 tokens = getTokenAmount(msg.value);\r\n        \r\n        require(IToken(tokenAddress).transfer(msg.sender, tokens), \"Sale Ended!\");\r\n        \r\n        // update the locking for this account\r\n        IToken(tokenAddress).setTokenLock(tokens, msg.sender);\r\n        \r\n        // send received funds to the owner\r\n        owner.transfer(msg.value);\r\n    }\r\n    \r\n    function getTokenAmount(uint256 amount) internal pure returns(uint256){\r\n        return amount.mul(200000); // 1 ether = 200.000 tokens approx\r\n    }\r\n    \r\n    function addToWhitelist(address user) external onlyOwner{\r\n        require(!users[user].whiteListed, \"already whitelisted\");\r\n        users[user].whiteListed = true;\r\n    }\r\n    \r\n    function whitelistMultipleUsers(address[] calldata _users) external onlyOwner{\r\n        require(_users.length > 0, \"Must send valid amount of users\");\r\n        require(_users.length <= 100, \"Can whitelist max 100 users at once\");\r\n        \r\n        for(uint256 i=0; i < _users.length; i++){\r\n            users[_users[i]].whiteListed = true;\r\n        }\r\n    }\r\n    \r\n\r\n}\r\n"
+    }
+  }
+}

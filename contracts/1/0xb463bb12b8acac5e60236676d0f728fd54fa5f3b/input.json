@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/1_Storage.sol": {
+      "content": "pragma solidity ^0.6.7;\n\nabstract contract AuthLike {\n    function addAuthorization(address) external virtual;\n    function removeAuthorization(address) external virtual;\n    function authorizedAccounts(address) external view virtual returns (uint);\n}\n\ncontract AuthRewardAdjusters {\n    address public constant fixedRewardsAdjuster = 0xfF5126b97f37DdB4743858b7e0d6c5aE8E5Db2ab;  // GEB_FIXED_REWARDS_ADJUSTER\n    address public constant minmaxRewardsAdjuster = 0xbe0D9016714c64a877ed28fd3F3C7c8fF513d807; // GEB_MINMAX_REWARDS_ADJUSTER\n\n    function execute(bool) public {\n        // Auth - Fixed rewards adjuster\n        AuthLike(0xe1d5181F0DD039aA4f695d4939d682C4cF874086).addAuthorization(fixedRewardsAdjuster); // DEBT_POPPER_REWARDS\n\n        // Auth - Minmax rewards adjuster\n        address payable[10] memory fundingReceivers = [\n            0xD52Da90c20c4610fEf8faade2a1281FFa54eB6fB, // GEB_RRFM_SETTER_RELAYER\n            0xE8063b122Bef35d6723E33DBb3446092877C6855, // MEDIANIZER_RAI_REWARDS_RELAYER\n            0xdD2e7750ebF07BB8Be147e712D5f8deDEE052fde, // MEDIANIZER_ETH_REWARDS_RELAYER\n            0x105b857583346E250FBD04a57ce0E491EB204BA3, // FSM_WRAPPER_ETH\n            0x54999Ee378b339f405a4a8a1c2f7722CD25960fa, // GEB_SINGLE_CEILING_SETTER\n            0x59536C9Ad1a390fA0F60813b2a4e8B957903Efc7, // COLLATERAL_AUCTION_THROTTLER\n            0x0262Bd031B99c5fb99B47Dc4bEa691052f671447, // GEB_DEBT_FLOOR_ADJUSTER\n            0x1450f40E741F2450A95F9579Be93DD63b8407a25, // GEB_AUTO_SURPLUS_BUFFER\n            0x7df2d51e69aA58B69C3dF18D75b8e9ACc3C1B04E, // GEB_DEBT_AUCTION_INITIAL_PARAM_SETTER\n            0xa43BFA2a04c355128F3f10788232feeB2f42FE98  // GEB_AUTO_SURPLUS_AUCTIONED\n\n        ];\n\n        for (uint256 i = 0; i < 10; i++) {\n            AuthLike(fundingReceivers[i]).addAuthorization(minmaxRewardsAdjuster);\n        }\n    }\n}"
+    }
+  }
+}

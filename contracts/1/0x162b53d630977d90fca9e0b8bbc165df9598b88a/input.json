@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/RefundSponsor.sol": {
+      "content": "// SPDX-License-Identifier: --🥺--\npragma solidity =0.7.0;\n\ncontract RefundSponsor {\n\n    address public refundSponsor;\n    address public sponsoredContract;\n    bool public isPaused;\n    uint256 public flushNonce;\n    uint256 public payoutPercent;\n\n    mapping (bytes32 => uint256) public refundAmount;\n    mapping (address => uint256) public sponsoredAmount;\n\n    event RefundIssued(\n        address refundedTo,\n        uint256 amount\n    );\n\n    event SponsoredContribution(\n        address sponsor,\n        uint256 amount\n    );\n\n    modifier onlySponsor() {\n        require(\n            msg.sender == refundSponsor,\n            'RefundSponsor: not a sponsor'\n        );\n        _;\n    }\n\n    receive()\n        external\n        payable\n    {\n        sponsoredAmount[msg.sender] += msg.value;\n        emit SponsoredContribution(\n            msg.sender,\n            msg.value\n        );\n    }\n\n    constructor() {\n        refundSponsor = msg.sender;\n        payoutPercent = 70;\n    }\n\n    function changePayoutPercent(\n        uint256 _newPauoutPercent\n    )\n        external\n        onlySponsor\n    {\n        payoutPercent = _newPauoutPercent;\n    }\n\n    function setSponsoredContract(address _s)\n        onlySponsor\n        external\n    {\n        sponsoredContract = _s;\n    }\n\n    function addGasRefund(address _a, uint256 _g)\n        external\n    {\n        if (msg.sender == sponsoredContract && isPaused == false) {\n            refundAmount[getHash(_a)] += _g;\n        }\n    }\n\n    function setGasRefund(address _a, uint256 _g)\n        external\n        onlySponsor\n    {\n        refundAmount[getHash(_a)] = _g;\n    }\n\n    function requestGasRefund()\n        external\n    {\n        require(\n            isPaused == false,\n            'RefundSponsor: refunds paused'\n        );\n\n        bytes32 sender = getHash(msg.sender);\n\n        require(\n            refundAmount[sender] > 0,\n            'RefundSponsor: nothing to refund'\n        );\n\n        uint256 amount = getRefundAmount(msg.sender);\n        refundAmount[sender] = 0;\n\n        msg.sender.transfer(amount);\n\n        emit RefundIssued(\n            msg.sender,\n            amount\n        );\n    }\n\n    function myRefundAmount()\n        external\n        view\n        returns (uint256)\n    {\n        return getRefundAmount(msg.sender) * payoutPercent / 100;\n    }\n\n    function getRefundAmount(address x)\n        public\n        view\n        returns (uint256)\n    {\n        return refundAmount[getHash(x)] * payoutPercent / 100;\n    }\n\n    function getHash(address x)\n        public\n        view\n        returns (bytes32)\n    {\n        return keccak256(\n            abi.encodePacked(x, flushNonce)\n        );\n    }\n\n    function pause()\n        external\n        onlySponsor\n    {\n        isPaused = true;\n    }\n\n    function resume()\n        external\n        onlySponsor\n    {\n        isPaused = false;\n    }\n\n    function flush()\n        external\n        onlySponsor\n    {\n        flushNonce += 1;\n    }\n}"
+    }
+  }
+}

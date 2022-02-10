@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "browser/nteria.sol": {
+      "content": "pragma solidity >=0.6.6;\n\ncontract NTeria {\n    address payable owner;\n    struct Person {\n        address payable voter;\n        uint256 amount;\n        string decision;\n    }\n    bytes32 private_key_hashed;\n    uint people_count;\n    bool voting_in_progress;\n    mapping(uint => Person) people;\n    \n    event RevealKey(string);\n    event VotingClosed(uint);\n    \n    constructor() public {\n        owner = msg.sender;\n    }\n\n    modifier isOwner() {\n        require(msg.sender == owner, \"Caller is not owner\");\n        _;\n    }\n    \n    function add_funds() public payable isOwner {}\n    \n    function withdraw_funds() public isOwner {\n        require(address(this).balance>0, 'Balance is zero');\n        owner.transfer(address(this).balance);\n    }\n    \n    function open_voting(bytes32 _private_key_hashed) public isOwner {\n        private_key_hashed = _private_key_hashed;\n        voting_in_progress = true;\n    }\n    \n    function get_vote(string memory _private_key, string memory _decision) internal pure returns(uint _vote) {\n        bytes32 _data = keccak256(abi.encodePacked(_private_key,_decision));\n        assembly { \n            _vote := and(_data,0xf)\n        }\n        return _vote;        \n    }\n    \n    function close_voting() public isOwner {\n        require(voting_in_progress, \"No voting to close\");\n        uint _balance = get_voting_balance();\n        delete voting_in_progress;\n        emit VotingClosed(_balance);\n    }\n    \n    function reveal_key_and_pay(string memory  _private_key) public isOwner {\n        require(!voting_in_progress, \"First, close voting\");\n        require(keccak256(abi.encodePacked(_private_key)) == private_key_hashed, \"Wrong private key\");\n        emit RevealKey(_private_key);\n        \n        uint[16] memory _people_votes;\n        for (uint i;i<people_count;i++)\n            _people_votes[get_vote(_private_key,people[i].decision)]++;\n        \n        uint _max_votes = 0;\n        for (uint j;j<16;j++)\n            if (_people_votes[j] > _max_votes)\n                _max_votes = _people_votes[j];\n        \n        uint _money_to_give;\n        uint _winners_count = 1;\n        for (uint i;i<people_count;i++) {\n            uint _vote = get_vote(_private_key,people[i].decision);\n            if (_people_votes[_vote] == _max_votes) {\n                _money_to_give += people[i].amount;\n                delete people[i];\n            } else if (people[i].amount > 0) {\n                _winners_count ++;\n            }\n        }\n        \n        _money_to_give -= _money_to_give%_winners_count;\n        uint _qty = _money_to_give/_winners_count;\n\n        for (uint i;i<people_count;i++) {\n            if (people[i].amount > 0) {\n                people[i].voter.transfer(_qty+people[i].amount);\n                delete people[i];\n            }\n        }\n        delete people_count;\n        delete private_key_hashed;\n    }\n    \n    function make_vote(string memory _decision) public payable {\n        require(voting_in_progress, \"Voting is closed\");\n        require(msg.value > 0, \"You should pay something\");\n        people[people_count] = Person(msg.sender,msg.value,_decision);\n        people_count ++;\n    }\n    \n    function cancel_vote() public {\n        require(voting_in_progress, \"Voting is closed\");\n        for (uint i;i<people_count;i++) {\n            if (people[i].voter == msg.sender) {\n                msg.sender.transfer(people[i].amount);\n                delete people[i];\n            }\n            \n        }\n    }\n    \n    function get_voting_balance() public view returns(uint _val){\n        _val = 0;\n        for (uint i;i<people_count;i++) {\n            _val += people[i].amount;\n        }\n    }\n\n    function get_number_votes() public view returns(uint _val){\n        _val = 0;\n        for (uint i;i<people_count;i++) {\n            if (people[i].amount>0) {\n                _val ++;\n            }\n        }\n    }\n \n    function destroy_contract() public isOwner{\n        selfdestruct(owner);\n    }\n}\n"
+    }
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/FlashMoneyPrinterRedux.sol": {
+      "content": "// SPDX-License-Identifier: ARB ASSASSIN SQUAD\r\npragma solidity >=0.6.6 <0.8.0;\r\nimport './interfaces/IUniswapV2Pair.sol';\r\nimport './interfaces/IUniswapV2Factory.sol';\r\nimport './interfaces/IERC20.sol';\r\n// e00: out of block\r\ncontract MoneyPrinter {\r\n    constructor() {owner = msg.sender;}\r\n    address public owner;\r\n    modifier onlyOwner {\r\n        require(msg.sender == owner,\"You don't own me.\");\r\n        _;\r\n    }\r\n    function arb(\r\n        uint _maxBlockNumber,\r\n        uint256[] calldata _amounts,\r\n        address _sourcePool,\r\n        address _targetPool,// _amountIn,\r\n        address[] calldata _pathIn,\r\n        address[] calldata _pathOut\r\n    )external{\r\n       require(block.number <= _maxBlockNumber, 'e00');\r\n       uint256 amountIn=_amounts[0];\r\n       uint256 amountOut1=_amounts[1];\r\n       uint256 amountOut2=_amounts[2];\r\n        address pairAddress_source = _sourcePool;\r\n        address pairAddress_target = _targetPool;\r\n        address pathIn = _pathIn[0];\r\n        address pathOut = _pathOut[0];\r\n        IUniswapV2Pair AMM1 =  IUniswapV2Pair(pairAddress_source);\r\n        IUniswapV2Pair AMM2 =  IUniswapV2Pair(pairAddress_target);\r\n        IERC20(pathIn).transfer(pairAddress_source,amountIn);\r\n        AMM1.swap(\r\n             pathOut == AMM1.token0() ? amountOut1 : 0,\r\n             pathOut == AMM1.token1() ? amountOut1 : 0,\r\n             pairAddress_target,\r\n           new bytes(0));\r\n        AMM2.swap(\r\n             pathIn == AMM2.token0() ? amountOut2 : 0,\r\n             pathIn == AMM2.token1() ? amountOut2 : 0,\r\n             address(this),\r\n           new bytes(0));\r\n    }\r\n    function arbHarvest(address _tokenContract) external onlyOwner {\r\n        IERC20 tokenContract = IERC20(_tokenContract);\r\n        tokenContract.transfer(owner, tokenContract.balanceOf(address(this)));\r\n    }\r\n}"
+    },
+    "contracts/interfaces/IERC20.sol": {
+      "content": "// SPDX-License-Identifier: MIT\n\npragma solidity >=0.6.2 <0.8.0;\n\ninterface IERC20 {\n    function transfer(address recipient, uint256 amount) external returns (bool);\n    function approve(address spender, uint256 amount) external returns (bool);\n    function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);\n    function balanceOf(address account) external view returns (uint256);\n}\n"
+    },
+    "contracts/interfaces/IUniswapV2Factory.sol": {
+      "content": "// SPDX-License-Identifier: MIT\n\npragma solidity >=0.5.0;\n\ninterface IUniswapV2Factory {\n  function getPair(address tokenA, address tokenB) external view returns (address pair);\n}\n"
+    },
+    "contracts/interfaces/IUniswapV2Pair.sol": {
+      "content": "// SPDX-License-Identifier: MIT\n\npragma solidity >=0.5.0;\n\ninterface IUniswapV2Pair {\n    function token0() external view returns (address);\n    function token1() external view returns (address);\n    function approve(address spender, uint value) external returns (bool);\n    function swap(uint amount0Out, uint amount1Out, address to, bytes calldata data) external;\n    function getReserves() external view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast);\n    function transferFrom(address from, address to, uint value) external returns (bool);\n}\n"
+    }
+  }
+}

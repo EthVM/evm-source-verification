@@ -1,0 +1,32 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "contracts/IPrizeAssets.sol": {
+      "content": "// SPDX-License-Identifier: CC-BY-4.0\npragma solidity ^0.8.0;\n\ninterface IPrizeAssets {\n    function getPrize(uint ranking, address wallet, uint tokenId) external pure returns (string memory _json);\n}"
+    },
+    "contracts/SnakePrizes.sol": {
+      "content": "// SPDX-License-Identifier: CC-BY-4.0\npragma solidity ^0.8.0;\n\nimport \"./IPrizeAssets.sol\";\n\ncontract SnakePrizes is IPrizeAssets {\n\n    function uint2str(uint _i) internal pure returns (string memory _uintAsString) {\n        if (_i == 0) {\n            return \"0\";\n        }\n        uint j = _i;\n        uint len;\n        while (j != 0) {\n            len++;\n            j /= 10;\n        }\n        bytes memory bstr = new bytes(len);\n        uint k = len;\n        while (_i != 0) {\n            k = k-1;\n            uint8 temp = (48 + uint8(_i - _i / 10 * 10));\n            bytes1 b1 = bytes1(temp);\n            bstr[k] = b1;\n            _i /= 10;\n        }\n        return string(bstr);\n    }\n\n\n    function getImage(uint ranking) internal pure returns (string memory) { \n        return [\n            \"https://ipfs.infura.io/ipfs/QmaAwPBscf8bLS7KeyK2SQb9RfNRUiioQK2nU2FvXaYJuC\",\n            \"https://ipfs.infura.io/ipfs/QmY7HGFhmYLxU14bVr1RbzH9YTvU4GCVGafAu3pgva24Gd\",\n            \"https://ipfs.infura.io/ipfs/QmTJWfVMcgmAeSPEKwHxPyu4PnSwsfvsqZS9KyWKggZnox\",\n            \"https://ipfs.infura.io/ipfs/QmQbMszds5V8ueCHsmTmKTVvA19gHT78koZPvFPPY76UMp\"\n        ][ranking];\n    }\n\n    function getWonDescription(address wallet, uint tokenId) internal pure returns (bytes memory) {\n        string memory description1 = \"This prize has been won by \";\n        string memory description2 = \" with the ArcadeGlyph #\";\n        \n        return abi.encodePacked(description1, toAsciiString(wallet), description2, uint2str(tokenId));\n    }\n\n    function getNonWonDescription(uint ranking) internal pure returns (bytes memory) {\n        string memory text1 = \"This is a prize-NFT for the \";\n        string memory rankingText = getRankingText(ranking);\n        string memory text2 = \" of the ArcadeGlyphs. It's not for sale. Head to https://www.arcadeglyphs.io/ to know how to win it.\";\n        \n        return abi.encodePacked(text1, rankingText, text2);\n    }\n\n    function getRankingText(uint ranking) internal pure returns (string memory) {\n        return [\n            \"Worst Place\",\n            \"3rd Place\",\n            \"2nd Place\",\n            \"1st Place\"\n        ][ranking];\n    }\n\n    function getName(uint ranking) internal pure returns (bytes memory) {\n        string memory template1 = \"ArcadeGlyphs - \";\n        return abi.encodePacked(template1, getRankingText(ranking));\n    }\n\n    function getDescription(bool won, address wallet, uint tokenId, uint ranking) internal pure returns (bytes memory) {\n        return won ? getWonDescription(wallet, tokenId) : getNonWonDescription(ranking);\n    }\n\n    function getAttributes(uint ranking) internal pure returns (bytes memory) {\n        string memory template1 = '\",\"attributes\":[{\"trait_type\":\"Rank\", \"value\":\"';\n        string memory template2 = '\"}],\"created_by\":\"Inner Space and Captain Pixel\",\"image\":\"';\n\n        return abi.encodePacked(template1, getRankingText(ranking), template2);\n    }\n\n    function toAsciiString(address x) internal pure returns (bytes memory) {\n        bytes memory s = new bytes(40);\n        for (uint i = 0; i < 20; i++) {\n            bytes1 b = bytes1(uint8(uint(uint160(x)) / (2**(8*(19 - i)))));\n            bytes1 hi = bytes1(uint8(b) / 16);\n            bytes1 lo = bytes1(uint8(b) - 16 * uint8(hi));\n            s[2*i] = char(hi);\n            s[2*i+1] = char(lo);            \n        }\n        return abi.encodePacked(\"0x\", s);\n    }\n\n    function char(bytes1 b) internal pure returns (bytes1 c) {\n        if (uint8(b) < 10) return bytes1(uint8(b) + 0x30);\n        else return bytes1(uint8(b) + 0x57);\n    }\n\n    function getPrize(uint ranking, address wallet, uint tokenId) external override pure returns (string memory _json) {\n        string memory template1 = 'data:text/plain,{\"name\":\"';\n        string memory template2 = '\",\"description\":\"';\n        \n        string memory template5 = '\"}';\n        \n        return string(\n            abi.encodePacked(\n                template1, getName(ranking), template2,\n                getDescription(wallet != address(0), wallet, tokenId, ranking), \n                getAttributes(ranking), \n                getImage(ranking), template5\n            )\n        );\n    }\n}"
+    }
+  }
+}

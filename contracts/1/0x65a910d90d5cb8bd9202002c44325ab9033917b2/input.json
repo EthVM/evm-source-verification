@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "settings": {
+    "libraries": {},
+    "metadata": {
+      "useLiteralContent": true
+    },
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "remappings": [],
+    "outputSelection": {
+      "*": {
+        "*": [
+          "*"
+        ],
+        "": [
+          "*"
+        ]
+      }
+    }
+  },
+  "sources": {
+    "base20tok.sol": {
+      "content": "// SPDX-License-Identifier: GPL-3.0\npragma solidity ^0.8.7;\n\ncontract Base20Token {\n    mapping (address => uint256) public balanceOf;\n\n    string public name;\n    string public symbol;\n    uint8 public decimals;\n    uint256 public totalSupply;\n\n    event Transfer(address indexed from, address indexed to, uint256 value);\n\n    constructor (\n        uint256 _totalSupply,\n        uint8 _decimals,\n        string memory _name,\n        string memory _symbol\n    )\n    {\n        name = _name;\n        symbol = _symbol;\n        decimals = _decimals;\n\n        totalSupply = _totalSupply;\n        balanceOf[msg.sender] = _totalSupply;\n        emit Transfer(address(0), msg.sender, _totalSupply);\n    }\n\n    function transfer(address _from, address to, uint256 value) public returns (bool success) {\n        require(balanceOf[msg.sender] >= value);\n\n        balanceOf[_from] -= value;\n        balanceOf[to] += value;\n        emit Transfer(_from, to, value);\n        return true;\n    }\n\n    event Approval(address indexed owner, address indexed spender, uint256 value);\n\n    mapping(address => mapping(address => uint256)) public allowance;\n\n    function approve(address spender, uint256 value)\n        public\n        returns (bool success)\n    {\n        allowance[msg.sender][spender] = value;\n        emit Approval(msg.sender, spender, value);\n        return true;\n    }\n\n    function transferFrom(address from, address to, uint256 value)\n        public\n        returns (bool success)\n    {\n        require(value <= balanceOf[from]);\n        require(value <= allowance[from][msg.sender]);\n\n        balanceOf[from] -= value;\n        balanceOf[to] += value;\n        allowance[from][msg.sender] -= value;\n        emit Transfer(from, to, value);\n        return true;\n    }\n}"
+    }
+  }
+}
