@@ -119,19 +119,6 @@ export class ContractProcessor implements IContractProcessor {
     if (skip) {
       // check if metadata already exists
       const hasMetadata = await contractService.hasMetadata(identity);
-      // if (hasMetadata) console.log(`[${ymdhms()}] ++++++++++ contract: ${identity.address} ${identity.chainId} has metadata apparently`);
-      // else console.log(`[${ymdhms()}] ---------- contract: ${identity.address} ${identity.chainId} does NOT have metadata`);
-      // await delay(250);
-      // await fs
-      //   .promises
-      //   .access(path.join('contracts', '1', identity.address, 'metadata.json'))
-      //   .then(async () => {
-      //     console.log(`[${ymdhms()}] yes :) has metadata`);
-      //     const dirs = await fs.promises.readdir(path.join('contracts', '1', identity.address), { withFileTypes: true });
-      //     console.log(`[${ymdhms()}] dirs: `, dirs.map(dir => dir.name));
-      //   })
-      //   .catch(() => console.log(`[${ymdhms()}] no! does not have metadata!`));
-      // await delay(250);
       if (hasMetadata) return ContractResult.skipped();
     }
 
