@@ -1,5 +1,5 @@
-import { getDiffs } from "../libs/diffs";
-import { randomAddress, randomChainId } from "../libs/utils";
+// import { getDiffs } from "../libs/diffs";
+// import { randomAddress, randomChainId } from "../libs/utils";
 import { ContractService } from "./contract.service";
 
 describe('ContractService', () => {

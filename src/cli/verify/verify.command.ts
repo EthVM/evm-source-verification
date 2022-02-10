@@ -49,6 +49,12 @@ export const registerVerifyCommand: Command = (argv) => {
         describe: "Exit on first error",
         default: false,
       })
+
+      .positional("--jump", {
+        type: "number",
+        describe: "Jump past this many contracts before starting to verify",
+        default: false,
+      })
       ,
 
     (args) => handleVerifyCommand(args),

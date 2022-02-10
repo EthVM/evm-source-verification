@@ -36,15 +36,9 @@ describe('VerificationService', () => {
         testCase.getInput(),
         testCase.getMetadata(),
       ]);
-
-      const cout = await compilerService.compile(config, input);
-      if (Result.isFail(cout)) throw cout.value;
-
-      const vout = await verificationService.verify(cout.value, config);
-      if (Result.isFail(vout)) throw vout.value;
-
-      const actual = getMetadata(vout.value);
-
+      const out = await compilerService.compile(config, input);
+      const verify = await verificationService.verify(out, config);
+      const actual = getMetadata(verify);
       expect(actual).toEqual(expected);
     }
   }, count * SOLIDITY_COMPILE_TIMEOUT);

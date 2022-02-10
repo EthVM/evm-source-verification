@@ -1,17 +1,16 @@
-import { performance } from 'perf_hooks';
-import { Result } from "@nkp/result";
-import { toPercentage } from '@nkp/percentage';
 import Web3 from "web3";
-import { saveContract } from "./contracts.save";
-import { ChainId, CompiledOutput, ContractConfig, ContractIdentity, ContractInput } from "../types";
+import { ChainId } from "../types";
 import { IServices } from "../bootstrap";
 import { MatchedChains, MatchedContracts } from "../services/contract.service";
-import { ymdhms } from './utils';
+import { ContractProcessor } from './contracts.processor';
+import { MAX_CONCURRENCY } from "../constants";
+import { parallelProcessContracts } from "./contracts.parallel";
 
 export interface ProcessContractsOptions {
   save: boolean;
   failFast: boolean;
   skip: boolean;
+  jump?: number;
 }
 
 /**
@@ -53,21 +52,16 @@ export async function processChainContracts(
   options: ProcessContractsOptions,
 ): Promise<void> {
   const {
-    contractService,
-    verificationService,
-    nodeService,
-  } = services;
-
-  const {
     failFast,
     save,
     skip,
+    jump,
   } = options;
 
-  // TODO: process in parallel
-
   // eslint-disable-next-line no-await-in-loop
-  const providerUrl = await nodeService.getUrl({ chainId });
+  const providerUrl = await services
+    .nodeService
+    .getUrl({ chainId });
   if (!providerUrl) throw new Error(`unsupported chain "${chainId}"`);
   const web3 = new Web3(providerUrl);
 
@@ -76,160 +70,22 @@ export async function processChainContracts(
     throw new Error(msg);
   }
 
-  let j = 0;
-  for (const contract of contracts.values()) {
-    j += 1;
-
-    const identity: ContractIdentity = {
-      chainId,
-      address: contract.address,
-    };
-
-    if (skip) {
-      // check if metadata already exists
-      const hasMetadata = await contractService.hasMetadata(identity);
-      if (hasMetadata) {
-        console.info('skipping' +
-          `  chainid=${chainId}  address=${contract.address}` +
-          `  ${j}/${contracts.size}` +
-          `  ${toPercentage(j / contracts.size)}`);
-        continue;
-      }
-    }
-
-    console.info('verifying' +
-      `  chainid=${chainId}  address=${contract.address}` +
-      `  ${j}/${contracts.size}` +
-      `  ${toPercentage(j / contracts.size)}`);
-
-    const start = performance.now();
-
-    // eslint-disable-next-line no-await-in-loop
-    let config: ContractConfig;
-    let input: ContractInput;
-    try {
-      ([config, input] = await Promise.all([
-        await contractService.getConfig(identity),
-        await contractService.getInput(identity),
-      ]));
-    } catch (err) {
-      // failed to get config or input
-      const date = ymdhms()
-      const msg = `[${date}] (${j})` +
-        ` ${identity.chainId}` +
-        ` ${identity.address}` +
-        ` errored: ${(err as Error).toString()}`;
-      await services.stateService.addLog(identity, 'error', msg);
-      if (failFast) throw err;
-      else console.warn(msg);
-      continue;
-    }
-
-    const vInput = services
-      .contractService
-      .validateInput(identity, input);
-
-    if (Result.isFail(vInput)) {
-      // failed to get input
-      const date = ymdhms()
-      const msg = `[${date}] (${j})` +
-        ` ${identity.chainId}` +
-        ` ${identity.address}` +
-        ` input validation failed: ${vInput.value.toString()}`;
-      await services.stateService.addLog(identity, 'error', msg);
-      if (failFast) throw vInput.value;
-      else console.warn(msg);
-      continue;
-    }
-
-    const vConfig = services
-      .contractService
-      .validateConfig(identity, config);
-
-    if (Result.isFail(vConfig)) {
-      // failed to get config
-      const date = ymdhms()
-      const msg = `[${date}] (${j})` +
-        ` ${identity.chainId}` +
-        ` ${identity.address}` +
-        ` config validation failed: ${vConfig.value.toString()}`;
-      await services.stateService.addLog(identity, 'error', msg);
-      if (failFast) throw vConfig.value;
-      else console.warn(msg);
-      continue;
-    }
-
-    const rOut = await services
-      .compilerService
-      .compile(config, input)
-      .catch((err: Error) => Result.fail(err));
-
-    if (save) {
-      await services
-        .stateService
-        .addUsedCompiler(identity, config.compiler);
-    }
-
-    if (Result.isFail(rOut)) {
-      // failed to compile
-      const date = ymdhms()
-      const msg = `[${date}] (${j})` +
-        ` ${identity.chainId}` +
-        ` ${identity.address}` +
-        ` compilation failed: ${(rOut.value as Error).toString()}`;
-      await services.stateService.addLog(identity, 'error', msg);
-      if (failFast) throw rOut.value;
-      else console.warn(msg);
-      continue;
-    }
-
-    const rVer = await verificationService
-      .verify(rOut.value, config)
-      .catch((err: Error) => Result.fail(err));
-
-    if (Result.isFail(rVer)) {
-      // failed to verify
-      const date = ymdhms()
-      const msg = `[${date}] (${j})` +
-        ` ${identity.chainId}` +
-        ` ${identity.address}` +
-        ` verification failed: ${(rVer.value as Error).toString()}`;
-      await services.stateService.addLog(identity, 'error', msg);
-      if (failFast) throw rVer.value;
-      else console.warn(msg);
-      continue;
-    }
-
-    const {
-      isDirectVerified,
-      isOpCodeVerified,
-      isRuntimeVerified,
-    } = rVer.value
-
-    if (!isRuntimeVerified && !isOpCodeVerified) {
-      // - is not verified -
-      const date = ymdhms()
-      const msg = `[${date}] (${j})` +
-        ` ${identity.chainId}` +
-        ` ${identity.address}` +
-        ` contract is not verified` +
-        `  chainid=${chainId}` +
-        `  address=${contract.address}` +
-        `  isDirectVerified=${isDirectVerified}` +
-        `  isRuntimeVerified=${isRuntimeVerified}` +
-        `  isOpCodeVerified=${isOpCodeVerified}`
-      await services.stateService.addLog(identity, 'error', msg);
-      if (failFast) throw new Error(msg);
-      else console.warn(msg);
-      continue;
-    }
-
-    if (save) {
-      await saveContract(
-        rVer.value,
-        identity,
-        services,
-      );
-    }
+  const { CONCURRENCY } = process.env;
+  const concurrency =  CONCURRENCY ? parseInt(CONCURRENCY, 10) : 1;
+  if (concurrency > MAX_CONCURRENCY) {
+    throw new Error(`concurrency must be ${MAX_CONCURRENCY}` +
+      ` or less (${concurrency})`);
   }
+  const processors = Array.from(
+    { length: concurrency },
+    () => new ContractProcessor(services, { skip }),
+  );
+  await parallelProcessContracts(
+    services,
+    { failFast, save, jump },
+    Array
+      .from(contracts.values())
+      .map(contract => ({ address: contract.address, chainId })),
+    processors,
+  );
 }

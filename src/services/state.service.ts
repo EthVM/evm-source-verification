@@ -279,7 +279,9 @@ export class StateService implements IStateService {
       const compilers = (await readJSONFile<string[]>(filename)) ?? [];
       if (!arrPush(compilers, compilerName)) return false;
       await this.dircache.ensureOf(filename);
-      await writeJSONFile(filename, compilers.sort());
+      // keep the list sorted
+      compilers.sort();
+      await writeJSONFile(filename, compilers);
       return true;
     });
   }
@@ -293,8 +295,11 @@ export class StateService implements IStateService {
     return this.runtimeMutex.runExclusive(async () => {
       const filename = this.runtimeHashesFilename(identity);
       await this.dircache.ensureOf(filename);
-      const hashes = (await readJSONFile<HashList>(filename)) ?? {};
+      let hashes = (await readJSONFile<HashList>(filename)) ?? {};
       if (!arrObjPush(hashes, hash, identity.address)) return false;
+      // keep the list sorted
+      hashes = sortKeys(hashes);
+      hashes[hash].sort();
       await writeJSONFile(filename, hashes);
       return true;
     });
@@ -309,9 +314,11 @@ export class StateService implements IStateService {
     return this.opcodeMutex.runExclusive(async () => {
       const filename = this.opcodeHashesFilename(identity);
       await this.dircache.ensureOf(filename);
-      const hashes = (await readJSONFile<HashList>(filename)) ?? {};
+      let hashes = (await readJSONFile<HashList>(filename)) ?? {};
       if (!arrObjPush(hashes, hash, identity.address)) return false;
-      // TODO: sort
+      // keep the list sorted
+      hashes = sortKeys(hashes);
+      hashes[hash].sort();
       await writeJSONFile(filename, hashes);
       return true;
     });
@@ -326,8 +333,11 @@ export class StateService implements IStateService {
     return this.metalessMutex.runExclusive(async () => {
       const filename = this.metalessHashesFilename(identity);
       await this.dircache.ensureOf(filename);
-      const hashes = (await readJSONFile<HashList>(filename)) ?? {};
+      let hashes = (await readJSONFile<HashList>(filename)) ?? {};
       if (!arrObjPush(hashes, hash, identity.address)) return false;
+      // keep the list sorted
+      hashes = sortKeys(hashes);
+      hashes[hash].sort();
       await writeJSONFile(filename, hashes);
       return true;
     });
@@ -343,6 +353,8 @@ export class StateService implements IStateService {
       await this.dircache.ensureOf(filename);
       const addresses = (await readJSONFile<Address[]>(filename)) ?? [];
       if (!arrPush(addresses, identity.address)) return false;
+      // keep the list sorted
+      addresses.sort();
       await writeJSONFile(filename, addresses);
       return true;
     });
@@ -455,4 +467,13 @@ export class StateService implements IStateService {
       `${type}${this.logFilenameSuffix}`,
     )
   }
+}
+
+function sortKeys<T extends Record<any, any>>(object: T): T {
+  const out: T = {} as T;
+  Object
+    .keys(object)
+    .sort()
+    .forEach(key => { out[key as keyof T] = object[key] });
+  return object;
 }

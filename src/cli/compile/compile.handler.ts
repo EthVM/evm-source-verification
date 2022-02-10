@@ -40,7 +40,7 @@ export async function handleCompileCommand(argv: CompileCliArgs): Promise<void> 
   }
 
   // compile based on the options given
-  let output: undefined | Result<CompiledOutput, Error>;
+  let output: undefined | CompiledOutput;
 
   if (chainId || address) {
     // validate chain & address
@@ -75,12 +75,9 @@ export async function handleCompileCommand(argv: CompileCliArgs): Promise<void> 
   // something went wrong with options
   if (!output) throw new Error('invalid options');
 
-  // failed
-  if (Result.isFail(output)) throw output.value;
-
   const json = pretty
-    ? JSON.stringify(output.value, null, 2)
-    : JSON.stringify(output.value)
+    ? JSON.stringify(output, null, 2)
+    : JSON.stringify(output)
 
   // write to file
   if (outFile) {
@@ -129,7 +126,7 @@ export async function handleCompileCommand(argv: CompileCliArgs): Promise<void> 
 async function compileFromConfigAndInput(
   configFilename: string,
   inputFilename: string,
-): Promise<Result<CompiledOutput, Error>> {
+): Promise<CompiledOutput> {
   const services = await bootstrap();
 
   const {
@@ -141,8 +138,10 @@ async function compileFromConfigAndInput(
     readJSONFile<ContractInput>(fabs(inputFilename)),
   ]);
 
-  if (!jinput) return Result.fail(Error(`input file "${inputFilename}" not found`));
-  if (!jconfig) return Result.fail(Error(`config file "${configFilename}" not found`));
+  if (!jinput)
+    throw new Error(`input file "${inputFilename}" not found`);
+  if (!jconfig)
+    throw new Error(`config file "${configFilename}" not found`);
 
   const output = await compilerService.compile(jconfig, jinput);
 
@@ -156,7 +155,7 @@ async function compileFromConfigAndInput(
  * @param dir   directory with input and config file to use
  * @returns     compilation output
  */
-async function compileFromDirectory(dir: string): Promise<Result<CompiledOutput, Error>> {
+async function compileFromDirectory(dir: string): Promise<CompiledOutput> {
   const services = await bootstrap();
 
   const {
@@ -174,8 +173,10 @@ async function compileFromDirectory(dir: string): Promise<Result<CompiledOutput,
     readJSONFile<ContractInput>(inputFilename),
   ]);
 
-  if (!jconfig) return Result.fail(Error(`config file ${configBasename} not found in "${dir}"`));
-  if (!jinput) return Result.fail(Error(`input file "${inputBasename}" not found in "${dir}"`));
+  if (!jconfig)
+    throw new Error(`config file ${configBasename} not found in "${dir}"`);
+  if (!jinput)
+    throw new Error(`input file "${inputBasename}" not found in "${dir}"`);
 
   const output = await compilerService.compile(jconfig, jinput);
 
@@ -191,7 +192,7 @@ async function compileFromDirectory(dir: string): Promise<Result<CompiledOutput,
  */
 async function compileFromIdentity(
   identity: ContractIdentity
-): Promise<Result<CompiledOutput, Error>> {
+): Promise<CompiledOutput> {
   const services = await bootstrap();
 
   const {

@@ -12,7 +12,7 @@ import { getBytecodeMetadatas, getBytecodeWithoutMetadata } from "./utils";
  */
 export function getMetadata(verification: VerifyContractResult): VerifiedMetadata {
   // metadata & hashes
-  const { mainSrcObj, liveCode } = verification;
+  const { mainSrcObj, liveCode, compiler } = verification;
   const { abi } = mainSrcObj;
 
   const metalessBytecode = getBytecodeWithoutMetadata(liveCode);
@@ -30,6 +30,7 @@ export function getMetadata(verification: VerifyContractResult): VerifiedMetadat
     .map(v => JSON.parse(v));
 
   const metadata: VerifiedMetadata = {
+    compiler,
     opcodeHash,
     metalessHash,
     runtimeHash,
