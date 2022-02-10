@@ -3,6 +3,7 @@ import { toPercentage } from "@nkp/percentage";
 import { Result } from "@nkp/result";
 import { Mutex } from "async-mutex";
 import { IServices } from "../bootstrap";
+import { MAX_CONTRACT_WORKAHEAD } from "../constants";
 import { ContractIdentity } from "../types";
 import { ContractResult, IContractProcessor } from "./contracts.processor";
 import { saveContract } from "./contracts.save";
@@ -261,7 +262,7 @@ export function parallelProcessContracts(
           // TODO: can increase concurrency here
           // this is limits concurrency so we don't process too quickly away
           // from the current head
-          if (!(workQueue.size < concurrency)) {
+          if (workQueue.size >= (concurrency + MAX_CONTRACT_WORKAHEAD)) {
             break;
           }
           const identity = pending.shift()!;
