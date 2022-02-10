@@ -1,3 +1,6 @@
+import fs from "node:fs";
+import path from "node:path";
+import { delay } from "@nkp/delay";
 import { IServices } from "../bootstrap";
 import { VerifyContractResult } from "../services/verification.service";
 import { ContractIdentity } from "../types";
@@ -12,16 +15,22 @@ export interface ContractProcessorOptions {
 
 export type ContractResult =
   | ContractResult.Skipped
+  | ContractResult.Jumped
   | ContractResult.Verified
   | ContractResult.Unverified
 ;
 
 export namespace ContractResult {
   // eslint-disable-next-line no-shadow
-  export enum Type { Skipped, Verified, Unverified, }
+  export enum Type { Skipped, Jumped, Verified, Unverified, }
 
   export interface Skipped {
     type: ContractResult.Type.Skipped;
+    verification: null;
+  }
+
+  export interface Jumped {
+    type: ContractResult.Type.Jumped;
     verification: null;
   }
 
@@ -46,6 +55,19 @@ export namespace ContractResult {
     result: ContractResult
   ): result is ContractResult.Skipped {
     return result.type === ContractResult.Type.Skipped;
+  }
+
+  export function jumped(): ContractResult.Jumped {
+    return {
+      type: ContractResult.Type.Jumped,
+      verification: null,
+    };
+  }
+
+  export function isJumped(
+    result: ContractResult
+  ): result is ContractResult.Jumped {
+    return result.type === ContractResult.Type.Jumped;
   }
 
   export function verified(
@@ -97,6 +119,19 @@ export class ContractProcessor implements IContractProcessor {
     if (skip) {
       // check if metadata already exists
       const hasMetadata = await contractService.hasMetadata(identity);
+      // if (hasMetadata) console.log(`[${ymdhms()}] ++++++++++ contract: ${identity.address} ${identity.chainId} has metadata apparently`);
+      // else console.log(`[${ymdhms()}] ---------- contract: ${identity.address} ${identity.chainId} does NOT have metadata`);
+      // await delay(250);
+      // await fs
+      //   .promises
+      //   .access(path.join('contracts', '1', identity.address, 'metadata.json'))
+      //   .then(async () => {
+      //     console.log(`[${ymdhms()}] yes :) has metadata`);
+      //     const dirs = await fs.promises.readdir(path.join('contracts', '1', identity.address), { withFileTypes: true });
+      //     console.log(`[${ymdhms()}] dirs: `, dirs.map(dir => dir.name));
+      //   })
+      //   .catch(() => console.log(`[${ymdhms()}] no! does not have metadata!`));
+      // await delay(250);
       if (hasMetadata) return ContractResult.skipped();
     }
 

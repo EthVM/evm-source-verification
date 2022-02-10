@@ -134,7 +134,7 @@ export interface IContractService {
    * @param identity    info specifying the contract
    * @returns           whether the contract has an input file
    */
-  hasMetadata(identity: ContractIdentity): Promise<boolean>;
+  hasInput(identity: ContractIdentity): Promise<boolean>;
 
 
   /**

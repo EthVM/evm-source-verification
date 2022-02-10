@@ -9,6 +9,7 @@ interface VerifyCliOptions {
   save: boolean;
   skip: boolean;
   failFast: boolean;
+  jump?: number,
 }
 
 /**
@@ -25,9 +26,11 @@ export async function handleVerifyCommand(args: VerifyCliArgs): Promise<void> {
     skip,
     save,
     failFast,
+    jump,
   } = args;
 
   const options: VerifyCliOptions = {
+    jump,
     failFast,
     save,
     skip, 
@@ -84,6 +87,7 @@ async function handleChainId(
       failFast: options.failFast,
       save: options.save,
       skip: options.skip,
+      jump: options.jump,
     },
   );
 }
@@ -120,6 +124,7 @@ async function handleFile(
       failFast: options.failFast,
       save: options.save,
       skip: options.skip,
+      jump: options.jump,
     },
   );
 }

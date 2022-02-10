@@ -2,14 +2,15 @@ import Web3 from "web3";
 import { ChainId } from "../types";
 import { IServices } from "../bootstrap";
 import { MatchedChains, MatchedContracts } from "../services/contract.service";
-import { parallelProcessContracts } from './contracts.parallel';
 import { ContractProcessor } from './contracts.processor';
 import { MAX_CONCURRENCY } from "../constants";
+import { parallelProcessContracts } from "./contracts.parallel";
 
 export interface ProcessContractsOptions {
   save: boolean;
   failFast: boolean;
   skip: boolean;
+  jump?: number;
 }
 
 /**
@@ -54,6 +55,7 @@ export async function processChainContracts(
     failFast,
     save,
     skip,
+    jump,
   } = options;
 
   // eslint-disable-next-line no-await-in-loop
@@ -80,9 +82,10 @@ export async function processChainContracts(
   );
   await parallelProcessContracts(
     services,
-    { failFast, save },
+    { failFast, save, jump },
     Array
       .from(contracts.values())
       .map(contract => ({ address: contract.address, chainId })),
-    processors);
+    processors,
+  );
 }

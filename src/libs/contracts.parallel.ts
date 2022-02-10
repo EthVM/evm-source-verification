@@ -32,6 +32,7 @@ namespace Work {
 interface QueueOptions {
   failFast: boolean;
   save: boolean;
+  jump?: number;
 }
 
 /**
@@ -49,7 +50,7 @@ export function parallelProcessContracts(
   pending: ContractIdentity[],
   processors: IContractProcessor[],
 ): Promise<void> {
-  const { failFast, save, } = options;
+  const { failFast, save, jump } = options;
 
   return new Promise<void>((res, rej) => {
     /**
@@ -78,7 +79,7 @@ export function parallelProcessContracts(
      *
      * Preserves the same order as {@link pending}
      */
-    const workQueue: Work[] = [];
+    const workQueue: LinkedList<Work> = new LinkedList;
 
     /**
      * Items waiting to be post-processed
@@ -140,14 +141,21 @@ export function parallelProcessContracts(
             const output = result.value;
             if (ContractResult.isSkipped(output)) {
               // handle skipped
-              const msg = `[${ymdhms()}] complete: skipped:` +
+              const msg = `[${ymdhms()}] skipped:` +
+                `  ${idCtx}`;
+              console.debug(msg);
+            }
+
+            else if (ContractResult.isJumped(output)) {
+              // handle skipped
+              const msg = `[${ymdhms()}] jumped:` +
                 `  ${idCtx}`;
               console.debug(msg);
             }
 
             else if (ContractResult.isUnverified(output)) {
               // handle unverified
-              const msg = `[${ymdhms()}] complete: unverified:` +
+              const msg = `[${ymdhms()}] unverified:` +
                 `  ${idCtx}`;
               await services.stateService.addLog(identity, 'unverified', msg);
               if (failFast) return void forceStop(new Error(msg));
@@ -156,7 +164,7 @@ export function parallelProcessContracts(
 
             else if (ContractResult.isVerified(output)) {
               // handle verified
-              const msg = `[${ymdhms()}] complete: verified:` +
+              const msg = `[${ymdhms()}] verified:` +
                 `  ${idCtx}`;
               // success
               console.info(msg);
@@ -169,7 +177,7 @@ export function parallelProcessContracts(
           else {
             // handle error
             const err = result.value;
-            const msg = `[${ymdhms()}] complete: error:` +
+            const msg = `[${ymdhms()}] error:` +
               `  ${idCtx}` +
               `  ${err.toString()}`;
             await services.stateService.addLog(identity, 'error', msg);
@@ -191,9 +199,9 @@ export function parallelProcessContracts(
       // continuous range of finished items
       const workFinished: Work.Done[] = [];
 
-      let work: Work;
+      let work: Work | undefined;
       // eslint-disable-next-line prefer-destructuring, no-cond-assign
-      while (work = workQueue[0]) {
+      while (work = workQueue.head) {
         // end of the continuous range of finished items
         if (!work.done) break;
         workQueue.shift();
@@ -204,13 +212,13 @@ export function parallelProcessContracts(
       if (isStopping) {
         // wait for the workQueue to empty
         // before rejecting the outer promise empty
-        if (!workQueue.length) {
+        if (!workQueue.size) {
           console.debug(`[${ymdhms()}] queue empty... stopping`);
           return rej(isStopping.err);
         }
         console.debug(`[${ymdhms()}] waiting for workQueue` +
           ` to empty before stopping...` +
-          ` ${workQueue.length} items left`);
+          ` ${workQueue.size} items left`);
         return;
       }
 
@@ -224,7 +232,7 @@ export function parallelProcessContracts(
         enqueue();
       }
 
-      if (!pending.length && !completedQueue.clone && !workQueue.length) {
+      if (!pending.length && !completedQueue.clone && !workQueue.size) {
         console.debug(`[${ymdhms()}] tick:` +
           ' finished!');
         res();
@@ -253,7 +261,7 @@ export function parallelProcessContracts(
           // TODO: can increase concurrency here
           // this is limits concurrency so we don't process too quickly away
           // from the current head
-          if (!(workQueue.length < concurrency)) {
+          if (!(workQueue.size < concurrency)) {
             break;
           }
           const identity = pending.shift()!;
@@ -266,10 +274,15 @@ export function parallelProcessContracts(
             result: null,
             identity,
           });
-          processor
-            .process(identity)
-            .then((result) => handleDone(processor, result))
-            .catch((err) => handleError(processor, err))
+          if (jump != null && index < jump) {
+            // jump past this
+            handleDone(processor, ContractResult.jumped());
+          } else {
+            processor
+              .process(identity)
+              .then((result) => handleDone(processor, result))
+              .catch((err) => handleError(processor, err))
+          }
         }
       }) 
     }
@@ -281,15 +294,17 @@ export function parallelProcessContracts(
      * @param result
      */
     function handleDone(processor: IContractProcessor, result: ContractResult) {
-      const idx = workQueue.findIndex((bitem) => bitem.processor === processor);
-      const done: Work.Done = {
-        done: true,
-        identity: workQueue[idx].identity,
-        index: workQueue[idx].index,
-        processor: null,
-        result: Result.success(result),
-      };
-      workQueue[idx] = done;
+      const found = workQueue.replace(
+        (bitem) => bitem.processor === processor,
+        (prev): Work.Done => ({
+          done: true,
+          identity: prev.identity,
+          index: prev.index,
+          processor: null,
+          result: Result.success(result),
+        }),
+      );
+      if (!found) throw new Error('something went wrong');
       idle.push(processor);
       tick();
     }
@@ -301,15 +316,17 @@ export function parallelProcessContracts(
      * @param result
      */
     function handleError(processor: IContractProcessor, err: Error) {
-      const idx = workQueue.findIndex((bitem) => bitem.processor === processor);
-      const done: Work.Done = {
-        done: true,
-        identity: workQueue[idx].identity,
-        index: workQueue[idx].index,
-        processor: null,
-        result: Result.fail(err),
-      };
-      workQueue[idx] = done;
+      const found = workQueue.replace(
+        (bitem) => bitem.processor === processor,
+        (prev): Work.Done => ({
+          done: true,
+          identity: prev.identity,
+          index: prev.index,
+          processor: null,
+          result: Result.fail(err),
+        }),
+      );
+      if (!found) throw new Error('something went wrong');
       idle.push(processor);
       tick();
     }
