@@ -1,3 +1,14 @@
+/**
+ * Max number of git changed files we can process
+ * in the pull-contracts handler
+ *
+ * The GitHub API seems to have a limit at 100 files?
+ * https://github.com/EthVM/evm-source-verification/pull/13
+ * https://github.com/EthVM/evm-source-verification/runs/5134522436?check_suite_focus=true
+ * so 
+ */
+export const MAX_GIT_DIFF_FILES = 99;
+
 export const SOLIDITY_COMPILE_TIMEOUT = 30_000;
 
 /**

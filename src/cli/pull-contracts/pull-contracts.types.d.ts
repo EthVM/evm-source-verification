@@ -5,6 +5,9 @@ export interface PullContractsCliArgs {
   owner: string;
   base: string;
   head: string;
-  requireContracts: boolean;
-  outputVerifiedAddresses?: string;
+
+  outBodyFile?: string;
+  outPrNameFile?: string;
+  outBranchNameFile?: string;
+  outCommitTitle?: string;
 }

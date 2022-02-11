@@ -66,7 +66,7 @@ interface HashList {
 /**
  * metadata.json contents
  */
-export interface VerifiedMetadata {
+export interface ContractMetadata {
   abi: any[];
   compiler: string;
   opcodeHash: string;

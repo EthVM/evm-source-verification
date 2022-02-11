@@ -65,13 +65,18 @@ jobs:
             --owner="${{ github.event.pull_request.base.repo.owner.login }}" \
             --head="${{ github.event.pull_request.head.label }}" \
             --base="${{ github.event.pull_request.base.ref }}" \
-            --require-contracts \
-            --output-verified-addresses=/tmp/added-contracts
+            --out-body-file=/tmp/ethvm-body \
+            --out-pr-name-file=/tmp/ethvm-pr-name \
+            --out-branch-name-file=/tmp/ethvm-branch-name \
+            --out-commit-title-file=/tmp/ethvm-commit-title
 
-      - id: contracts
+      - id: vars
         name: record new contracts
         run: |
-          echo "::set-output name=contracts-added::$(cat /tmp/added-contracts)"
+          echo "::set-output body::$(cat /tmp/ethvm-body)"
+          echo "::set-output pr-name::$(cat /tmp/ethvm-pr-name)"
+          echo "::set-output branch-name::$(cat /tmp/ethvm-branch-name)"
+          echo "::set-output commit-title::$(cat /tmp/ethvm-commit-title)"
 
       # https://github.com/marketplace/actions/create-pull-request
       - id: create-pr
@@ -80,13 +85,13 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           author: 'EthVMBot <EthVMBot@users.noreply.github.com>'
-          commit-message: 'verified contracts: ${{ steps.contracts.outputs.contracts-added }}'
-          branch: 'contracts-${{ steps.contracts.outputs.contracts-added }}'
-          title: 'verified contracts: ${{ steps.contracts.outputs.contracts-added }}'
+          commit-message: '${{ steps.vars.outputs.commit-title }}'
+          branch: '${{ steps.vars.outputs.branch-name }}'
+          title: '${{ steps.vars.outputs.pr-name }}'
           body: |
             **Verified Contracts**:
 
-            ${{ steps.contracts.outputs.contracts-added }}
+            ${{ steps.vars.outputs.body }}
 
             Generated from [Pull Request](${{ github.event.pull_request._links.html.href }})
 
@@ -101,3 +106,5 @@ jobs:
             Your contract has been verified and will soon be pulled into the main branch
 
             See [Pull Request ${{ steps.create-pr.outputs.pull-request-number }}](${{ steps.create-pr.outputs.pull-request-url }})
+
+            ${{ steps.vars.outputs.body }}

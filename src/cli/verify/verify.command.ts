@@ -31,6 +31,12 @@ export const registerVerifyCommand: Command = (argv) => {
           " contract directories",
       })
 
+      .positional("--dir", {
+        type: "string",
+        describe: "Verify contracts within the provided new-line separated"
+          + " directories (or stdin if dir == '-').",
+      })
+
       .positional("--skip", {
         type: "boolean",
         describe: "Skip contracts that have already have metadata (have" +
@@ -53,7 +59,12 @@ export const registerVerifyCommand: Command = (argv) => {
       .positional("--jump", {
         type: "number",
         describe: "Jump past this many contracts before starting to verify",
-        default: false,
+      })
+
+      .positional("--concurrency", {
+        type: "number",
+        describe: "Number of contracts to verify in parallel",
+        default: process.env.CONCURRENCY,
       })
       ,
 
