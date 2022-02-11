@@ -58,7 +58,7 @@ export async function pullContractsCommand(
     ` ${owner}:${repo} : ${head} -> ${base}`);
 
   console.info(files
-    .map((file, i) => `  ${i}. ${file
+    .map((file, i) => `  ${i + 1}. ${file
       .status
       .padStart(6, ' ')}: ${file.filename}`)
     .join('\n'));
