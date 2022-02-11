@@ -53,8 +53,15 @@ export async function pullContractsCommand(
   const gres = await client.rest.repos.compareCommits({ base, head, owner, repo});
 
   const files: components["schemas"]["diff-entry"][] = gres.data.files ?? [];
-  console.info(`git diff ${files.length} files ${owner}:${repo} : ${head} -> ${base}`);
-  console.info(files);
+
+  console.info(`git diff ${files.length} files` +
+    ` ${owner}:${repo} : ${head} -> ${base}`);
+
+  console.info(files
+    .map((file, i) => `  ${i}. ${file
+      .status
+      .padStart(6, ' ')}: ${file.filename}`)
+    .join('\n'));
 
   // assert: not too many files
   if (files.length > MAX_GIT_DIFF_FILES)
