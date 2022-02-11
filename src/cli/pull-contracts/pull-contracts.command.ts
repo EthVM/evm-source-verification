@@ -60,7 +60,7 @@ export const registerPullContractsCommand: Command = (argv) => {
         desc: 'File to put the name of a new branch to host the verified contracts',
       },)
 
-      .positional('--out-commit-title', {
+      .positional('--out-commit-title-file', {
         type: 'string',
         desc: 'File to put the name of a new commit with verified contracts',
       },)

@@ -27,7 +27,7 @@ export async function pullContractsCommand(
     repo,
     outBodyFile,
     outBranchNameFile,
-    outCommitTitle,
+    outCommitTitleFile,
     outPrNameFile,
   } = args;
 
@@ -64,14 +64,18 @@ export async function pullContractsCommand(
   const additions: components["schemas"]["diff-entry"][] = []
   const nonAdditions: components["schemas"]["diff-entry"][] = [];
   for (const file of files) {
-    if (file.status !== 'added') additions.push(file);
+    if (file.status === 'added') additions.push(file);
     else nonAdditions.push(file);
   }
   // assert: only additions
   if (nonAdditions.length > 0) {
     const msg = 'diffs can only contain additions' +
-      `, found ${nonAdditions.length}:` +
-      `\n  ${nonAdditions.map(f => f.filename).join('\n  ')}`
+      `, found ${nonAdditions.length} non-additions:` +
+      `\n  ${nonAdditions
+          .map(file => `${file
+            .status
+            .padStart(8, ' ')}. ${file.filename}`)
+          .join('\n  ')}`
     throw new Error(msg);
   }
 
@@ -262,14 +266,14 @@ export async function pullContractsCommand(
   }
 
   // save filename with the name for a new commit
-  if (outCommitTitle) {
+  if (outCommitTitleFile) {
     let commitTitle = `verified-${contracts.length}`;
     commitTitle += `-${contracts[0].address.slice(0, 12)}`;
     commitTitle += `-${rand}`;
     console.info(`saving commit title:` +
       `\n  filename: "${outBranchNameFile}"` +
       `\n  content: ${commitTitle}`)
-    await fs.promises.writeFile(outCommitTitle, commitTitle, 'utf-8');
+    await fs.promises.writeFile(outCommitTitleFile, commitTitle, 'utf-8');
   }
 
   // save filename with the name for a new pull request
