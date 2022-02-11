@@ -3,7 +3,7 @@ import { components } from '@octokit/openapi-types';
 import { getOctokit } from "@actions/github";
 import { PullContractsCliArgs } from "./pull-contracts.types";
 import { bootstrap } from "../../bootstrap";
-import { FilenameMatchedContract } from "../../services/contract.service";
+import { ContractPath } from "../../services/contract.service";
 import { downloadFile, ymdhms } from '../../libs/utils';
 import { MAX_GIT_DIFF_FILES } from '../../constants';
 import { Contract } from '../../models/contract';
@@ -112,9 +112,9 @@ export async function pullContractsCommand(
     throw new Error('no contract files matched');
   }
 
-  const withUnknownFiles: FilenameMatchedContract[] = [];
-  const withoutConfig: FilenameMatchedContract[] = [];
-  const withoutInput: FilenameMatchedContract[] = [];
+  const withUnknownFiles: ContractPath[] = [];
+  const withoutConfig: ContractPath[] = [];
+  const withoutInput: ContractPath[] = [];
   Array
     .from(chains.values())
     .filter(chain => Array

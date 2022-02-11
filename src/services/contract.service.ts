@@ -18,7 +18,7 @@ import {
 /**
  * Result of matching a single contract filename
  */
-export interface ContractFilenameMatch {
+export interface ContractMatch {
   /**
    * Original matched filename
    */
@@ -52,7 +52,7 @@ export interface ContractFilenameMatch {
  * 
  * Is the grouping of files belonging to a single contract
  */
-export interface FilenameMatchedContract {
+export interface ContractPath {
   /**
    * ChainId of the matched contract
    */
@@ -92,29 +92,29 @@ export interface FilenameMatchedContract {
 /**
  * Chains and their contracts that were found by matching filenames
  */
-export type FilenameMatchedChains = Map<ChainId, FilenameMatchedChain>;
+export type ChainPaths = Map<ChainId, ChainPath>;
 
 /**
  * Contracts that were found by matching filenames
  */
-export type FilenameMatchedContracts = Map<Address, FilenameMatchedContract>
+export type ContractPaths = Map<Address, ContractPath>
 
 /**
  * Result of matching many contract filenames
  * 
  * Includes the matched chains and the files that did not match
  */
-export interface ContractFilenamesMatches {
+export interface ContractPathMatches {
   unmatched: string[]
-  chains: FilenameMatchedChains;
+  chains: ChainPaths;
 }
 
 /**
  * Chain from parsed filenames
  */
-export interface FilenameMatchedChain {
+export interface ChainPath {
   id: number;
-  contracts: FilenameMatchedContracts;
+  contracts: ContractPaths;
 }
 
 /**
@@ -187,7 +187,7 @@ export interface IContractService {
    * @param filename    contract-like filename or dirname
    * @returns           contract info if match was successful
    */
-  matchContractFilename(filename: string): null | ContractFilenameMatch;
+  matchContractFilename(filename: string): null | ContractMatch;
 
   /**
    * Match many contract-like filenameas and dirnames to get their identifying info
@@ -198,7 +198,7 @@ export interface IContractService {
    * @param filenames   contract-like filenames or dirnames
    * @returns           matched chains and contracts, and unmatched files
    */
-  matchContractFilenames(filenames: string[]): ContractFilenamesMatches;
+  matchContractFilenames(filenames: string[]): ContractPathMatches;
 
   /**
    * Assert that a contract config is valid
@@ -471,7 +471,7 @@ export class ContractService implements IContractService {
    * @param filename    contract-like filename or dirname
    * @returns           contract info if match was successful
    */
-  matchContractFilename(filename: string): null | ContractFilenameMatch {
+  matchContractFilename(filename: string): null | ContractMatch {
     const { dirname } = this;
     const regex = new RegExp(`^(${dirname}\\/([0-9]+)\\/(0x[a-f0-9]{40}))(\\/.*|$)`);
     const rmatch = filename.match(regex);
@@ -495,8 +495,8 @@ export class ContractService implements IContractService {
    * @param filenames   contract-like filenames or dirnames
    * @returns           matched chains and contracts, and unmatched files
    */
-  matchContractFilenames(filenames: string[]): ContractFilenamesMatches {
-    const matches: ContractFilenameMatch[] = [];
+  matchContractFilenames(filenames: string[]): ContractPathMatches {
+    const matches: ContractMatch[] = [];
     const unmatched: string[] = [];
 
     for (const filename of filenames) {
@@ -506,7 +506,7 @@ export class ContractService implements IContractService {
     }
 
     // aggregate all matches
-    const chains: FilenameMatchedChains = new Map();
+    const chains: ChainPaths = new Map();
     for (const match of matches) {
       const {
         address,
@@ -515,13 +515,13 @@ export class ContractService implements IContractService {
         filename,
       } = match;
 
-      const chain: FilenameMatchedChain = mapGetOrCreate(
+      const chain: ChainPath = mapGetOrCreate(
         chains,
         chainId,
         () => ({ id: chainId, contracts: new Map(), })
       );
 
-      const contract: FilenameMatchedContract = mapGetOrCreate(
+      const contract: ContractPath = mapGetOrCreate(
         chain.contracts,
         address,
         () => ({
