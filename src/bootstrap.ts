@@ -5,13 +5,17 @@ import { SolidityCompiler } from "./compilers/solidity.compiler";
 import { IStateService, StateService } from "./services/state.service";
 import { ICompiler } from "./types";
 import { IVerificationService, VerificationService } from "./services/verification.service";
+import { ContractProcessorService, IContractProcessorService } from "./services/contract-processor.service";
+import { IParallelProcessorService, ParallelProcessorService } from "./services/parallel-processor.service";
 
 export interface IServices {
   contractService: IContractService;
   nodeService: INodeService;
   stateService: IStateService;
   compilerService: ICompilerService;
-  verificationService: IVerificationService,
+  verificationService: IVerificationService;
+  contractProcessorService: IContractProcessorService;
+  parallelProcessorService: IParallelProcessorService;
 }
 
 /**
@@ -28,6 +32,14 @@ export async function bootstrap(): Promise<IServices> {
   const solidity: ICompiler = new SolidityCompiler();
   const compilerService: ICompilerService = new CompilerService(solidity);
   const verificationService: IVerificationService = new VerificationService(nodeService);
+  const contractProcessorService: IContractProcessorService = new ContractProcessorService(
+    compilerService,
+    verificationService,
+  );
+  const parallelProcessorService: IParallelProcessorService = new ParallelProcessorService(
+    contractProcessorService,
+    stateService,
+  );
 
   const services: IServices = {
     contractService,
@@ -35,6 +47,8 @@ export async function bootstrap(): Promise<IServices> {
     nodeService,
     compilerService,
     verificationService,
+    contractProcessorService,
+    parallelProcessorService,
   };
 
   return services;

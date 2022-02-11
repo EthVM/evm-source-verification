@@ -1,10 +1,7 @@
 import { config } from 'dotenv';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
-import { registerValidateGitDiffsCommand } from './cli/validate-git-diffs/validate-git-diffs.command';
 import { registerVerifyCommand } from './cli/verify/verify.command';
-import { registerCompileCommand } from './cli/compile/compile.command';
-import { registerMetadataCommand } from './cli/metadata/metadata.command';
 import { registerPullContractsCommand } from './cli/pull-contracts/pull-contracts.command';
 
 const argv = yargs(hideBin(process.argv)).usage('Usage $0 <cmd> [args]');
@@ -13,10 +10,7 @@ const argv = yargs(hideBin(process.argv)).usage('Usage $0 <cmd> [args]');
 config();
 
 // register commands
-registerValidateGitDiffsCommand(argv);
 registerVerifyCommand(argv);
-registerCompileCommand(argv);
-registerMetadataCommand(argv);
 registerPullContractsCommand(argv);
 
 argv.demandCommand(1);
