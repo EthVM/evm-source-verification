@@ -10,7 +10,8 @@ import { PullContractsCliArgs } from './pull-contracts.types';
 export const registerPullContractsCommand: Command = (argv) => {
   argv.command<PullContractsCliArgs>(
     "pull-contracts",
-    "description <todo>",
+    "Download, validate and verify contracts added in the head branch." +
+    " Asserts that only contracts were added and nothing else.",
     args => args
       .positional('--token', {
         type: 'string',
