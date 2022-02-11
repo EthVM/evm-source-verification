@@ -47,9 +47,9 @@ export interface ResultHandler<T, R> {
 }
 
 /**
- * FIFO work queue
+ * FIFO worker queue
  *
- * Guarantees order of results is the order of inputs
+ * Guarantees order of results
  * 
  * @param services 
  * @param options 
