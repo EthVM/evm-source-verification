@@ -4,7 +4,7 @@ import { Result } from "@nkp/result";
 import { MAX_CONCURRENCY } from "../constants";
 import { asyncQueue, ResultHandler, WorkCtx, WorkHandler } from "../libs/async-queue";
 import { getMetadata } from "../libs/metadata";
-import { ymdhms } from "../libs/utils";
+import { eng, ymdhms } from "../libs/utils";
 import { Contract } from "../models/contract";
 import { IContractProcessorService } from "./contract-processor.service";
 import { IStateService } from "./state.service";
@@ -80,7 +80,7 @@ export class ParallelProcessorService implements IParallelProcessorService {
     }
 
     console.info(`[${ymdhms()}] parallel processing` +
-      ` ${contracts.length.toLocaleString('en-US')} contracts` +
+      ` ${eng(contracts.length)} contracts` +
       `  failFast=${failFast}` +
       `  save=${save}` +
       `  jump=${jump}` +
@@ -109,8 +109,8 @@ export class ParallelProcessorService implements IParallelProcessorService {
 
     const end = performance.now();
     console.info(`[${ymdhms()}] finished processing` +
-      ` ${contracts.length.toLocaleString('en-US')} contracts` +
-      `  took=${Math.round(end - start).toLocaleString('en-US')}ms`
+      ` ${eng(contracts.length)} contracts` +
+      `  took=${eng(Math.round(end - start))}ms`
     );
   }
 
@@ -172,11 +172,10 @@ export class ParallelProcessorService implements IParallelProcessorService {
     // eslint-disable-next-line prefer-template
     const idCtx = `chainId=${contract.chainId}` +
       `  address=${contract.address}` +
-      `  ${Math
-          .round(ctx.end! - ctx.start)
-          .toLocaleString('en-US')
+      `  ${eng(Math
+          .round(ctx.end! - ctx.start))
           .padStart(5, ' ')}ms` +
-      `  ${index}/${total}` +
+      `  ${eng(index)}/${eng(total)}` +
       `  ${toPercentage(index / total)}` +
       `  ${contract.name}`
     ;

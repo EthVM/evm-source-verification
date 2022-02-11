@@ -1,7 +1,7 @@
 import { toPercentage } from '@nkp/percentage';
 import fs from 'node:fs';
 import path from 'node:path';
-import { mapGetOrCreate, toBN, toChainId, ymdhms } from "../libs/utils";
+import { eng, mapGetOrCreate, toBN, toChainId, ymdhms } from "../libs/utils";
 import { Contract } from '../models/contract';
 import { FsContract, FsContractOptions } from '../models/contract.fs';
 import { IContractStorage } from '../models/contract.storage.interface';
@@ -406,19 +406,23 @@ export class ContractService implements IContractService {
     const contracts: Contract[] = []
     let i = 0;
     const total = args.length;
+
+    console.log(`[${ymdhms()}] loading ${eng(total)} contracts...`);
+
+    const LOG_EVERY = 1000;
     for (const arg of args) {
       i += 1;
       const contract = await this.hydrateContract(
         arg.dirname,
         { ...options, ... arg.options, },
       );
-      console.log(`[${ymdhms()}] hydrated contract` +
-        `  chainId=${contract.chainId}` +
-        `  address=${contract.address}` +
-        `  ${i}/${total}` +
-        `  ${toPercentage(i/total)}` +
-        `  ${contract.name}`
-      );
+
+      if ((i % LOG_EVERY) === 0) {
+        console.log(`[${ymdhms()}] loading contracts...` +
+          `  ${eng(i)}/${eng(total)}` +
+          `  ${toPercentage(i/total)}`);
+      }
+
       contracts.push(contract);
     }
     return contracts;

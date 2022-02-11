@@ -546,3 +546,7 @@ export function toChainId(raw: string | number): number {
   if (/^[0-9]+$/.test(raw)) return Number(raw);
   throw new Error(`unable to convert value to chainId: "${raw}"`);
 }
+
+export function eng(number: number): string {
+  return number.toLocaleString('en-US');
+}
