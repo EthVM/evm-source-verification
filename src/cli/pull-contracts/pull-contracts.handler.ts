@@ -277,7 +277,7 @@ export async function pullContractsCommand(
   // save filename with the name for a new branch
   if (outBranchNameFile) {
     let branchName = `verified-${contracts.length}`;
-    branchName += `-${contracts[0].address.slice(0, 12)}xxx`;
+    branchName += `-${contracts[0].address.slice(0, 12)}`;
     branchName += `-${rand}`;
     console.info(`saving branch name:` +
       `\n  filename: "${outBranchNameFile}"` +
@@ -288,7 +288,7 @@ export async function pullContractsCommand(
   // save filename with the name for a new commit
   if (outCommitTitleFile) {
     let commitTitle = `verified-${contracts.length}`;
-    commitTitle += `-${contracts[0].address.slice(0, 12)}xxx`;
+    commitTitle += `-${contracts[0].address.slice(0, 12)}`;
     commitTitle += `-${rand}`;
     console.info(`saving commit title:` +
       `\n  filename: "${outBranchNameFile}"` +
@@ -299,7 +299,7 @@ export async function pullContractsCommand(
   // save filename with the name for a new pull request
   if (outPrNameFile) {
     let prName = `verified-${contracts.length}`;
-    prName += `-${contracts[0].address.slice(0, 12)}xxx`;
+    prName += `-${contracts[0].address.slice(0, 12)}`;
     prName += `-${rand}`;
     console.info(`saving pr name:` +
       `\n  filename: "${outBranchNameFile}"` +
