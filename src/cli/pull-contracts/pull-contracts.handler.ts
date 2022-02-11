@@ -130,7 +130,7 @@ export async function pullContractsCommand(
 
   // assert: no unknown files
   if (withUnknownFiles.length) {
-    errors.push(`the following contracts have unknown files:`);
+    errors.push(`cannot add unknown contract-like:`);
     for (const wUnknown of withUnknownFiles) {
       const msg = `  chainId=${wUnknown.chainId}` +
         `  address=${wUnknown.address}` +
