@@ -1,14 +1,20 @@
 # evm-source-verification
 
-EVM Contract Source Code Verification.
+Ethereum smart contract source code verification.
 
-Verifies Ethereum smart contracts.
+Verifies contract sourcecode and saves the output to `contracts/<chainId>/<contractAddress>`.
+
+With `evm-source-verification` you can
+
+1. Submit your own smart contracts for verification (see [Submitting a contract](#submitting-a-contract))
+2. Verify contracts locally (see [Commands](#commands))
+3. View other verified contracts in `contracts/<chainId>/<contractAddress>`
 
 Special thanks to [Sourcify](https://sourcify.dev/) and [Etherscan](https://etherscan.io/).
 
 ## Table of Contents
 
-- [Adding a contract](#adding-a-contract)
+- [Submitting a contract](#submitting-a-contract)
 - [Opening a verified contract in Remix IDE](#opening-a-verified-contract-in-remix-ide)
 - [Getting Started](#getting-started)
 - [Commands](#commands)
@@ -17,7 +23,7 @@ Special thanks to [Sourcify](https://sourcify.dev/) and [Etherscan](https://ethe
     - [Verify contract in a directory](#verify-contract-in-a-directory)
     - [Verify contracts in many directories](#verify-contracts-in-many-directories)
 
-## Adding a contract
+## Submitting a contract
 
 ### By Pull Request
 
