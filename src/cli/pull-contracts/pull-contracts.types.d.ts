@@ -9,5 +9,5 @@ export interface PullContractsCliArgs {
   outBodyFile?: string;
   outPrNameFile?: string;
   outBranchNameFile?: string;
-  outCommitTitle?: string;
+  outCommitTitleFile?: string;
 }
