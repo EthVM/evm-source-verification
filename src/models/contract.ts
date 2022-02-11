@@ -1,5 +1,5 @@
 import { Address, ChainId, ContractIdentity } from "../types";
-import { IContractStorage } from "./contract.storage.interface";
+import { IContractStorage } from "./contract.storage";
 
 
 /**

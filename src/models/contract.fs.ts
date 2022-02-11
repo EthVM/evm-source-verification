@@ -2,10 +2,10 @@ import path from 'node:path';
 import fs from 'node:fs';
 import { fabs, fexists, writeJSONFile } from "../libs/utils";
 import { ContractConfig, ContractInput, ContractMetadata } from '../types';
-import { IContractStorage } from './contract.storage.interface';
+import { IContractStorage } from './contract.storage';
 
 /**
- * Contract configuration
+ * Filesystem contract configuration
  */
 export interface FsContractOptions {
   /**
@@ -113,7 +113,6 @@ export class FsContract implements IContractStorage {
    * @inheritdoc
    */
   getConfig(): Promise<ContractConfig> {
-    // TODO: verify the file contents
     return fs
       .promises
       .readFile(this.getConfigFilename())
@@ -125,7 +124,6 @@ export class FsContract implements IContractStorage {
    * @inheritdoc
    */
   getInput(): Promise<ContractInput> {
-    // TODO: verify the file contents
     return fs
       .promises
       .readFile(this.getInputFilename())

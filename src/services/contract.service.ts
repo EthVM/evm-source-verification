@@ -4,7 +4,7 @@ import path from 'node:path';
 import { eng, mapGetOrCreate, toBN, toChainId, ymdhms } from "../libs/utils";
 import { Contract } from '../models/contract';
 import { FsContract, FsContractOptions } from '../models/contract.fs';
-import { IContractStorage } from '../models/contract.storage.interface';
+import { IContractStorage } from '../models/contract.storage';
 import {
   ContractConfig,
   ContractInput,

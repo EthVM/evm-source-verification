@@ -1,5 +1,5 @@
 import { ContractConfig, ContractInput, ContractMetadata } from '../types';
-import { IContractStorage } from './contract.storage.interface';
+import { IContractStorage } from './contract.storage';
 
 /**
  * Contract configuration
@@ -16,7 +16,7 @@ export interface MemoryContractOptions {
   readonly input?: ContractInput;
 
   /**
-   * Contract's input
+   * Contract's metadata
    */
   readonly metadata?: ContractMetadata;
 }

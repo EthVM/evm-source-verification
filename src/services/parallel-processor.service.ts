@@ -129,7 +129,7 @@ export class ParallelProcessorService implements IParallelProcessorService {
     const { skip, jump } = options ?? {};
 
     // jump over
-    if (jump != null && jump < index) {
+    if (jump != null && index < jump) {
       // jump over this contract
       return ProcessResult.jump();
     }
