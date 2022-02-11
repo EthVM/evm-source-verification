@@ -8,7 +8,7 @@ import { IContractStorage } from "./contract.storage";
 export class Contract implements ContractIdentity {
 
   /**
-   * Directory of the contract
+   * ChainId of the contract
    *
    * @example 1
    */
