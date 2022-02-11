@@ -251,8 +251,19 @@ export async function pullContractsCommand(
       { save: true, concurrency: 1, failFast: true },
     );
 
+  // sanity check: assert we processed the number of items expected
+  const matchContractCount = Array
+    .from(chains.values())
+    .reduce((cnt, chain) => cnt + chain.contracts.size, 0);
+  if (contracts.length !== matchContractCount) {
+    const msg = 'something went wrong:' +
+      `the number of verified contracts ${contracts.length} does not match` +
+      `the number of contracts parsed from the fileystem ${matchContractCount}`;
+    throw new Error(msg);
+  }
+
   // success!
-  console.info('✔️ success');
+  console.info(`✔️ success ${contracts.length}`);
 
   // save results
 

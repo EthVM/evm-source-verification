@@ -51,11 +51,12 @@ export interface ResultHandler<T, R> {
  *
  * Guarantees order of results
  * 
- * @param services 
- * @param options 
- * @param pending 
- * @param workHandlers 
- * @returns 
+ * @param pending           items to process
+ * @param workHandlers      workers
+ * @param resultHandler     result handler
+ * @param maxWorkAhead      maximum distance we can exceed the head with
+ *                          concurrency
+ * @returns                 resolves after completion
  */
 export function asyncQueue<T, R>(
   pending: T[],
@@ -81,9 +82,14 @@ export function asyncQueue<T, R>(
     const total = pending.length;
 
     /**
+     * Pending values
+     */
+    const pendingQueue: LinkedList<T> = new LinkedList(pending);
+
+    /**
      * Idle processors that are ready to process the next contract
      */
-    const idle: LinkedList<WorkHandler<T, R>> = new LinkedList();
+    const idleQueue: LinkedList<WorkHandler<T, R>> = new LinkedList();
 
     /**
      * Queue of processing and processed-but-waiting-for-recognition items
@@ -111,7 +117,7 @@ export function asyncQueue<T, R>(
 
     const enqueueMutex = new Mutex();
 
-    idle.push(...workHandlers);
+    idleQueue.push(...workHandlers);
 
     const concurrency = workHandlers.length;
 
@@ -185,11 +191,11 @@ export function asyncQueue<T, R>(
         complete();
       }
 
-      if (pending.length) {
+      if (pendingQueue.size) {
         enqueue();
       }
 
-      if (!pending.length && !completedQueue.size && !workQueue.size) {
+      if (!pendingQueue.size && !completedQueue.size && !workQueue.size) {
         console.info(`[${ymdhms()}] tick:` +
           ' finished!');
         res();
@@ -207,11 +213,11 @@ export function asyncQueue<T, R>(
         // enqueue as many as possible
         // eslint-disable-next-line no-constant-condition
         while (true) {
-          if (!idle.size) {
+          if (!idleQueue.size) {
             // no idle workers
             break;
           }
-          if (!pending.length) {
+          if (!pendingQueue.size) {
             // no pending items left
             break;
           }
@@ -219,8 +225,8 @@ export function asyncQueue<T, R>(
             // exceeded workahead limit
             break;
           }
-          const item = pending.shift()!;
-          const handler = idle.shift()!;
+          const item = pendingQueue.shift()!;
+          const handler = idleQueue.shift()!;
           const index = (cursor += 1);
           const start = performance.now();
           const ctx: WorkCtx<T> = { index, total, item, start, end: null };
@@ -249,7 +255,7 @@ export function asyncQueue<T, R>(
         }),
       );
       if (!found) throw new Error('something went wrong');
-      idle.push(handler);
+      idleQueue.push(handler);
       tick();
     }
 
@@ -270,7 +276,7 @@ export function asyncQueue<T, R>(
         }),
       );
       if (!found) throw new Error('something went wrong');
-      idle.push(handler);
+      idleQueue.push(handler);
       tick();
     }
   });
