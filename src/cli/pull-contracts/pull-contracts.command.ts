@@ -10,7 +10,8 @@ import { PullContractsCliArgs } from './pull-contracts.types';
 export const registerPullContractsCommand: Command = (argv) => {
   argv.command<PullContractsCliArgs>(
     "pull-contracts",
-    "description <todo>",
+    "Download, validate and verify contracts added in the head branch." +
+    " Asserts that only contracts were added and nothing else.",
     args => args
       .positional('--token', {
         type: 'string',
@@ -45,16 +46,27 @@ export const registerPullContractsCommand: Command = (argv) => {
         desc: 'Destination being compared to (eg destination of a Pull Request)',
       },)
 
-      .positional('--require-contracts', {
-        type: 'boolean',
-        default: false,
-        desc: 'Error if no contracts are added',
+      .positional('--out-body-file', {
+        type: 'string',
+        desc: 'File to place the verified addresses for use in a PR or comment body',
       },)
 
-      .positional('--output-verified-addresses', {
+      .positional('--out-pr-name-file', {
         type: 'string',
-        desc: 'File to place a comma separated list of verified contract addresses',
+        desc: 'File to put the name of a new PR to accept the verified contracts',
       },)
+
+      .positional('--out-branch-name-file', {
+        type: 'string',
+        desc: 'File to put the name of a new branch to host the verified contracts',
+      },)
+
+      .positional('--out-commit-title-file', {
+        type: 'string',
+        desc: 'File to put the name of a new commit with verified contracts',
+      },)
+
+
     ,
     async (args) => {
       const token = args.token ?? process.env.GITHUB_TOKEN;

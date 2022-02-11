@@ -40,11 +40,6 @@ jobs:
       - name: set NPM version
         run: npm i -g npm@6.14.16
 
-      # - name: "create .env file"
-      #   run: |
-      #     cp .env.example .env
-      #     sed -i'' "s/^GITHUB_TOKEN=/GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}/" .env
-
       #  ensure only valid changes have been made
       - name: "install, build, test"
         run: |
@@ -58,20 +53,34 @@ jobs:
       # https://docs.github.com/en/rest/reference/repos#get-a-repository
       - name: "pull, validate and generate metadata"
         run: |
-          node dist/bin.js \
+          node --enable-source-maps \
+            dist/bin.js \
             pull-contracts \
             --token="${{ secrets.GITHUB_TOKEN }}" \
             --repo="${{ github.event.pull_request.base.repo.name  }}" \
             --owner="${{ github.event.pull_request.base.repo.owner.login }}" \
             --head="${{ github.event.pull_request.head.label }}" \
             --base="${{ github.event.pull_request.base.ref }}" \
-            --require-contracts \
-            --output-verified-addresses=/tmp/added-contracts
+            --concurrency=1 \
+            --out-body-file=/tmp/ethvm-body \
+            --out-pr-name-file=/tmp/ethvm-pr-name \
+            --out-branch-name-file=/tmp/ethvm-branch-name \
+            --out-commit-title-file=/tmp/ethvm-commit-title
 
-      - id: contracts
+      - id: vars
         name: record new contracts
         run: |
-          echo "::set-output name=contracts-added::$(cat /tmp/added-contracts)"
+          echo "::set-output name=body::$(cat /tmp/ethvm-body)"
+          echo "::set-output name=pr-name::$(cat /tmp/ethvm-pr-name)"
+          echo "::set-output name=branch-name::$(cat /tmp/ethvm-branch-name)"
+          echo "::set-output name=commit-title::$(cat /tmp/ethvm-commit-title)"
+
+      - name: echo
+        run: |
+          echo "steps.vars.outputs.body:          ${{ steps.vars.outputs.body }}"
+          echo "steps.vars.outputs.pr-name:       ${{ steps.vars.outputs.pr-name }}"
+          echo "steps.vars.outputs.branch-name:   ${{ steps.vars.outputs.branch-name }}"
+          echo "steps.vars.outputs.commit-title:  ${{ steps.vars.outputs.commit-title }}"
 
       # https://github.com/marketplace/actions/create-pull-request
       - id: create-pr
@@ -80,15 +89,15 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           author: 'EthVMBot <EthVMBot@users.noreply.github.com>'
-          commit-message: 'verified contracts: ${{ steps.contracts.outputs.contracts-added }}'
-          branch: 'contracts-${{ steps.contracts.outputs.contracts-added }}'
-          title: 'verified contracts: ${{ steps.contracts.outputs.contracts-added }}'
+          commit-message: '${{ steps.vars.outputs.commit-title }}'
+          branch: '${{ steps.vars.outputs.branch-name }}'
+          title: '${{ steps.vars.outputs.pr-name }}'
           body: |
-            **Verified Contracts**:
+            **Verified Contracts**
 
-            ${{ steps.contracts.outputs.contracts-added }}
+            The following contracts extracted and verified from [this Pull Request](${{ github.event.pull_request._links.html.href }}) and are ready to be merged:
 
-            Generated from [Pull Request](${{ github.event.pull_request._links.html.href }})
+            ${{ steps.vars.outputs.body }}
 
       # https://github.com/marketplace/actions/close-pull-request
       - name: close pr
@@ -98,6 +107,8 @@ jobs:
           comment: |
             **Congratulations!**
 
-            Your contract has been verified and will soon be pulled into the main branch
+            Your contracts have been verified and will soon be pulled into the main branch
 
             See [Pull Request ${{ steps.create-pr.outputs.pull-request-number }}](${{ steps.create-pr.outputs.pull-request-url }})
+
+            ${{ steps.vars.outputs.body }}

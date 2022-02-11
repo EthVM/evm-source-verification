@@ -77,10 +77,10 @@ describe('ContractService', () => {
   describe('match', () => {
     it('should extract chain info from file paths', () => {
       for (const entry of entries) {
-        const match = contractService.match(entry.original);
+        const match = contractService.matchContractFilename(entry.original);
         expect(match).toBeTruthy();
-        expect(match!.original).toBe(entry.original);
-        expect(match!.dir).toBe(entry.dir);
+        expect(match!.filename).toBe(entry.original);
+        expect(match!.dirname).toBe(entry.dir);
         expect(match!.chainId).toBe(entry.chainId);
         expect(match!.address).toBe(entry.address);
         expect(match!.subpath).toBe(entry.subpath);

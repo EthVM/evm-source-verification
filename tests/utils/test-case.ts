@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fabs } from '../../src/libs/utils';
-import { CompiledOutput, ContractConfig, ContractIdentity, ContractInput, VerifiedMetadata } from "../../src/types";
+import { CompiledOutput, ContractConfig, ContractIdentity, ContractInput, ContractMetadata } from "../../src/types";
 
 /**
  * Represents a contract that we can run tests on
@@ -85,7 +85,7 @@ export class TestCase implements ContractIdentity {
    *
    * @returns     test cases metadata
    */
-  getMetadata(): Promise<VerifiedMetadata> {
+  getMetadata(): Promise<ContractMetadata> {
     return fs
       .promises
       .readFile(this.getMetadataFilename(), 'utf-8')

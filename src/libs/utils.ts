@@ -204,11 +204,12 @@ export function hasOwn(
   return Object.prototype.hasOwnProperty.call(object, property);
 }
 
+
 /**
  * Read a UTF8 file from the filesystem
  *
  * @param filename  filename to read from the filesystem
- * @returns         the json object or undefined if the file was not found
+ * @returns         string contents if it exists
  */
 export function readUTF8File(filename: string): Promise<undefined | string> {
   return fs
@@ -219,6 +220,20 @@ export function readUTF8File(filename: string): Promise<undefined | string> {
       return undefined;
     });
 }
+
+
+/**
+ * Write a UTF8 file to the filesystem
+ *
+ * @param filename  filename to write
+ * @param content   string contents
+ */
+export function writeUTF8File(filename: string, content: string): Promise<void> {
+  return fs
+    .promises
+    .writeFile(filename, content, 'utf-8');
+}
+
 
 /**
  * Read a JSON file from the filesystem
@@ -247,12 +262,11 @@ export function writeJSONFile(
   options?: { pretty?: boolean },
 ): Promise<void> {
   const pretty = options?.pretty ?? false;
-  return fs.promises.writeFile(
+  return writeUTF8File(
     filename,
     pretty
       ? JSON.stringify(contents, null, 2)
       : JSON.stringify(contents),
-    'utf-8',
   );
 }
 
@@ -348,6 +362,7 @@ export function frel(filename: string): string {
     : filename);
 }
 
+
 /**
  * Get the absolute file destination assuming it's relatively based at the
  * process cwd
@@ -364,6 +379,7 @@ export function fabs(filename: string): string {
     ? filename
     : path.join(process.cwd(), filename))
 }
+
 
 /**
  * Does the file exist?
@@ -382,6 +398,7 @@ export async function fexists(filename: string): Promise<boolean> {
     throw err;
   }
 }
+
 
 /**
  * Is the value a safe filename
@@ -455,6 +472,7 @@ export function mapGetOrCreate<K, V>(
   return value;
 }
 
+
 /**
  * TODO: docs
  * TODO: testing
@@ -470,6 +488,7 @@ export function downloadFile(uri: string, filename: string): Promise<void> {
     (err) => err ? rej(err) : res())
   );
 }
+
 
 /**
  * TODO: docs
@@ -510,4 +529,24 @@ function _download(
       cb(new Error(`Unexpected response: ${code}, ${hres.statusMessage}`));
     }
   });
+}
+
+
+/**
+ * Normalise chainId
+ *
+ * @param raw     raw chainId input
+ * @returns       normalised chainId output
+ */
+export function toChainId(raw: string | number): number {
+  if (typeof raw === 'number') return raw;
+  // parse as hex
+  if (raw.startsWith('0x')) return parseInt(raw, 16);
+  // only accept base 10
+  if (/^[0-9]+$/.test(raw)) return Number(raw);
+  throw new Error(`unable to convert value to chainId: "${raw}"`);
+}
+
+export function eng(number: number): string {
+  return number.toLocaleString('en-US');
 }

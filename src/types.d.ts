@@ -66,7 +66,7 @@ interface HashList {
 /**
  * metadata.json contents
  */
-export interface VerifiedMetadata {
+export interface ContractMetadata {
   abi: any[];
   compiler: string;
   opcodeHash: string;
@@ -162,7 +162,12 @@ export type ChainId = number;
 
 export interface HasChainId { chainId: ChainId; }
 export interface HasAddress { address: Address; }
-/** Minimal info required to locate a contract */
+
+/**
+ * Identity of the contract
+ * 
+ * ChainId and Address
+ */
 export interface ContractIdentity extends HasChainId, HasAddress {}
 
 /**

@@ -1,5 +1,5 @@
 import { VerifyContractResult } from "../services/verification.service";
-import { CborDataType, VerifiedMetadata } from "../types";
+import { CborDataType, ContractMetadata } from "../types";
 import * as hash from './hash';
 import { getBytecodeMetadatas, getBytecodeWithoutMetadata } from "./utils";
 
@@ -10,7 +10,7 @@ import { getBytecodeMetadatas, getBytecodeWithoutMetadata } from "./utils";
  * @param verification    verification result
  * @returns               metadata
  */
-export function getMetadata(verification: VerifyContractResult): VerifiedMetadata {
+export function getMetadata(verification: VerifyContractResult): ContractMetadata {
   // metadata & hashes
   const { mainSrcObj, liveCode, compiler } = verification;
   const { abi } = mainSrcObj;
@@ -29,7 +29,7 @@ export function getMetadata(verification: VerifyContractResult): VerifiedMetadat
     .from(new Set(encodedMetadata.map((v) => JSON.stringify(v))))
     .map(v => JSON.parse(v));
 
-  const metadata: VerifiedMetadata = {
+  const metadata: ContractMetadata = {
     compiler,
     opcodeHash,
     metalessHash,

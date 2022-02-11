@@ -3,14 +3,8 @@ import { VerifyCliArgs } from "./verify.types";
 import { bootstrap, IServices } from "../../bootstrap";
 import { Address, ChainId } from "../../types";
 import { toBN } from "../../libs/utils";
-import { processChainContracts, processContracts } from "../../libs/contracts.process";
-
-interface VerifyCliOptions {
-  save: boolean;
-  skip: boolean;
-  failFast: boolean;
-  jump?: number,
-}
+import { Contract } from "../../models/contract";
+import { ParallelProcessorOptions } from "../../services/parallel-processor.service";
 
 /**
  * Execution the `verify` command
@@ -27,13 +21,16 @@ export async function handleVerifyCommand(args: VerifyCliArgs): Promise<void> {
     save,
     failFast,
     jump,
+    dir,
+    concurrency,
   } = args;
 
-  const options: VerifyCliOptions = {
+  const options: ParallelProcessorOptions = {
     jump,
     failFast,
     save,
     skip, 
+    concurrency,
   }
 
   // validate the arguments
@@ -52,13 +49,17 @@ export async function handleVerifyCommand(args: VerifyCliArgs): Promise<void> {
     await handleFile(services, file, options);
   }
 
+  else if (dir) {
+    await handleDir(services, dir, options);
+  }
+
   else {
     const msg = 'You must provide either --chainId or --file';
     throw new Error(msg);
   }
 
   // success
-  console.info('✔ success: verify complete');
+  console.info('✔ success: verification complete');
 }
 
 
@@ -74,23 +75,60 @@ async function handleChainId(
   services: IServices,
   chainId: ChainId,
   address: undefined | Address,
-  options: VerifyCliOptions,
+  options: ParallelProcessorOptions,
 ): Promise<void> {
-  const contracts = await services.contractService.getChainContracts({ chainId });
 
-  // TODO: respect `address`
-  await processChainContracts(
-    chainId,
-    contracts,
-    services,
-    {
-      failFast: options.failFast,
-      save: options.save,
-      skip: options.skip,
-      jump: options.jump,
-    },
-  );
+  const contracts: Contract[] = [];
+  if (address) {
+    contracts.push(await services
+      .contractService
+      .getContract({ chainId, address }));
+  } else {
+    contracts.push(...await services
+      .contractService
+      .getChainContracts({ chainId }));
+  }
+
+  await services
+    .parallelProcessorService
+    .process(contracts, options);
 }
+
+/**
+ * Verify all contract directories specified
+ *
+ * @param services
+ * @param dir
+ * @param skip
+ */
+async function handleDir(
+  services: IServices,
+  dir: string,
+  options: ParallelProcessorOptions,
+): Promise<void> {
+  let dirnames: string[];
+
+  if (dir === '-') {
+    // read from stdsin
+    dirnames = fs
+      .readFileSync(0, 'utf-8',)
+      .trim()           // remove trailing whitespace
+      .split('\n')      // split new lines
+      .filter(Boolean); // remove empty lines
+  } else {
+    // new-line separated directories
+    dirnames = dir.split('\n').filter(Boolean);
+  }
+
+  const contracts = await services
+    .contractService
+    .hydrateContracts(dirnames.map(dirname => ({ dirname })));
+
+  await services
+    .parallelProcessorService
+    .process(contracts, options);
+}
+
 
 /**
  * Verify all contracts specified in a file
@@ -102,29 +140,22 @@ async function handleChainId(
 async function handleFile(
   services: IServices,
   file: string,
-  options: VerifyCliOptions,
+  options: ParallelProcessorOptions,
 ): Promise<void> {
   // '-' -> stdin file descriptor
   const useFile = file === '-' ? 0 : file
 
-  const dirs = fs
+  const dirnames = fs
     .readFileSync(useFile, 'utf-8',)
     .trim()           // remove trailing whitespace
     .split('\n')      // split new lines
     .filter(Boolean); // remove empty lines
 
-  const chains = services
+  const contracts = await services
     .contractService
-    .parseContractFilenames(dirs);
+    .hydrateContracts(dirnames.map(dirname => ({ dirname })));
 
-  await processContracts(
-    chains,
-    services,
-    {
-      failFast: options.failFast,
-      save: options.save,
-      skip: options.skip,
-      jump: options.jump,
-    },
-  );
+  await services
+    .parallelProcessorService
+    .process(contracts, options);
 }
