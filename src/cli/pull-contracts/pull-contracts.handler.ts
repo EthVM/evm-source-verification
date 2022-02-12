@@ -173,13 +173,12 @@ export async function pullContractsCommand(
       // download the input and config files
       // eslint-disable-next-line prefer-destructuring
       const dirname = contractMatch.dirname;
-      const configFilename = contractMatch.configFilename!;
-      const inputFilename = contractMatch.inputFilename!;
 
       console.info(`[${ymdhms()}] creating config dir ${dirname}`);
       await fs.promises.mkdir(dirname, { recursive: true });
 
       // download config
+      const configFilename = contractMatch.configFilename!;
       const configFile = fileMap.get(configFilename)!;
       const configUrl = configFile.raw_url;
       console.info(`[${ymdhms()}] downloading config`
@@ -191,13 +190,14 @@ export async function pullContractsCommand(
       await downloadFile(configUrl, configFilename);
 
       // download input
+      const inputFilename = contractMatch.inputFilename!;
       const inputFile = fileMap.get(inputFilename)!;
       const inputUrl = inputFile.raw_url;
       console.info(`[${ymdhms()}] downloading input`
         + `  chainId=${contractMatch.chainId}`
         + `  address=${contractMatch.address}`
-        + `  url=${configUrl}`
-        + `  filename=${configFilename}`
+        + `  url=${inputUrl}`
+        + `  filename=${inputFilename}`
       );
       await downloadFile(inputUrl, inputFilename);
 
