@@ -1,7 +1,9 @@
-import cbor from "cbor";
 import https from "node:https";
-import tmp from 'tmp';
+import os from 'node:os';
 import cp from 'node:child_process';
+import cbor from "cbor";
+import tmp from 'tmp';
+import chalk from "chalk";
 import { toB58String } from "multihashes";
 import Web3 from "web3";
 import fs from 'fs';
@@ -362,6 +364,7 @@ export function frel(filename: string): string {
     : filename);
 }
 
+const HOME_DIR = new RegExp(`^~(\\${path.sep}|$)`);
 
 /**
  * Get the absolute file destination assuming it's relatively based at the
@@ -375,6 +378,12 @@ export function frel(filename: string): string {
  * @returns           absolute normalised filename
  */
 export function fabs(filename: string): string {
+  // is targetting the home directory with ~?
+  if (HOME_DIR.test(filename)) {
+    // replace ^~ with the actual litereal home directory
+    return filename.replace(HOME_DIR, `${os.homedir()}$1`);
+  }
+
   return path.normalize(path.isAbsolute(filename)
     ? filename
     : path.join(process.cwd(), filename))
@@ -549,4 +558,34 @@ export function toChainId(raw: string | number): number {
 
 export function eng(number: number): string {
   return number.toLocaleString('en-US');
+}
+
+export function clamp(min: number, value: number, max: number): number {
+  return Math.min(Math.max(min, value), max);
+}
+
+/**
+ * interpolate the color from low (cyan) to high (red)
+ * to apply to the string
+ * 
+ * @param low       green value
+ * @param value     actual value
+ * @param high      red value
+ * @param string    string to color
+ * @returns         colored string
+ */
+export function interpolateColor(
+  low: number,
+  value: number,
+  high: number,
+  string: string,
+): string {
+  const interpolation = (value - low) / (high - low);
+  if (interpolation <= 0) return chalk.cyan(string);
+  if (interpolation >= 1) return chalk.red(string);
+  const between = ['green', 'yellow'] as const;
+  const idxMax = between.length - 1;
+  const idx = clamp(0, Math.round(idxMax * interpolation), idxMax);
+  const color = between[idx];
+  return chalk[color](string);
 }

@@ -25,7 +25,7 @@ export interface INodeService {
 /**
  * Configuration options for the NodeService
  */
-export interface ContractServiceOptions {
+export interface NodeServiceOptions {
   /**
    * relative filename with node rpc url's
    */
@@ -51,7 +51,7 @@ export class NodeService implements INodeService {
   /**
    * Absolute filename of the primary nodes file
    *
-   * @see ContractServiceOptions.primaryFilename
+   * @see NodeServiceOptions.primaryFilename
    */
   private readonly primaryFilename: string;
 
@@ -59,7 +59,7 @@ export class NodeService implements INodeService {
   /**
    * Absolute filename of the fallback nodes file
    *
-   * @see ContractServiceOptions.fallbackFilename
+   * @see NodeServiceOptions.fallbackFilename
    */
   private readonly fallbackFilename: string;
 
@@ -79,7 +79,7 @@ export class NodeService implements INodeService {
   /**
    * @param options   configuration for the NodeService
    */
-  constructor(options?: ContractServiceOptions) {
+  constructor(options?: NodeServiceOptions) {
     this.primaryFilename = fabs(options?.primaryFilename
       ?? NodeService.DEFAULTS.PRIMARY_FILENAME);
 

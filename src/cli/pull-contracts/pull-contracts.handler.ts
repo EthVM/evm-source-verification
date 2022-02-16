@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import chalk from 'chalk';
 import { components } from '@octokit/openapi-types';
 import { getOctokit } from "@actions/github";
 import { PullContractsCliArgs } from "./pull-contracts.types";
@@ -46,7 +47,7 @@ export async function pullContractsCommand(
     throw new Error(msg);
   }
 
-  console.info('✔️ fetching changes from GitHub');
+  console.info(`${chalk.green('✔️')} fetching changes from GitHub`);
 
   // get changed files from GitHub
   const client = getOctokit(token!);
@@ -67,7 +68,7 @@ export async function pullContractsCommand(
   if (files.length > MAX_GIT_DIFF_FILES)
     throw new Error(`too many git files to process: ${files.length}`);
 
-  console.info('✔️ extracting additions');
+  console.info(`${chalk.green('✔️')} extracting additions`);
   const additions: components["schemas"]["diff-entry"][] = []
   const nonAdditions: components["schemas"]["diff-entry"][] = [];
   for (const file of files) {
@@ -94,7 +95,7 @@ export async function pullContractsCommand(
     addition,
   ]));
 
-  console.info('✔️ parsing additions');
+  console.info(`${chalk.green('✔️')} parsing additions`);
   // parse additions
   const { chains, unmatched } = services
     .contractService
@@ -165,7 +166,7 @@ export async function pullContractsCommand(
     throw new Error(err);
   }
 
-  console.info('✔️ downloading contracts');
+  console.info(`${chalk.green('✔️')} downloading contracts`);
   // download and validate each contract
   const contracts: Contract[] = [];
   for (const chainMatch of chains.values()) {
@@ -242,7 +243,7 @@ export async function pullContractsCommand(
     }
   }
 
-  console.info('✔️ verifying contracts');
+  console.info(`${chalk.green('✔️')} verifying contracts`);
   // verify contracts & save results
   await services
     .parallelProcessorService

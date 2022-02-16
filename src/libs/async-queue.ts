@@ -124,7 +124,7 @@ export function asyncQueue<T, R>(
     tick();
 
     function forceStop(err: Error) {
-      console.debug(`[${ymdhms()}] stopping... ${err.toString()}`);
+      console.info(`[${ymdhms()}] stopping... ${err.toString()}`);
       isStopping = { err };
       // empty the completed queuje
       while (completedQueue.size) { completedQueue.shift(); }
@@ -176,10 +176,10 @@ export function asyncQueue<T, R>(
         // wait for the workQueue to empty
         // before rejecting the outer promise empty
         if (!workQueue.size) {
-          console.debug(`[${ymdhms()}] queue empty... stopping`);
+          console.info(`[${ymdhms()}] queue empty... stopping`);
           return rej(isStopping.err);
         }
-        console.debug(`[${ymdhms()}] waiting for workQueue` +
+        console.info(`[${ymdhms()}] waiting for workQueue` +
           ` to empty before stopping...` +
           ` ${workQueue.size} items left`);
         return;
@@ -196,8 +196,6 @@ export function asyncQueue<T, R>(
       }
 
       if (!pendingQueue.size && !completedQueue.size && !workQueue.size) {
-        console.info(`[${ymdhms()}] tick:` +
-          ' finished!');
         res();
       }
     }

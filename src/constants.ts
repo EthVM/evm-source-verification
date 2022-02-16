@@ -19,13 +19,6 @@ export const SOLIDITY_COMPILE_TIMEOUT = 30_000;
 export const SOLIDITY_MAX_OUTPUT_BUFFER_SIZE = 100 * 1024 * 1024;
 
 /**
- * Maximum allowed contract verification concurrency
- * 
- * Anything higher than this will cause an error to be thrown
- */
-export const MAX_CONCURRENCY = 30;
-
-/**
  * Maximum distance contracts can parallel process ahead of the oldest
  * processing contract (earliest in the processing fifo queue)
  * 

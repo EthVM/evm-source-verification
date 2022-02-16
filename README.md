@@ -2,7 +2,7 @@
 
 Ethereum smart contract source code verification.
 
-Verifies contract sourcecode and saves the output to `contracts/<chainId>/<contractAddress>`.
+Verifies contract sourcecode and saves the output metadata to `contracts/<chainId>/<contractAddress>`.
 
 With `evm-source-verification` you can
 
@@ -14,6 +14,11 @@ Special thanks to [Sourcify](https://sourcify.dev/) and [Etherscan](https://ethe
 
 ## Table of Contents
 
+- [Contract files](#contract-files)
+  - [input.json](#inputjson)
+  - [configs.json](#configsjson)
+  - [metadata.json](#metadatajson)
+- [Verified Contracts](#verified-contracts)
 - [Submitting a contract](#submitting-a-contract)
 - [Opening a verified contract in Remix IDE](#opening-a-verified-contract-in-remix-ide)
 - [Getting Started](#getting-started)
@@ -22,6 +27,58 @@ Special thanks to [Sourcify](https://sourcify.dev/) and [Etherscan](https://ethe
     - [Verify mainnet contracts](#verify)
     - [Verify contract in a directory](#verify-contract-in-a-directory)
     - [Verify contracts in many directories](#verify-contracts-in-many-directories)
+
+## Contract Files
+
+Contracts require an [`input.json`](#inputjson) and [`configs.json`](#configsjson) file for verification. These specify the source contract's source files and identity.
+
+![my-contract](./assets/my-contract.png)
+
+[Contract that are successfully verified](#verified-contracts) (and whose result is saved with `--save`) will have a [`metadata.json`](#metadatajson) file containing the verification output.
+
+![my-contract-verified](./assets/my-contract-verified.png)
+
+All contracts in `contracts/<chainId>/<contractAddress>` are verified.
+
+You can verify your own contracts using the [`verify`](#verify) command.
+
+### input.json
+
+`input.json` specifies the source files for compiler input for the contract. It includes the source files and compilation options.
+
+For Solidity, `input.json` is the Solidity [`--standard-json` input format](https://docs.soliditylang.org/en/develop/using-the-compiler.html).
+
+For example:
+
+![example input.json](./assets/input.json.png)
+
+### configs.json
+
+`configs.json` provides the additional information about specifying the contract that isn't required by the compiler.
+
+For example:
+
+![example configs.json](./assets/configs.json.png)
+
+### metadata.json
+
+`metadata.json` provides information on the verified output of the contract. Only contracts that have been verified can have a `metadata.json`.
+
+`metadata.json` contains the contract's ABI, opcode hash, metaless hash, runtime hash, encoded metadata, and more.
+
+For example:
+
+![example metadata.json](./assets/metadata.json.png)
+
+## Verified Contracts
+
+Officially verified contracts are stored under `contracts/<chainId>/<contractAddress>` with their `input.json`, `configs.json` and `metadata.json`.
+
+The `chainId` for mainnet is `1`.
+
+![contract-listing](./assets/contract-listing.png)
+
+![contract-count](./assets/contract-count.png)
 
 ## Submitting a contract
 
@@ -93,8 +150,36 @@ To execute commands, first download and build the project. For steps, see [Getti
 
 The verify command takes takes directories with `input.json` and `configs.json` files and compiles and verifies them against the blockchain.
 
-For additional information on the verify command, use `dist/bin.js verify --help`
+For additional information on the `verify` command, use `node dist/bin.js verify --help`.
 
+```sh
+bin.js verify
+
+compile source file and verify the code on evm based chain
+
+Positionals:
+  --chainId      Verify contracts of this chainId.                      [string]
+  --address      Verify the contract with this address and the given chainId.
+                 Requires --chainId.                                    [string]
+  --dirs         Verify contracts within the provided directories. Expects a
+                 new-line separated string of directories. Reads from stdin if
+                 --dirs=-                                               [string]
+  --skip         Skip contracts that have already been verified i.e. contracts
+                 that have metadata                   [boolean] [default: false]
+  --save         Save metadata of successfully verified contracts
+                                                      [boolean] [default: false]
+  --failFast     Exit on first error                  [boolean] [default: false]
+  --jump         Jump past this many contracts before starting to verify[number]
+  --concurrency  Number of contracts to verify in parallel. Defaults to the
+                 number of CPUs.                          [number] [default: 16]
+
+Options:
+  --help     Show help                                                 [boolean]
+  --version  Show version number                                       [boolean]
+```
+
+
+Below are some examples using the `verify` command:
 
 #### Verify mainnet contracts
 
@@ -106,28 +191,32 @@ node dist/bin.js \
   --failFast        `# exit on the first failure`
 ```
 
+![verify 1](./assets/verify--1.gif)
+
+
 #### Verify contract in a directory
 
 ```sh
-# verifying one contract in a directory
+# verify a single contract
 node dist/bin.js \
   verify \
-  --concurrency=10 \
-  --dir=~/my-contract   `# the contract's directory` \
-  --save                `# save verified metadata to the contract's directory` \
-  --failFast            `# exit on the first failure`
+  --dirs=~/my-contract  `# the contract's directory` \
+  --save                `# save verified metadata to the contract's directory`
 ```
+
+![verify 2](./assets/verify--2.gif)
 
 #### Verify contracts in many directories
 
 ```sh
 # verify contracts from the piped directories
-find contracts/1 -mindepth 1 -maxdepth 1 -type d \
+find ~/my-contracts/ -mindepth 1 -maxdepth 1 -type d \
   | head -n 1000        `# first 1000 contracts` \
   | node dist/bin.js \
     verify \
-    --concurrency=10    `# process at most 10 contracts concurrently` \
-    --dir=-             `# read directories from stdin`  \
-    --save              `# save verified metadata to contract directories` \
-    --jump=200          `# skip past the first 200 contracts`
+    --concurrency=1     `# process one contract at a time` \
+    --dirs=-            `# read directories from stdin`  \
+    --save              `# save verified metadata to contract directories`
 ```
+
+![verify 3](./assets/verify--3.gif)

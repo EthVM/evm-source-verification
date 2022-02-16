@@ -1,12 +1,32 @@
-import { CompilerService, ICompilerService } from "./services/compiler.service";
-import { ContractService, IContractService } from "./services/contract.service";
-import { INodeService, NodeService } from "./services/node.service";
-import { SolidityCompiler } from "./compilers/solidity.compiler";
-import { IStateService, StateService } from "./services/state.service";
-import { ICompiler } from "./types";
-import { IVerificationService, VerificationService } from "./services/verification.service";
-import { ContractProcessorService, IContractProcessorService } from "./services/contract-processor.service";
-import { IParallelProcessorService, ParallelProcessorService } from "./services/parallel-processor.service";
+import {
+  CompilerService,
+  ICompilerService
+} from "./services/compiler.service";
+import { ContractService,
+  ContractServiceOptions,
+  IContractService
+} from "./services/contract.service";
+import { INodeService,
+  NodeService,
+  NodeServiceOptions
+} from "./services/node.service";
+import { SolidityCompiler,
+  SolidityServiceOptions
+} from "./compilers/solidity.compiler";
+import { IStateService,
+  StateService,
+  StateServiceOptions
+} from "./services/state.service";
+import { IVerificationService,
+  VerificationService,
+  VerificationServiceOptions
+} from "./services/verification.service";
+import { ContractProcessorService,
+  IContractProcessorService
+} from "./services/contract-processor.service";
+import { IParallelProcessorService,
+  ParallelProcessorService
+} from "./services/parallel-processor.service";
 
 export interface IServices {
   contractService: IContractService;
@@ -18,6 +38,14 @@ export interface IServices {
   parallelProcessorService: IParallelProcessorService;
 }
 
+export interface BootstrapOptions {
+  contracts?: ContractServiceOptions;
+  nodes?: NodeServiceOptions;
+  state?: StateServiceOptions;
+  solidity?: SolidityServiceOptions;
+  verification?: VerificationServiceOptions;
+}
+
 /**
  * Create the application services
  *
@@ -25,18 +53,21 @@ export interface IServices {
  *
  * @returns   application services
  */
-export async function bootstrap(): Promise<IServices> {
-  const contractService: IContractService = new ContractService();
-  const nodeService: INodeService = new NodeService();
-  const stateService: IStateService = new StateService();
-  const solidity: ICompiler = new SolidityCompiler();
-  const compilerService: ICompilerService = new CompilerService(solidity);
-  const verificationService: IVerificationService = new VerificationService(nodeService);
-  const contractProcessorService: IContractProcessorService = new ContractProcessorService(
+export async function bootstrap(options?: BootstrapOptions): Promise<IServices> {
+  const contractService = new ContractService(options?.contracts);
+  const nodeService = new NodeService(options?.nodes);
+  const stateService = new StateService(options?.state);
+  const solidity = new SolidityCompiler(options?.solidity);
+  const compilerService = new CompilerService(solidity);
+  const verificationService = new VerificationService(
+    nodeService,
+    options?.verification
+  );
+  const contractProcessorService = new ContractProcessorService(
     compilerService,
     verificationService,
   );
-  const parallelProcessorService: IParallelProcessorService = new ParallelProcessorService(
+  const parallelProcessorService = new ParallelProcessorService(
     contractProcessorService,
     stateService,
   );

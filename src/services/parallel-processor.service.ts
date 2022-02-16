@@ -1,10 +1,11 @@
+import os from 'node:os';
 import { performance } from 'node:perf_hooks';
 import { toPercentage } from "@nkp/percentage";
 import { Result } from "@nkp/result";
-import { MAX_CONCURRENCY } from "../constants";
+import chalk from 'chalk';
 import { asyncQueue, ResultHandler, WorkCtx, WorkHandler } from "../libs/async-queue";
 import { getMetadata } from "../libs/metadata";
-import { eng, ymdhms } from "../libs/utils";
+import { eng, interpolateColor, ymdhms } from "../libs/utils";
 import { Contract } from "../models/contract";
 import { IContractProcessorService } from "./contract-processor.service";
 import { IStateService } from "./state.service";
@@ -74,18 +75,29 @@ export class ParallelProcessorService implements IParallelProcessorService {
 
     // determine concurrency
     const _concurrency = concurrency ?? 1;
-    if (_concurrency > MAX_CONCURRENCY) {
-      throw new Error(`concurrency must be ${MAX_CONCURRENCY}` +
-        ` or less (${_concurrency})`);
+    if (!Number.isFinite(_concurrency)) {
+      throw new Error(`Concurrency must be a number.` +
+        ` Given: ${String(_concurrency)}`);
+    }
+
+    if (_concurrency > os.cpus().length) {
+      const msg = `[${ymdhms()}] concurrency ${chalk.red(_concurrency)} is` +
+        ` greater than the` +
+        ` number of cpus ${chalk.green(os.cpus().length)}.` +
+        `\n  Concurrency will be limited by` +
+        ` the number of cpus.` +
+        `\n  Consider lowering concurrency to ` +
+        ` ${chalk.green(os.cpus().length)}.`;
+      console.warn(msg);
     }
 
     console.info(`[${ymdhms()}] parallel processing` +
       ` ${eng(contracts.length)} contracts` +
-      `  failFast=${failFast}` +
-      `  save=${save}` +
-      `  jump=${jump}` +
-      `  skip=${skip}` +
-      `  concurrency=${concurrency}`);
+      `  failFast=${chalk.green(failFast)}` +
+      `  save=${chalk.green(save)}` +
+      `  jump=${chalk.green(jump)}` +
+      `  skip=${chalk.green(skip)}` +
+      `  concurrency=${chalk.green(concurrency)}`);
 
     // does work in the queue
     const handlers: WorkHandler<Contract, ProcessResult>[] = [];
@@ -108,9 +120,11 @@ export class ParallelProcessorService implements IParallelProcessorService {
     )
 
     const end = performance.now();
+    const delta = Math.round(end - start);
+
     console.info(`[${ymdhms()}] finished processing` +
       ` ${eng(contracts.length)} contracts` +
-      `  took=${eng(Math.round(end - start))}ms`
+      ` ${eng(delta)}ms`
     );
   }
 
@@ -169,13 +183,18 @@ export class ParallelProcessorService implements IParallelProcessorService {
 
     const { index, total, item: contract } = ctx;
 
+    const duration = Math.round(ctx.end! - ctx.start);
+
     // eslint-disable-next-line prefer-template
-    const idCtx = `chainId=${contract.chainId}` +
-      `  address=${contract.address}` +
-      `  ${eng(Math
-          .round(ctx.end! - ctx.start))
-          .padStart(5, ' ')}ms` +
-      `  ${eng(index)}/${eng(total)}` +
+    const idCtx = `${contract.chainId}` +
+      `  ${contract.address}` +
+      `  ${interpolateColor(
+          200,
+          duration,
+          5_000,
+          eng(duration).padStart(5, ' ')
+        )}ms` +
+      `  ${`${eng(index)}/${eng(total)}`}` +
       `  ${toPercentage(index / total)}` +
       `  ${contract.name}`
     ;
@@ -186,22 +205,19 @@ export class ParallelProcessorService implements IParallelProcessorService {
       const output = result.value;
       if (ProcessResult.isSkipped(output)) {
         // handle skipped
-        const msg = `[${ymdhms()}] skipped:` +
-          `  ${idCtx}`;
-        console.debug(msg);
+        const msg = `[${ymdhms()}] ${chalk.magenta('skipped')}  ${idCtx}`;
+        console.info(msg);
       }
 
       else if (ProcessResult.isJump(output)) {
         // handle skipped
-        const msg = `[${ymdhms()}] jumped:` +
-          `  ${idCtx}`;
-        console.debug(msg);
+        const msg = `[${ymdhms()}] ${chalk.magenta('jumped')}  ${idCtx}`;
+        console.info(msg);
       }
 
       else if (ProcessResult.isUnverified(output)) {
         // handle unverified
-        const msg = `[${ymdhms()}] unverified:` +
-          `  ${idCtx}`;
+        const msg = `[${ymdhms()}] ${chalk.red('unverified')}  ${idCtx}`;
         await this
           .stateService
           .addLog(contract, 'unverified', msg);
@@ -211,8 +227,7 @@ export class ParallelProcessorService implements IParallelProcessorService {
 
       else if (ProcessResult.isVerified(output)) {
         // handle verified
-        const msg = `[${ymdhms()}] verified:` +
-          `  ${idCtx}`;
+        const msg = `[${ymdhms()}] ${chalk.green('✔️')}  ${idCtx}`;
         // success
         console.info(msg);
         if (save) {
@@ -225,7 +240,7 @@ export class ParallelProcessorService implements IParallelProcessorService {
     else {
       // handle error
       const err = result.value;
-      const msg = `[${ymdhms()}] error:` +
+      const msg = `[${ymdhms()}] ${chalk.red('error')}` +
         `  ${idCtx}` +
         `  ${err.toString()}`;
       await this.stateService.addLog(contract, 'error', msg);

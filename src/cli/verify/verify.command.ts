@@ -1,3 +1,4 @@
+import os from 'node:os';
 import { Command } from "../../types";
 import { VerifyCliArgs } from "./verify.types";
 import { handleVerifyCommand } from "./verify.handler";
@@ -16,37 +17,32 @@ export const registerVerifyCommand: Command = (argv) => {
     (args) => args
       .positional("--chainId", {
         type: "string",
-        describe: "Verify contracts at this chainId.",
+        describe: "Verify contracts of this chainId.",
       })
 
       .positional("--address", {
         type: "string",
-        describe: "Verify the contract with address. Requires --chainId.",
+        describe: "Verify the contract with this address and the given" +
+          " chainId. Requires --chainId.",
       })
 
-      .positional("--file", {
+      .positional("--dirs", {
         type: "string",
-        describe: "Verify contracts specified in a file (or stdin if" +
-          " file == '-'). File should be new-line separated list of" +
-          " contract directories",
-      })
-
-      .positional("--dir", {
-        type: "string",
-        describe: "Verify contracts within the provided new-line separated"
-          + " directories (or stdin if dir == '-').",
+        describe: "Verify contracts within the provided directories." +
+          " Expects a new-line separated string of directories." +
+          " Reads from stdin if --dirs=-",
       })
 
       .positional("--skip", {
         type: "boolean",
-        describe: "Skip contracts that have already have metadata (have" +
-          " been verified)",
+        describe: "Skip contracts that have already been verified" +
+          " i.e. contracts that have metadata",
         default: false,
       })
 
       .positional("--save", {
         type: "boolean",
-        describe: "Save metadta of successfully verified contracts",
+        describe: "Save metadata of successfully verified contracts",
         default: false,
       })
 
@@ -63,8 +59,9 @@ export const registerVerifyCommand: Command = (argv) => {
 
       .positional("--concurrency", {
         type: "number",
-        describe: "Number of contracts to verify in parallel",
-        default: process.env.CONCURRENCY,
+        describe: "Number of contracts to verify in parallel."
+          + " Defaults to the number of CPUs.",
+        default: os.cpus().length,
       })
       ,
 

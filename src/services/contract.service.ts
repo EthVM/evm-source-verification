@@ -1,7 +1,8 @@
 import { toPercentage } from '@nkp/percentage';
+import chalk from 'chalk';
 import fs from 'node:fs';
 import path from 'node:path';
-import { eng, mapGetOrCreate, toBN, toChainId, ymdhms } from "../libs/utils";
+import { eng, fabs, mapGetOrCreate, toBN, toChainId, ymdhms } from "../libs/utils";
 import { Contract } from '../models/contract';
 import { FsContract, FsContractOptions } from '../models/contract.fs';
 import { IContractStorage } from '../models/contract.storage';
@@ -262,7 +263,7 @@ export class ContractService implements IContractService {
   }
 
   /**
-   * directory with the application's contracts
+   * absolute directory with the application's contracts
    *
    * @example "contracts"
    */
@@ -295,8 +296,8 @@ export class ContractService implements IContractService {
    * @param options   configuration of the ContractService
    */
   constructor(options?: ContractServiceOptions) {
-    this.dirname = options?.dirname
-      ?? ContractService.DEFAULTS.DIRNAME;
+    this.dirname = fabs(options?.dirname
+      ?? ContractService.DEFAULTS.DIRNAME);
 
     this.configBasename = options?.configBasename
       ?? ContractService.DEFAULTS.CONFIG_BASENAME;
@@ -473,7 +474,8 @@ export class ContractService implements IContractService {
    */
   matchContractFilename(filename: string): null | ContractMatch {
     const { dirname } = this;
-    const regex = new RegExp(`^(${dirname}\\/([0-9]+)\\/(0x[a-f0-9]{40}))(\\/.*|$)`);
+    // TODO: use path.sep for windows
+    const regex = new RegExp(`^(${dirname}\\${path.sep}([0-9]+)\\${path.sep}(0x[a-f0-9]{40}))(\\${path.sep}.*|$)`);
     const rmatch = filename.match(regex);
     if (!rmatch) return null;
     const [, contractDirname, chainId, address, subpath] = rmatch;

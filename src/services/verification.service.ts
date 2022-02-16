@@ -1,4 +1,6 @@
-import { hasOwn, toBN } from "../libs/utils";
+import chalk from 'chalk';
+import { performance } from 'node:perf_hooks';
+import { eng, hasOwn, toBN } from "../libs/utils";
 import { directVerification, opCodeCodeVerification, runtimeCodeVerification } from "../libs/verifications";
 import { CompiledOutput, ContractConfig, ContractSourceFile, ContractSourceObject } from "../types";
 import { INodeService } from "./node.service";
@@ -36,10 +38,27 @@ export interface VerifyContractResult {
   compiler: string;
 }
 
+/**
+ * Configuration options for the VerificationService
+ */
+export interface VerificationServiceOptions {
+  ignoreWarnings?: boolean;
+}
+
 
 export class VerificationService implements IVerificationService {
-  constructor(private readonly nodeService: INodeService) {
-    //
+  static readonly DEFAULTS = {
+    IGNORE_WARNINGS: false,
+  }
+
+  private readonly ignoreWarnings: boolean;
+
+  constructor(
+    private readonly nodeService: INodeService,
+    options?: VerificationServiceOptions,
+  ) {
+    this.ignoreWarnings = options?.ignoreWarnings
+      ?? VerificationService.DEFAULTS.IGNORE_WARNINGS;
   }
 
 
@@ -80,8 +99,32 @@ export class VerificationService implements IVerificationService {
     const mainSrcObj = mainSrcFile[name];
     const compiledCode = mainSrcObj.evm.deployedBytecode.object;
 
-    // TODO: handle liveCode = 0x (contract has already self destructed)
-    const liveCode = await web3.eth.getCode(address);
+    const start = performance.now();
+    const liveCode = await web3
+      .eth
+      .getCode(address)
+      .catch(err => {
+        const end = performance.now();
+        const delta = Math.round(end - start);
+        const msg = 'eth_getCode errored' +
+          `  took=${delta}ms` +
+          `  chainId=${chalk.green(chainId)}` +
+          `  address=${chalk.green(address)}` +
+          `  err=${err.toString()}`
+        console.warn(msg);
+        throw err;
+      });
+    const end = performance.now();
+    const delta = Math.round(end - start);
+
+    if (!this.ignoreWarnings && delta > 5_000) {
+      // detect slow node...
+      const msg = `WARNING eth_getCode took ${chalk.red(eng(delta))}ms` +
+        `  chainId=${chalk.green(chainId)}` +
+        `  address=${chalk.green(address)}`;
+      console.warn(msg);
+    }
+
 
     if (liveCode === '0x') {
       const msg = `liveCode is "0x". The contract has probably self destructed` +

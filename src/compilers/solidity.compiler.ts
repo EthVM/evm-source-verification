@@ -82,7 +82,7 @@ export class SolidityCompiler implements ICompiler {
     await fs.promises.mkdir(tmpDirname, { recursive: true });
 
     const url = `https://raw.githubusercontent.com/ethereum/solc-bin/gh-pages/linux-amd64/solc-linux-amd64-${compilername}`;
-    console.debug(`downloading compiler "${compilername}" -> "${tmp}"`);
+    console.info(`downloading compiler "${compilername}" -> "${tmp}"`);
     await new Promise<void>((res, rej) => https.get(url, (hres) => {
       const cws = fs.createWriteStream(tmp);
       hres.pipe(cws);
@@ -93,20 +93,20 @@ export class SolidityCompiler implements ICompiler {
     // ensure compilers dir exists
     const dirname = path.dirname(compilerFilename);
     if (!(await fexists(dirname))) {
-      console.debug(`creating ${frel(dirname)}`);
+      console.info(`creating ${frel(dirname)}`);
       await fs.promises.mkdir(dirname, { recursive: true });
     }
 
     // make the compiler executable
-    console.debug(`chmod +x "${tmp}"`);
+    console.info(`chmod +x "${tmp}"`);
     await fs.promises.chmod(tmp, 0o700);
 
     // mv to compiler to proper location
-    console.debug(`mv "${tmp}" -> "${frel(compilerFilename)}"`);
+    console.info(`mv "${tmp}" -> "${frel(compilerFilename)}"`);
     await fs.promises.rename(tmp, compilerFilename);
 
     // compiler ready to use
-    console.debug(`compiler "${compilername}" ("${compilerFilename}") is ready`);
+    console.info(`compiler "${compilername}" ("${compilerFilename}") is ready`);
   }
 
 
