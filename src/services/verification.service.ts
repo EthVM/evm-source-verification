@@ -1,10 +1,13 @@
 import chalk from 'chalk';
 import { performance } from 'node:perf_hooks';
-import { eng, hasOwn, toBN, toChainId } from "../libs/utils";
+import { eng, hasOwn, toChainId } from "../libs/utils";
 import { directVerification, opCodeCodeVerification, runtimeCodeVerification } from "../libs/verifications";
+import { logger } from '../logger';
 import { CompiledOutput, ContractConfig, ContractSourceFile, ContractSourceObject } from "../types";
 import { INodeService } from "./node.service";
 
+
+const log = logger.child({});
 
 /**
  * Output from contract verification
@@ -96,7 +99,7 @@ export class VerificationService {
           `  chainId=${chalk.green(chainId)}` +
           `  address=${chalk.green(address)}` +
           `  err=${err.toString()}`
-        console.warn(msg);
+        log.warn(msg);
         throw err;
       });
     const end = performance.now();
@@ -107,7 +110,7 @@ export class VerificationService {
       const msg = `WARNING eth_getCode took ${chalk.red(eng(delta))}ms` +
         `  chainId=${chalk.green(chainId)}` +
         `  address=${chalk.green(address)}`;
-      console.warn(msg);
+      log.warn(msg);
     }
 
 

@@ -2,7 +2,9 @@ import { performance } from 'node:perf_hooks';
 import { LinkedList } from "@nkp/linked-list";
 import { Result } from "@nkp/result";
 import { Mutex } from "async-mutex";
-import { ymdhms } from "./utils";
+import { logger } from '../logger';
+
+const log = logger.child({});
 
 type Work<T, R> =
   | Work.Processing<T, R>
@@ -127,7 +129,7 @@ export function asyncQueue<T, R>(
     tick();
 
     function forceStop(err: Error) {
-      console.info(`[${ymdhms()}] stopping... ${err.toString()}`);
+      log.info(`stopping... ${err.toString()}`);
       isStopping = { err };
       // empty the completed queuje
       while (completedQueue.size) { completedQueue.shift(); }
@@ -179,10 +181,10 @@ export function asyncQueue<T, R>(
         // wait for the workQueue to empty
         // before rejecting the outer promise empty
         if (!workQueue.size) {
-          console.info(`[${ymdhms()}] queue empty... stopping`);
+          log.info(`queue empty... stopping`);
           return rej(isStopping.err);
         }
-        console.info(`[${ymdhms()}] waiting for workQueue` +
+        log.info(`waiting for workQueue` +
           ` to empty before stopping...` +
           ` ${workQueue.size} items left`);
         return;

@@ -5,11 +5,14 @@ import { Result } from "@nkp/result";
 import chalk from 'chalk';
 import { asyncQueue, ResultHandler, WorkCtx, WorkHandler } from "../libs/async-queue";
 import { getMetadata } from "../libs/metadata";
-import { eng, interpolateColor, ymdhms } from "../libs/utils";
+import { eng, interpolateColor } from "../libs/utils";
 import { Contract } from "../models/contract";
 import { IStateService } from "./state.service";
 import { VerificationService, VerifyContractResult } from "./verification.service";
 import { ICompilerService } from './compiler.service';
+import { logger } from '../logger';
+
+const log = logger.child({});
 
 export interface IProcesorService {
   /**
@@ -82,17 +85,17 @@ export class ProcessorService implements IProcesorService {
     }
 
     if (_concurrency > os.cpus().length) {
-      const msg = `[${ymdhms()}] concurrency ${chalk.red(_concurrency)} is` +
+      const msg = `concurrency ${chalk.red(_concurrency)} is` +
         ` greater than the` +
         ` number of cpus ${chalk.green(os.cpus().length)}.` +
         `\n  Concurrency will be limited by` +
         ` the number of cpus.` +
         `\n  Consider lowering concurrency to ` +
         ` ${chalk.green(os.cpus().length)}.`;
-      console.warn(msg);
+      log.warn(msg);
     }
 
-    console.info(`[${ymdhms()}] processing` +
+    log.info(`processing` +
       ` ${eng(contracts.length)} contracts` +
       `  failFast=${chalk.green(failFast ?? false)}` +
       `  save=${chalk.green(save ?? false)}` +
@@ -123,7 +126,7 @@ export class ProcessorService implements IProcesorService {
     const end = performance.now();
     const delta = Math.round(end - start);
 
-    console.info(`[${ymdhms()}] finished processing` +
+    log.info(`finished processing` +
       ` ${eng(contracts.length)} contracts` +
       ` ${eng(delta)}ms`
     );
@@ -221,31 +224,31 @@ export class ProcessorService implements IProcesorService {
       const output = result.value;
       if (ProcessResult.isSkipped(output)) {
         // handle skipped
-        const msg = `[${ymdhms()}] ${chalk.magenta('skipped')}  ${idCtx}`;
-        console.info(msg);
+        const msg = `${chalk.magenta('⇢ skipped')}  ${idCtx}`;
+        log.info(msg);
       }
 
       else if (ProcessResult.isJump(output)) {
         // handle skipped
-        const msg = `[${ymdhms()}] ${chalk.magenta('jumped')}  ${idCtx}`;
-        console.info(msg);
+        const msg = `${chalk.magenta('↷ jumped')}  ${idCtx}`;
+        log.info(msg);
       }
 
       else if (ProcessResult.isUnverified(output)) {
         // handle unverified
-        const msg = `[${ymdhms()}] ${chalk.red('unverified')}  ${idCtx}`;
+        const msg = `${chalk.red('x unverified')}  ${idCtx}`;
         await this
           .stateService
           .addLog(contract, 'unverified', msg);
         if (failFast) return new Error(msg);
-        console.warn(msg);
+        log.warn(msg);
       }
 
       else if (ProcessResult.isVerified(output)) {
         // handle verified
-        const msg = `[${ymdhms()}] ${chalk.green('✔')}  ${idCtx}`;
+        const msg = `${chalk.green('✔')}  ${idCtx}`;
         // success
-        console.info(msg);
+        log.info(msg);
         if (save) {
           const metadata = getMetadata(output.verification);
           await contract.storage.saveMetadata(metadata);
@@ -256,12 +259,12 @@ export class ProcessorService implements IProcesorService {
     else {
       // handle error
       const err = result.value;
-      const msg = `[${ymdhms()}] ${chalk.red('error')}` +
+      const msg = `${chalk.red('x err')}` +
         `  ${idCtx}` +
         `  ${err.toString()}`;
       await this.stateService.addLog(contract, 'error', msg);
       if (failFast) return new Error(msg);
-      console.warn(msg);
+      log.warn(msg);
     }
   }
 }

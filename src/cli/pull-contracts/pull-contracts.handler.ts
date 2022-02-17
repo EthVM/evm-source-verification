@@ -4,6 +4,9 @@ import { getOctokit } from "@actions/github";
 import { PullContractsCliArgs } from "./pull-contracts.types";
 import { bootstrap } from "../../bootstrap";
 import { MAX_GIT_DIFF_FILES } from '../../constants';
+import { logger } from '../../logger';
+
+const log = logger.child({});
 
 /**
  * Executes the `pull-contracts` command
@@ -28,10 +31,10 @@ export async function pullContractsCommand(
     outPrNameFile,
   } = args;
 
-  console.info(`repo:   ${repo}`);
-  console.info(`owner:  ${owner}`);
-  console.info(`base:   ${base}`);
-  console.info(`head:   ${head}`);
+  log.info(`repo:   ${repo}`);
+  log.info(`owner:  ${owner}`);
+  log.info(`base:   ${base}`);
+  log.info(`head:   ${head}`);
 
   const services = await bootstrap();
 
@@ -43,7 +46,7 @@ export async function pullContractsCommand(
     throw new Error(msg);
   }
 
-  console.info(`${chalk.green('✔')} fetching changes from GitHub`);
+  log.info(`${chalk.green('✔')} fetching changes from GitHub`);
 
   // get changed files from GitHub
   const client = getOctokit(token!);
@@ -51,10 +54,10 @@ export async function pullContractsCommand(
 
   const files: components["schemas"]["diff-entry"][] = gres.data.files ?? [];
 
-  console.info(`git diff ${files.length} files` +
+  log.info(`git diff ${files.length} files` +
     ` ${owner}:${repo} : ${head} -> ${base}`);
 
-  console.info(files
+  log.info(files
     .map((file, i) => `  ${i + 1}. ${file
       .status
       .padStart(6, ' ')}: ${file.filename}`)

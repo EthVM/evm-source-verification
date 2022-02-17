@@ -4,6 +4,9 @@ import https from "node:https";
 import { fexists, mapGetOrCreate, frel, isSafeFilename, pexecPipe, fabs } from "../libs/utils";
 import { ContractInput, CompiledOutput, ICompiler } from "../types";
 import { SOLIDITY_COMPILE_TIMEOUT, SOLIDITY_MAX_OUTPUT_BUFFER_SIZE } from '../constants';
+import { logger } from '../logger';
+
+const log = logger.child({});
 
 /**
  * Configuration options for the SolidityService
@@ -88,7 +91,7 @@ export class SolidityCompiler implements ICompiler {
     await fs.promises.mkdir(tmpDirname, { recursive: true });
 
     const url = `https://raw.githubusercontent.com/ethereum/solc-bin/gh-pages/linux-amd64/solc-linux-amd64-${compilername}`;
-    console.info(`downloading compiler "${compilername}" -> "${tmp}"`);
+    log.info(`downloading compiler "${compilername}" -> "${tmp}"`);
     await new Promise<void>((res, rej) => https.get(url, (hres) => {
       const cws = fs.createWriteStream(tmp);
       hres.pipe(cws);
@@ -99,20 +102,20 @@ export class SolidityCompiler implements ICompiler {
     // ensure compilers dir exists
     const dirname = path.dirname(compilerFilename);
     if (!(await fexists(dirname))) {
-      console.info(`creating ${frel(dirname)}`);
+      log.info(`creating ${frel(dirname)}`);
       await fs.promises.mkdir(dirname, { recursive: true });
     }
 
     // make the compiler executable
-    console.info(`chmod +x "${tmp}"`);
+    log.info(`chmod +x "${tmp}"`);
     await fs.promises.chmod(tmp, 0o700);
 
     // mv to compiler to proper location
-    console.info(`mv "${tmp}" -> "${frel(compilerFilename)}"`);
+    log.info(`mv "${tmp}" -> "${frel(compilerFilename)}"`);
     await fs.promises.rename(tmp, compilerFilename);
 
     // compiler ready to use
-    console.info(`compiler "${compilername}" ("${compilerFilename}") is ready`);
+    log.info(`compiler "${compilername}" ("${compilerFilename}") is ready`);
   }
 
 
@@ -156,7 +159,7 @@ async function solidityCompile(
   if (stderr) {
     const msg = 'WARNING: stderr from solidity:' +
       ` "${compilerFilename}": ${stderr}`;
-    console.warn(msg);
+    log.warn(msg);
   }
 
   const json: CompiledOutput = JSON.parse(stdout);

@@ -1,7 +1,8 @@
 import { toPercentage } from '@nkp/percentage';
 import fs from 'node:fs';
 import path from 'node:path';
-import { eng, fabs, mapGetOrCreate, toChainId, ymdhms } from "../libs/utils";
+import { eng, fabs, mapGetOrCreate, toChainId } from "../libs/utils";
+import { logger } from '../logger';
 import { Contract } from '../models/contract';
 import { ContractStorage, ContractStorageOptions } from '../models/contract.storage';
 import {
@@ -11,6 +12,7 @@ import {
   ChainId,
 } from "../types";
 
+const log = logger.child({});
 
 /**
  * Result of matching a single contract filename
@@ -306,7 +308,7 @@ export class ContractService {
     let i = 0;
     const total = args.length;
 
-    console.log(`[${ymdhms()}] loading ${eng(total)} contracts...`);
+    logger.info(`loading ${eng(total)} contracts...`);
 
     const LOG_EVERY = 1000;
     for (const arg of args) {
@@ -317,7 +319,7 @@ export class ContractService {
       );
 
       if ((i % LOG_EVERY) === 0) {
-        console.log(`[${ymdhms()}] loading contracts...` +
+        logger.info(`loading contracts...` +
           `  ${eng(i)}/${eng(total)}` +
           `  ${toPercentage(i/total)}`);
       }

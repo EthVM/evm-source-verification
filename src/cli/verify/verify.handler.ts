@@ -3,9 +3,12 @@ import chalk from "chalk";
 import { VerifyCliArgs } from "./verify.types";
 import { bootstrap, IServices } from "../../bootstrap";
 import { Address, ChainId } from "../../types";
-import { toBN, ymdhms } from "../../libs/utils";
+import { toBN } from "../../libs/utils";
 import { Contract } from "../../models/contract";
 import { ParallelProcessorOptions } from "../../services/processor.service";
+import { logger } from "../../logger";
+
+const log = logger.child({});
 
 /**
  * Execution the `verify` command
@@ -55,7 +58,7 @@ export async function handleVerifyCommand(args: VerifyCliArgs): Promise<void> {
   }
 
   // success
-  console.info(`[${ymdhms()}] ${chalk.green('✔')} success: verification complete`);
+  log.info(`${chalk.green('✔')} success: verification complete`);
 }
 
 

@@ -97,7 +97,7 @@ describe('async-queue', () => {
       beforeWork.push(ctx.item);
       await delay(ctx.item);
       afterWork.push(ctx.item);
-      if (ctx.item === 600) throw new Error('something went wrong');
+      if (ctx.item === 600) throw new Error('test: something went wrong');
       return ctx.item + 1;
     };
 
@@ -129,7 +129,7 @@ describe('async-queue', () => {
     )
 
     expect(didReject).toBeTruthy();
-    expect(reason!.message).toEqual('something went wrong');
+    expect(reason!.message).toEqual('test: something went wrong');
 
     // expect: handlers called in ordered round-robin
     expect(handlerCalls).toEqual(Array.from({ length: items.length }, (_, i) => i));
@@ -144,7 +144,7 @@ describe('async-queue', () => {
     expect(results.map(result => result.value)).toEqual([
       901,
       1,
-      new Error('something went wrong'),
+      new Error('test: something went wrong'),
     ]);
   });
 });

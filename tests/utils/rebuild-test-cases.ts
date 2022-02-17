@@ -23,19 +23,22 @@ import { getMetadata } from '../../src/libs/metadata';
 import { bootstrap } from '../../src/bootstrap';
 import { frel } from '../../src/libs/utils';
 import { TestContractService } from './test-contract-service';
+import { logger } from '../../src/logger';
 
 prompt();
 
 const COOLOFF_DELAY = 250;
 const DOUBLE_CONFIRMATION_DELAY = 1_000;
 
+const log = logger.child({});
+
 /**
  * Regenerate test cases
  */
 async function prompt() {
-  console.log('=== test case rebuilder ===');
+  log.info('=== test case rebuilder ===');
 
-  console.log('you will be prompted to remove old or unknown files and regenerate new ones');
+  log.info('you will be prompted to remove old or unknown files and regenerate new ones');
 
   const rl = readline.createInterface(process.stdin, process.stdout);
 
@@ -45,8 +48,8 @@ async function prompt() {
   const rmFilenames = await getFilesnamesToRemove(tcontracts);
 
   // print files to remove
-  console.log(chalk.bold.red(`${rmFilenames.length} files to remove:`))
-  if (rmFilenames.length) console.log(`  ${rmFilenames
+  log.info(chalk.bold.red(`${rmFilenames.length} files to remove:`))
+  if (rmFilenames.length) log.info(`  ${rmFilenames
     .map(frel)
     .map(f => chalk.red(f))
     .join('\n  ')}`);
@@ -60,7 +63,7 @@ async function prompt() {
   // confirm once
   async function handleShouldRegenerate(ans: string): Promise<void> {
     if (ans.toLowerCase() !== 'y') {
-      console.log('exiting');
+      log.info('exiting');
       process.exit(0);
     }
     // wait in-case accidental y
@@ -74,17 +77,17 @@ async function prompt() {
   // confirm twice
   async function shouldDefinitelyRegenerate(ans: string) {
     if (ans.toLowerCase() !== 'y') {
-      console.log('exiting');
+      log.info('exiting');
       process.exit(0);
     }
 
     // start rebuilding
-    console.log('rebuilding test cases...');
+    log.info('rebuilding test cases...');
 
     // remove build / unknown files
-    console.log(`${chalk.red('removing')} ${rmFilenames.length} files:`)
+    log.info(`${chalk.red('removing')} ${rmFilenames.length} files:`)
     for (const rmFilename of rmFilenames) {
-      console.log(`${chalk.red('removing')}: ${frel(rmFilename)}`);
+      log.info(`${chalk.red('removing')}: ${frel(rmFilename)}`);
       await fs.promises.rm(rmFilename);
       await delay(COOLOFF_DELAY);
     }
@@ -97,11 +100,11 @@ async function prompt() {
     } = services;
 
     // regenerate build files
-    console.log('regenerating files');
+    log.info('regenerating files');
     let i = 0;
     for (const testCase of tcontracts) {
       i += 1;
-      console.log(`=== ${chalk.magenta('rebuilding')}` +
+      log.info(`=== ${chalk.magenta('rebuilding')}` +
         `  idx=${chalk.green(i)}` +
         `  chainId=${chalk.green(testCase.chainId)}` +
         `  address=${chalk.green(testCase.address)}`);
@@ -112,7 +115,7 @@ async function prompt() {
       );
     }
 
-    console.log('done');
+    log.info('done');
     process.exit(0);
   }
 }
@@ -168,7 +171,7 @@ async function rebuildTestCase(
   const config = await contract.storage.getConfig();
   const input = await contract.storage.getInput();
 
-  console.log(`compiling` +
+  log.info(`compiling` +
     `  name=${chalk.green(config.name)}` +
     `  compiler=${chalk.green(config.compiler)}`);
   const output = await compilerService.compile(config, input)
@@ -176,14 +179,14 @@ async function rebuildTestCase(
   const verification = await verificationService.verify(output, config);
   const metadata = getMetadata(verification);
 
-  console.log(`saving: ${frel(contract.getOutputFilename())}`)
+  log.info(`saving: ${frel(contract.getOutputFilename())}`)
   await fs.promises.writeFile(
     contract.getOutputFilename(),
     JSON.stringify(output, null, 2),
   );
   await delay(COOLOFF_DELAY);
 
-  console.log(`saving: ${frel(contract.storage.getMetadataFilename())}`)
+  log.info(`saving: ${frel(contract.storage.getMetadataFilename())}`)
   await fs.promises.writeFile(
     contract.storage.getMetadataFilename(),
     JSON.stringify(metadata, null, 2),

@@ -1,10 +1,17 @@
-name: Test main Push
+name: Build and Test
 
 on:
   push:
     branches:
       - main
       - devop/tests
+  pull_request:
+    branches:
+      - main
+      - devop/tests
+    paths-ignore:
+      # if contracts/** has changed, let the PR be handled by the `pull_contracts` action
+      - 'contracts/**'
 
 jobs:
   Validate:
@@ -24,7 +31,7 @@ jobs:
       - name: "install, build, test"
         run: |
           npm ci
-          npm run test
+          npm run test:ci
           npm run build
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

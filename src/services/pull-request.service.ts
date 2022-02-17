@@ -1,10 +1,12 @@
 import fs from 'node:fs';
-import { ymdhms } from "../libs/utils";
 import { Contract } from "../models/contract";
 import { ContractPath, ContractService } from "./contract.service";
 import { IProcesorService } from './processor.service';
 import { IDownloadService } from './download.service';
 import { validateConfig, validateInput } from '../libs/contract.validation';
+import { logger } from '../logger';
+
+const log = logger.child({});
 
 /**
  * Subtype of
@@ -209,14 +211,14 @@ export class PullRequestService {
         // eslint-disable-next-line prefer-destructuring
         const dirname = contractMatch.dirname;
 
-        console.info(`[${ymdhms()}] creating config dir ${dirname}`);
+        log.info(`creating config dir ${dirname}`);
         await fs.promises.mkdir(dirname, { recursive: true });
 
         // download config
         const configFilename = contractMatch.configFilename!;
         const configFile = fileMap.get(configFilename)!;
         const configUrl = configFile.raw_url;
-        console.info(`[${ymdhms()}] downloading config`
+        log.info(`downloading config`
           + `  chainId=${contractMatch.chainId}`
           + `  address=${contractMatch.address}`
           + `  url=${configUrl}`
@@ -228,7 +230,7 @@ export class PullRequestService {
         const inputFilename = contractMatch.inputFilename!;
         const inputFile = fileMap.get(inputFilename)!;
         const inputUrl = inputFile.raw_url;
-        console.info(`[${ymdhms()}] downloading input`
+        log.info(`downloading input`
           + `  chainId=${contractMatch.chainId}`
           + `  address=${contractMatch.address}`
           + `  url=${inputUrl}`
@@ -300,7 +302,7 @@ export class PullRequestService {
       let branchName = `verified-${contracts.length}`;
       branchName += `-${contracts[0].address.slice(0, 12)}`;
       branchName += `-${rand}`;
-      console.info(`saving branch name:` +
+      log.info(`saving branch name:` +
         `\n  filename: "${outBranchNameFile}"` +
         `\n  content: ${branchName}`)
       await fs.promises.writeFile(outBranchNameFile, branchName, 'utf-8');
@@ -311,7 +313,7 @@ export class PullRequestService {
       let commitTitle = `verified-${contracts.length}`;
       commitTitle += `-${contracts[0].address.slice(0, 12)}`;
       commitTitle += `-${rand}`;
-      console.info(`saving commit title:` +
+      log.info(`saving commit title:` +
         `\n  filename: "${outBranchNameFile}"` +
         `\n  content: ${commitTitle}`)
       await fs.promises.writeFile(outCommitTitleFile, commitTitle, 'utf-8');
@@ -322,7 +324,7 @@ export class PullRequestService {
       let prName = `verified-${contracts.length}`;
       prName += `-${contracts[0].address.slice(0, 12)}`;
       prName += `-${rand}`;
-      console.info(`saving pr name:` +
+      log.info(`saving pr name:` +
         `\n  filename: "${outBranchNameFile}"` +
         `\n  content: ${prName}`)
       await fs.promises.writeFile(outPrNameFile, prName, 'utf-8');
@@ -338,7 +340,7 @@ export class PullRequestService {
           .join(',')}`
         )
         .join('\n')
-      console.info(`saving message body:` +
+      log.info(`saving message body:` +
         `\n  filename: "${outBodyFile}"` +
         `\n  content: ${body}`)
       await fs.promises.writeFile(outBodyFile, body, 'utf-8');
