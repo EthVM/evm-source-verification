@@ -7,7 +7,7 @@ import { fexists, tmpFilename } from "../../libs/utils";
 import { TestContract } from "../../models/contract.test.util";
 import { TestContractService } from "../../services/contract.service.test.util";
 
-describe('PullRequestService', () => {
+describe('PullContractsService', () => {
   let tcontracts: TestContract[];
   let pullContractsService: PullContractsService;
 
