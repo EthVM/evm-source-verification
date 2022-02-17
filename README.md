@@ -39,11 +39,11 @@ Special thanks to [Sourcify](https://sourcify.dev/) and [Etherscan](https://ethe
 
 ## Contract Files
 
-Contracts require an [`input.json`](#inputjson) and [`configs.json`](#configsjson) file for verification. These specify the source contract's source files and identity.
+Contracts require an [`input.json`](#inputjson) and [`configs.json`](#configsjson) file for verification. `input.json` specifies the contract's source files and `configs.json` specifies it's identity.
 
 ![my-contract](./assets/my-contract.png)
 
-[Contract that are successfully verified](#verified-contracts) (and whose result is saved with `--save`) will have a [`metadata.json`](#metadatajson) file containing the verification output.
+[Contract that are successfully verified](#verified-contracts) will have a [`metadata.json`](#metadatajson) file containing the verification output.
 
 ![my-contract-verified](./assets/my-contract-verified.png)
 
@@ -63,7 +63,7 @@ For example:
 
 ### configs.json
 
-`configs.json` provides the additional information about specifying the contract that isn't required by the compiler.
+`configs.json` provides the additional information about specifying the contract's identity.
 
 For example:
 
@@ -81,7 +81,7 @@ For example:
 
 ## Verified Contracts
 
-Officially verified contracts are stored under `contracts/<chainId>/<contractAddress>` with their `input.json`, `configs.json` and `metadata.json`.
+Verified contracts are stored under `contracts/<chainId>/<contractAddress>` with their `input.json`, `configs.json` and `metadata.json`.
 
 The `chainId` for mainnet is `1`.
 
