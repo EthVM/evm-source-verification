@@ -1,0 +1,30 @@
+name: Test main Push
+
+on:
+  push:
+    branches:
+      - main
+      - devop/tests
+
+jobs:
+  Validate:
+    runs-on: ubuntu-18.04
+    steps:
+      # https://github.com/actions/checkout
+      - name: checkout
+        uses: actions/checkout@v2
+
+      - name: install NodeJS
+        uses: actions/setup-node@v2
+
+      - name: set NPM version
+        run: npm i -g npm@6.14.16
+
+      # build & test
+      - name: "install, build, test"
+        run: |
+          npm ci
+          npm run test
+          npm run build
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

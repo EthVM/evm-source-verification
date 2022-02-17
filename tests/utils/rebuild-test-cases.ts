@@ -4,8 +4,7 @@
  * Run with `ts-node`
  *
  * @example
- * ```
- * sh
+ * ```sh
  * npx ts-node tests/utils/rebuild-test-cases.ts
  * ```
  *
@@ -15,14 +14,15 @@
 import readline from 'node:readline';
 import path from 'node:path';
 import fs from 'node:fs';
+import chalk from 'chalk';
 import { delay } from '@nkp/delay';
-import { TestCase } from './test-case';
+import { TestContract } from './test-contract';
 import { ICompilerService } from '../../src/services/compiler.service';
-import { IVerificationService } from '../../src/services/verification.service';
+import { VerificationService } from '../../src/services/verification.service';
 import { getMetadata } from '../../src/libs/metadata';
 import { bootstrap } from '../../src/bootstrap';
 import { frel } from '../../src/libs/utils';
-import { getTestCases } from './get-test-cases';
+import { TestContractService } from './test-contract-service';
 
 prompt();
 
@@ -40,17 +40,20 @@ async function prompt() {
   const rl = readline.createInterface(process.stdin, process.stdout);
 
   // get all test cases
-  const testCases = await getTestCases();
-
-  const rmFilenames = await getFilesnamesToRemove(testCases);
+  const tcontractService = new TestContractService();
+  const tcontracts = await tcontractService.getTestCases();
+  const rmFilenames = await getFilesnamesToRemove(tcontracts);
 
   // print files to remove
-  console.log(`${rmFilenames.length} files to remove:`)
-  if (rmFilenames.length) console.log(`  ${rmFilenames.join('\n  ')}`);
+  console.log(chalk.bold.red(`${rmFilenames.length} files to remove:`))
+  if (rmFilenames.length) console.log(`  ${rmFilenames
+    .map(frel)
+    .map(f => chalk.red(f))
+    .join('\n  ')}`);
 
   // ask the developer
   rl.question(
-    'Are you sure you want to remove and rebuild test cases? (y/n): ',
+    `Are you sure you want to ${chalk.bold.red('delete')} and rebuild test cases? (y/n): `,
     handleShouldRegenerate,
   );
 
@@ -79,9 +82,9 @@ async function prompt() {
     console.log('rebuilding test cases...');
 
     // remove build / unknown files
-    console.log(`removing ${rmFilenames.length} files:`)
+    console.log(`${chalk.red('removing')} ${rmFilenames.length} files:`)
     for (const rmFilename of rmFilenames) {
-      console.log(`removing: ${frel(rmFilename)}`);
+      console.log(`${chalk.red('removing')}: ${frel(rmFilename)}`);
       await fs.promises.rm(rmFilename);
       await delay(COOLOFF_DELAY);
     }
@@ -96,18 +99,17 @@ async function prompt() {
     // regenerate build files
     console.log('regenerating files');
     let i = 0;
-    for (const testCase of testCases) {
+    for (const testCase of tcontracts) {
       i += 1;
-      console.log('=== rebuidling' +
-        `  idx=${i}` +
-        `  chainId="${testCase.chainId}"` +
-        `  address="${testCase.address}"`);
+      console.log(`=== ${chalk.magenta('rebuilding')}` +
+        `  idx=${chalk.green(i)}` +
+        `  chainId=${chalk.green(testCase.chainId)}` +
+        `  address=${chalk.green(testCase.address)}`);
       await rebuildTestCase(
         compilerService,
         verificationService,
         testCase,
       );
-      await delay(COOLOFF_DELAY);
     }
 
     console.log('done');
@@ -118,26 +120,26 @@ async function prompt() {
 /**
  * Get the filenames to strip from test cases
  *
- * @param testCases
+ * @param tcontracts
  * @returns
  */
-async function getFilesnamesToRemove(testCases: TestCase[]): Promise<string[]> {
+async function getFilesnamesToRemove(tcontracts: TestContract[]): Promise<string[]> {
   // get all files to remove
   const rmFiles: string[] = await Promise
-    .all(testCases.map(async testCase => {
+    .all(tcontracts.map(async contract => {
       // remove everything except input and config files
       const keepFilenames = new Set([
-        testCase.getInputFilename(),
-        testCase.getConfigFilename(),
+        contract.storage.getInputFilename(),
+        contract.storage.getConfigFilename(),
       ]);
 
       const actualDirents = await fs
         .promises
-        .readdir(testCase.dirname, { withFileTypes: true });
+        .readdir(contract.storage.getDirname(), { withFileTypes: true });
 
       // full absolute filenames
       const actualFilenames = actualDirents
-        .map(dirent => path.join(testCase.dirname, dirent.name));
+        .map(dirent => path.join(contract.storage.getDirname(), dirent.name));
       
       //
       const unexpectedFilenames = actualFilenames
@@ -155,34 +157,36 @@ async function getFilesnamesToRemove(testCases: TestCase[]): Promise<string[]> {
  *
  * @param compilerService
  * @param verificationService
- * @param testCase
+ * @param contract
  */
 async function rebuildTestCase(
   compilerService: ICompilerService,
-  verificationService: IVerificationService,
-  testCase: TestCase,
+  verificationService: VerificationService,
+  contract: TestContract,
 ): Promise<void> {
   // eslint-disable-next-line no-shadow
-  const config = await testCase.getConfig();
-  const input = await testCase.getInput();
+  const config = await contract.storage.getConfig();
+  const input = await contract.storage.getInput();
 
   console.log(`compiling` +
-    `  name="${config.name}"` +
-    `  compiler="${config.compiler}"`);
+    `  name=${chalk.green(config.name)}` +
+    `  compiler=${chalk.green(config.compiler)}`);
   const output = await compilerService.compile(config, input)
 
   const verification = await verificationService.verify(output, config);
   const metadata = getMetadata(verification);
 
-  console.log(`saving: "${frel(testCase.getOutputFilename())}"`)
+  console.log(`saving: ${frel(contract.getOutputFilename())}`)
   await fs.promises.writeFile(
-    testCase.getOutputFilename(),
+    contract.getOutputFilename(),
     JSON.stringify(output, null, 2),
   );
+  await delay(COOLOFF_DELAY);
 
-  console.log(`saving: "${frel(testCase.getMetadataFilename())}"`)
+  console.log(`saving: ${frel(contract.storage.getMetadataFilename())}`)
   await fs.promises.writeFile(
-    testCase.getMetadataFilename(),
+    contract.storage.getMetadataFilename(),
     JSON.stringify(metadata, null, 2),
   );
+  await delay(COOLOFF_DELAY);
 }

@@ -1,8 +1,7 @@
 import fs from 'node:fs';
 import path from "node:path";
 import https from "node:https";
-import { delay } from '@nkp/delay';
-import { fexists, mapGetOrCreate, tmpFile, frel, isSafeFilename, pexecPipe, fabs } from "../libs/utils";
+import { fexists, mapGetOrCreate, frel, isSafeFilename, pexecPipe, fabs } from "../libs/utils";
 import { ContractInput, CompiledOutput, ICompiler } from "../types";
 import { SOLIDITY_COMPILE_TIMEOUT, SOLIDITY_MAX_OUTPUT_BUFFER_SIZE } from '../constants';
 
@@ -37,11 +36,18 @@ export class SolidityCompiler implements ICompiler {
   private downloads: Map<string, Promise<void>> = new Map();
 
 
-  /** {@link ICompiler.compile} */
+  /**
+   * Compile a contract with solidity
+   *
+   * @param compilername        compiler name to use
+   * @param input               input for the compiler
+   * @returns                   compiled output
+   */
   async compile(
     compilername: string,
     input: ContractInput,
   ): Promise<CompiledOutput> {
+    // TODO: mutlithread safe concurrent downloading
     // wait for the compiler to download
     const compilerFilename = this.getFilename(compilername);
     if (!(await fexists(compilerFilename))) {

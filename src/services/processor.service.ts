@@ -7,11 +7,11 @@ import { asyncQueue, ResultHandler, WorkCtx, WorkHandler } from "../libs/async-q
 import { getMetadata } from "../libs/metadata";
 import { eng, interpolateColor, ymdhms } from "../libs/utils";
 import { Contract } from "../models/contract";
-import { IContractProcessorService } from "./contract-processor.service";
 import { IStateService } from "./state.service";
-import { VerifyContractResult } from "./verification.service";
+import { VerificationService, VerifyContractResult } from "./verification.service";
+import { ICompilerService } from './compiler.service';
 
-export interface IParallelProcessorService {
+export interface IProcesorService {
   /**
    * Compile, validate and optionally save metadata for all contracts
    * in parallel
@@ -45,10 +45,11 @@ export interface ParallelProcessorOptions extends
 /**
  * Coordinates processing of contracts
  */
-export class ParallelProcessorService implements IParallelProcessorService {
+export class ProcessorService implements IProcesorService {
   constructor(
-    private contractProcessorService: IContractProcessorService,
     private stateService: IStateService,
+    private compilerService: ICompilerService,
+    private verificationService: VerificationService,
   ) {
     //
   }
@@ -91,13 +92,13 @@ export class ParallelProcessorService implements IParallelProcessorService {
       console.warn(msg);
     }
 
-    console.info(`[${ymdhms()}] parallel processing` +
+    console.info(`[${ymdhms()}] processing` +
       ` ${eng(contracts.length)} contracts` +
-      `  failFast=${chalk.green(failFast)}` +
-      `  save=${chalk.green(save)}` +
-      `  jump=${chalk.green(jump)}` +
-      `  skip=${chalk.green(skip)}` +
-      `  concurrency=${chalk.green(concurrency)}`);
+      `  failFast=${chalk.green(failFast ?? false)}` +
+      `  save=${chalk.green(save ?? false)}` +
+      `  jump=${chalk.green(jump ?? 0)}` +
+      `  skip=${chalk.green(skip ?? false)}` +
+      `  concurrency=${chalk.green(_concurrency)}`);
 
     // does work in the queue
     const handlers: WorkHandler<Contract, ProcessResult>[] = [];
@@ -156,14 +157,29 @@ export class ParallelProcessorService implements IParallelProcessorService {
       if (hasMetadata) return ProcessResult.skipped();
     }
 
-    // do processing
-    const result = await this.contractProcessorService.process(contract)
+    const [config, input] = await Promise.all([
+      await contract.storage.getConfig(),
+      await contract.storage.getInput(),
+    ]);
 
-    // unsuccessful
-    if (!result) return ProcessResult.unverified();
+    const out = await this
+      .compilerService
+      .compile(config, input)
 
-    // successful
-    return ProcessResult.verified(result);
+    const verification = await this
+      .verificationService
+      .verify(out, config)
+
+    const {
+      isOpCodeVerified,
+      isRuntimeVerified,
+    } = verification;
+
+    if (!isRuntimeVerified && !isOpCodeVerified) {
+      return ProcessResult.unverified();
+    }
+
+    return ProcessResult.verified(verification);
   }
 
   /**
@@ -227,7 +243,7 @@ export class ParallelProcessorService implements IParallelProcessorService {
 
       else if (ProcessResult.isVerified(output)) {
         // handle verified
-        const msg = `[${ymdhms()}] ${chalk.green('✔️')}  ${idCtx}`;
+        const msg = `[${ymdhms()}] ${chalk.green('✔')}  ${idCtx}`;
         // success
         console.info(msg);
         if (save) {

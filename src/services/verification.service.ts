@@ -1,28 +1,9 @@
 import chalk from 'chalk';
 import { performance } from 'node:perf_hooks';
-import { eng, hasOwn, toBN } from "../libs/utils";
+import { eng, hasOwn, toBN, toChainId } from "../libs/utils";
 import { directVerification, opCodeCodeVerification, runtimeCodeVerification } from "../libs/verifications";
 import { CompiledOutput, ContractConfig, ContractSourceFile, ContractSourceObject } from "../types";
 import { INodeService } from "./node.service";
-
-
-/**
- * Provides contract verification between compiled output and code stored
- * on the blockchain
- */
-export interface IVerificationService {
-  /**
-   * Verify the compiled output against the Web3 node
-   *
-   * @param output    compiled output
-   * @param config    compiler config
-   * @returns         verified output if successful
-   */
-  verify(
-    output: CompiledOutput,
-    config: ContractConfig,
-  ): Promise<VerifyContractResult>;
-}
 
 
 /**
@@ -46,7 +27,11 @@ export interface VerificationServiceOptions {
 }
 
 
-export class VerificationService implements IVerificationService {
+/**
+ * Provides contract verification between compiled output and code stored
+ * on the blockchain
+ */
+export class VerificationService {
   static readonly DEFAULTS = {
     IGNORE_WARNINGS: false,
   }
@@ -75,7 +60,7 @@ export class VerificationService implements IVerificationService {
   ): Promise<VerifyContractResult> {
     const { address, chainId: cChainId, name } = config;
 
-    const chainId = toBN(cChainId).toNumber();
+    const chainId = toChainId(cChainId);
 
     const web3 = await this.nodeService.getWeb3({ chainId });
 

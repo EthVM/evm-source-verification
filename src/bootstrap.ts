@@ -2,40 +2,42 @@ import {
   CompilerService,
   ICompilerService
 } from "./services/compiler.service";
-import { ContractService,
+import {
+  ContractService,
   ContractServiceOptions,
-  IContractService
 } from "./services/contract.service";
-import { INodeService,
+import {
+  INodeService,
   NodeService,
   NodeServiceOptions
 } from "./services/node.service";
-import { SolidityCompiler,
+import {
+  SolidityCompiler,
   SolidityServiceOptions
 } from "./compilers/solidity.compiler";
-import { IStateService,
+import {
+  IStateService,
   StateService,
   StateServiceOptions
 } from "./services/state.service";
-import { IVerificationService,
+import {
   VerificationService,
   VerificationServiceOptions
 } from "./services/verification.service";
-import { ContractProcessorService,
-  IContractProcessorService
-} from "./services/contract-processor.service";
-import { IParallelProcessorService,
-  ParallelProcessorService
-} from "./services/parallel-processor.service";
+import {
+  ProcessorService
+} from "./services/processor.service";
+import { PullRequestService } from "./services/pull-request.service";
+import { DownloadService } from "./services/download.service";
 
 export interface IServices {
-  contractService: IContractService;
+  contractService: ContractService;
   nodeService: INodeService;
   stateService: IStateService;
   compilerService: ICompilerService;
-  verificationService: IVerificationService;
-  contractProcessorService: IContractProcessorService;
-  parallelProcessorService: IParallelProcessorService;
+  pullRequestService: PullRequestService;
+  verificationService: VerificationService;
+  processorService: ProcessorService;
 }
 
 export interface BootstrapOptions {
@@ -63,13 +65,15 @@ export async function bootstrap(options?: BootstrapOptions): Promise<IServices> 
     nodeService,
     options?.verification
   );
-  const contractProcessorService = new ContractProcessorService(
+  const processorService = new ProcessorService(
+    stateService,
     compilerService,
     verificationService,
   );
-  const parallelProcessorService = new ParallelProcessorService(
-    contractProcessorService,
-    stateService,
+  const pullRequestService = new PullRequestService(
+    contractService,
+    processorService,
+    new DownloadService(),
   );
 
   const services: IServices = {
@@ -78,8 +82,8 @@ export async function bootstrap(options?: BootstrapOptions): Promise<IServices> 
     nodeService,
     compilerService,
     verificationService,
-    contractProcessorService,
-    parallelProcessorService,
+    processorService,
+    pullRequestService,
   };
 
   return services;

@@ -364,7 +364,7 @@ export function frel(filename: string): string {
     : filename);
 }
 
-const HOME_DIR = new RegExp(`^~(\\${path.sep}|$)`);
+export const HOME_DIR = new RegExp(`^~(\\${path.sep}|$)`);
 
 /**
  * Get the absolute file destination assuming it's relatively based at the
@@ -391,12 +391,13 @@ export function fabs(filename: string): string {
 
 
 /**
- * Does the file exist?
+ * Does the file exist (and is a file?)?
  * 
  * @param filename  relative or absolute filename
  *                  if the filename is relative it will be treated as relative
  *                  to the cwd
  * @returns         whether the file exists
+ * @throws          if the file is a directory
  */
 export async function fexists(filename: string): Promise<boolean> {
   try {
@@ -588,4 +589,19 @@ export function interpolateColor(
   const idx = clamp(0, Math.round(idxMax * interpolation), idxMax);
   const color = between[idx];
   return chalk[color](string);
+}
+
+
+/**
+ * Create a random base 16 string of the desired length
+ *
+ * @param length      length of the string
+ * @returns           random string
+ */
+export function randomBase16(length: number): string {
+  let str = '';
+  for (let i = 0; i < length; i += 1) {
+    str += Math.floor(16 * Math.random()).toString(16);
+  }
+  return str;
 }

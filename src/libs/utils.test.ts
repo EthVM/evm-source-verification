@@ -1,6 +1,22 @@
 // eslint-disable-next-line import/no-extraneous-dependencies
-import fs from 'fs';
-import { arrObjPush, arrPush, tmpFile, hasOwn, randomAddress, readJSONFile, writeJSONFile, isSafeFilename } from './utils';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import {
+  arrObjPush,
+  arrPush,
+  tmpFile,
+  hasOwn,
+  randomAddress,
+  readJSONFile,
+  writeJSONFile,
+  isSafeFilename,
+  randomChainId,
+  tmpDir,
+  fexists,
+  HOME_DIR,
+  frel,
+} from './utils';
 
 describe('utils', () => {
   describe('hasOwn', () => {
@@ -126,9 +142,37 @@ describe('utils', () => {
     });
   });
 
+  describe('randomChainId', () => {
+    it('should create a random chain id', () => {
+      const chainId = randomChainId();
+      expect(typeof chainId).toBe('number');
+      expect(Number.isFinite(chainId)).toBeTruthy();
+    });
+  });
+
   describe('fexists', () => {
-    it('todo: should work', () => {
-      expect(true).toBeTruthy();
+    it('should return true if a file exists', async () => {
+      const [filename] = await tmpFile({ discardDescriptor: true });
+      try {
+        expect(await fexists(filename)).toBeTruthy();
+      } finally {
+        await fs.promises.rm(filename);
+      }
+    });
+
+    it('should return true the file is a directory', async () => {
+      const [dirname] = await tmpDir({ discardDescriptor: true });
+      try {
+        expect(await fexists(dirname)).toBeTruthy();
+      } finally {
+        await fs.promises.rmdir(dirname);
+      }
+    });
+
+    it('should return false if a file does not exist', async () => {
+      const [dirname] = await tmpFile({ discardDescriptor: true });
+      await fs.promises.rm(dirname);
+      expect(await fexists(dirname)).toBeFalsy();
     });
   });
 
@@ -151,6 +195,72 @@ describe('utils', () => {
 
       const slashes = 'has/dashes';
       it(`name: ${slashes}`, () => expect(isSafeFilename(slashes)).toBeFalsy());
+    });
+  });
+
+  describe('HOME_DIR', () => {
+    it('should match ~', () => {
+      const match = '~'.match(HOME_DIR);
+      expect(match).toBeTruthy();
+      expect(match![0]).toBe('~');
+      expect(match![1]).toBe('');
+    });
+
+    it('should match ~/', () => {
+      const match = '~/'.match(HOME_DIR);
+      expect(match).toBeTruthy();
+      expect(match![0]).toBe('~/');
+      expect(match![1]).toBe('/');
+    });
+
+    it('should not match /~', () => {
+      const match = '/~'.match(HOME_DIR);
+      expect(match).toBeNull();
+    });
+
+    it('should not match ./~', () => {
+      const match = './~'.match(HOME_DIR);
+      expect(match).toBeNull();
+    });
+  });
+
+  describe('frel', () => {
+    it('should leave relative filenames unchanged', () => {
+      const relname = 'relative/file-name';
+      const actual = frel(relname);
+      const expected = relname;
+      expect(actual).toEqual(expected);
+      // const expected = path.join(os.homedir(), 'within-home');
+    });
+
+    describe('should leave change absolute filenames to relative filenames', () => {
+      it('/relative/file-name', () => {
+        const relname = '/relative/file-name';
+        const actual = frel(relname);
+        const expected = path.relative(process.cwd(), relname);
+        expect(actual).toEqual(expected);
+      });
+      it('./relative/file-name', () => {
+        const relname = './relative/file-name';
+        const actual = frel(relname);
+        const expected = path.relative(process.cwd(), relname);
+        expect(actual).toEqual(expected);
+      });
+    });
+  });
+
+  describe('fabs', () => {
+    // TODO
+    it('should leave absolute filenames unchanged', () => {
+      //
+    });
+
+    it('should leave change relative filenames to absolute filenames', () => {
+      //
+    });
+
+    it('should leave change relative filenames to absolute filenames', () => {
+      //
     });
   });
 });

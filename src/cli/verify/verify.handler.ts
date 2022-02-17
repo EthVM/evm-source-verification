@@ -3,9 +3,9 @@ import chalk from "chalk";
 import { VerifyCliArgs } from "./verify.types";
 import { bootstrap, IServices } from "../../bootstrap";
 import { Address, ChainId } from "../../types";
-import { fabs, toBN, ymdhms } from "../../libs/utils";
+import { toBN, ymdhms } from "../../libs/utils";
 import { Contract } from "../../models/contract";
-import { ParallelProcessorOptions } from "../../services/parallel-processor.service";
+import { ParallelProcessorOptions } from "../../services/processor.service";
 
 /**
  * Execution the `verify` command
@@ -86,7 +86,7 @@ async function handleChainId(
   }
 
   await services
-    .parallelProcessorService
+    .processorService
     .process(contracts, options);
 }
 
@@ -121,6 +121,6 @@ async function handleDirs(
     .hydrateContracts(dirnames.map(dirname => ({ dirname })));
 
   await services
-    .parallelProcessorService
+    .processorService
     .process(contracts, options);
 }

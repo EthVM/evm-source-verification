@@ -1,45 +1,38 @@
-import { Result } from "@nkp/result";
-import { getTestCases } from "../../tests/utils/get-test-cases";
-import { TestCase } from "../../tests/utils/test-case";
-import { SolidityCompiler } from "../compilers/solidity.compiler";
-import { SOLIDITY_COMPILE_TIMEOUT } from "../constants";
+import { TestContract } from "../../tests/utils/test-contract";
+import { TestContractService } from "../../tests/utils/test-contract-service";
 import { getMetadata } from "../libs/metadata";
-import { ICompiler } from "../types";
-import { ICompilerService, CompilerService } from "./compiler.service";
-import { INodeService, NodeService } from "./node.service";
-import { IVerificationService, VerificationService } from "./verification.service";
+import { ICompilerService } from "./compiler.service";
+import { CompilerServiceMock } from "./compiler.service.mock";
+import { NodeService } from "./node.service";
+import { VerificationService } from "./verification.service";
 
 describe('VerificationService', () => {
-  let testCases: TestCase[] = [];
-  let solidityCompiler: ICompiler;
+  let tcontractService: TestContractService;
+  let testCases: TestContract[];
   let compilerService: ICompilerService;
-  let nodeService: INodeService;
-  let verificationService: IVerificationService;
+  let verificationService: VerificationService;
 
   beforeAll(async () => {
-    testCases = await getTestCases();
+    tcontractService = new TestContractService();
+    testCases = await tcontractService.getTestCases();
+    compilerService = new CompilerServiceMock(testCases);
   });
 
   beforeEach(async () => {
-    solidityCompiler = new SolidityCompiler();
-    compilerService = new CompilerService(solidityCompiler);
-    nodeService = new NodeService();
-    verificationService = new VerificationService(nodeService);
+    verificationService = new VerificationService(new NodeService());
   })
 
-  const count = 1;
-
-  it(`should verify ${count} test cases successfully`, async () => {
-    for (const testCase of testCases.slice(0, count)) {
+  it(`should verify test cases successfully`, async () => {
+    for (const testCase of testCases) {
       const [config, input, expected] = await Promise.all([
-        testCase.getConfig(),
-        testCase.getInput(),
-        testCase.getMetadata(),
+        testCase.storage.getConfig(),
+        testCase.storage.getInput(),
+        testCase.storage.getMetadata(),
       ]);
       const out = await compilerService.compile(config, input);
       const verify = await verificationService.verify(out, config);
       const actual = getMetadata(verify);
       expect(actual).toEqual(expected);
     }
-  }, count * SOLIDITY_COMPILE_TIMEOUT);
+  });
 });

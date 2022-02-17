@@ -43,7 +43,7 @@ export interface ResultHandler<T, R> {
    * @param result    result of processing
    * @returns         true to continue, false to force stop
    */
-  (result: Result<R, Error>, ctx: WorkCtx<T>): Promise<undefined | Error>;
+  (result: Result<R, Error>, ctx: WorkCtx<T>): Promise<void | undefined | Error>;
 }
 
 /**
@@ -117,7 +117,10 @@ export function asyncQueue<T, R>(
 
     const enqueueMutex = new Mutex();
 
-    idleQueue.push(...workHandlers);
+    // effectively clone each work handler to ensure referentually inequality
+    // so we can identify handlers by their reference
+    idleQueue.push(...workHandlers
+      .map((wh): WorkHandler<T, R> => (...args) => wh(...args)));
 
     const concurrency = workHandlers.length;
 

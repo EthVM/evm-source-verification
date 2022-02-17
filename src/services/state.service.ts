@@ -7,6 +7,8 @@ import { DirCache } from '../libs/dir-cache';
 
 /**
  * Provides access to the persistant state of the application
+ *
+ * TODO: rework this
  */
 export interface IStateService {
   /**

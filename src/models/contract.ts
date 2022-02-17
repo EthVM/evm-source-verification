@@ -1,5 +1,5 @@
 import { Address, ChainId, ContractIdentity } from "../types";
-import { IContractStorage } from "./contract.storage";
+import { ContractStorage } from "./contract.storage";
 
 
 /**
@@ -22,9 +22,9 @@ export class Contract implements ContractIdentity {
   public readonly address: Address;
 
   /**
-   * Provides access to the contract's contents
+   * Provides access to the contract's location and contents
    */
-  public readonly storage: IContractStorage;
+  public readonly storage: ContractStorage;
 
   /**
    * Name of the contract
@@ -42,7 +42,7 @@ export class Contract implements ContractIdentity {
   constructor(
     chainId: ChainId,
     address: Address,
-    storage: IContractStorage,
+    storage: ContractStorage,
     name: string
   ) {
     this.chainId = chainId;
