@@ -1,7 +1,7 @@
 import path from "node:path";
-import { TestContractService } from "../../tests/utils/test-contract-service";
 import { randomAddress, randomChainId } from "../libs/utils";
 import { ChainPath, ChainPaths, ContractPath } from "./contract.service";
+import { TestContractService } from "./contract.service.test.util";
 
 describe('ContractService', () => {
   let tcontractService: TestContractService;

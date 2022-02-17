@@ -3,6 +3,10 @@ import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import { registerVerifyCommand } from './cli/verify/verify.command';
 import { registerPullContractsCommand } from './cli/pull-contracts/pull-contracts.command';
+import { registerSummariseCommand } from './cli/summarise/summarise.command';
+import { registerRebuildTestsCommand } from './cli/rebuild-tests/rebuild-tests.command';
+
+console.log('que$?');
 
 const argv = yargs(hideBin(process.argv)).usage('Usage $0 <cmd> [args]');
 
@@ -12,6 +16,8 @@ config();
 // register commands
 registerVerifyCommand(argv);
 registerPullContractsCommand(argv);
+registerSummariseCommand(argv);
+registerRebuildTestsCommand(argv);
 
 argv.demandCommand(1);
 

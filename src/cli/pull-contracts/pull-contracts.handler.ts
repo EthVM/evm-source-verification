@@ -20,6 +20,8 @@ const log = logger.child({});
 export async function pullContractsCommand(
   args: PullContractsCliArgs,
 ): Promise<void> {
+  log.info('command: pull-contracts');
+
   const {
     base,
     head,
@@ -68,7 +70,7 @@ export async function pullContractsCommand(
     throw new Error(`too many git files to process: ${files.length}`);
 
   await services
-    .pullRequestService
+    .pullContractsService
     .process(files, {
       save: true,
       outBodyFile,

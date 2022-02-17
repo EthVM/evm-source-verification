@@ -1,9 +1,9 @@
-import { TestContract } from "../../tests/utils/test-contract";
-import { TestContractService } from "../../tests/utils/test-contract-service";
 import { SolidityCompiler } from "../compilers/solidity.compiler";
 import { SOLIDITY_COMPILE_TIMEOUT } from "../constants";
+import { TestContract } from "../models/contract.test.util";
 import { ICompiler } from "../types";
 import { ICompilerService, CompilerService } from "./compiler.service";
+import { TestContractService } from "./contract.service.test.util";
 
 describe('CompilerService', () => {
   let tcontractService: TestContractService;
@@ -26,8 +26,8 @@ describe('CompilerService', () => {
   it(`should compile ${count} test cases successfully`, async () => {
     for (const testCase of testCases.slice(0, count)) {
       const [config, input, expected] = await Promise.all([
-        testCase.storage.getConfig(),
-        testCase.storage.getInput(),
+        testCase.getConfig(),
+        testCase.getInput(),
         testCase.getOutput(),
       ]);
 

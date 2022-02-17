@@ -1,9 +1,8 @@
-import { TestContract } from "../../tests/utils/test-contract";
-import { TestContractService } from "../../tests/utils/test-contract-service";
+import { TestContract } from "../models/contract.test.util";
 import { CompilerServiceMock } from "./compiler.service.mock";
+import { TestContractService } from "./contract.service.test.util";
 import { NodeService } from "./node.service";
 import { ProcessorService } from "./processor.service";
-import { StateService } from "./state.service";
 import { VerificationService } from "./verification.service";
 
 describe('ProcessorService', () => {
@@ -15,7 +14,6 @@ describe('ProcessorService', () => {
     tcontractService = new TestContractService();
     tcontracts = await tcontractService.getTestCases();
     processorService = new ProcessorService(
-      new StateService(),
       new CompilerServiceMock(tcontracts),
       new VerificationService(new NodeService())
     );

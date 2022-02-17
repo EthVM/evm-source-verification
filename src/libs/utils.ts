@@ -2,7 +2,6 @@ import https from "node:https";
 import os from 'node:os';
 import cp from 'node:child_process';
 import cbor from "cbor";
-import tmp from 'tmp';
 import chalk from "chalk";
 import { toB58String } from "multihashes";
 import Web3 from "web3";
@@ -17,31 +16,26 @@ import { Address, CborDataType, CborDecodedType, HexString } from "../types";
 export const pexec = promisify(cp.exec);
 
 /**
- * Create a temporary file
+ * Create a random filename in the tmp directory
+ * 
+ * Does not actually create the file
+ * 
+ * @returns 
  */
-export function tmpFile(
-  options: tmp.FileOptions,
-): Promise<[filename: string, fd: number]> {
-  return new Promise((res, rej) => {
-    tmp.file(options, (err, name, fd) => {
-      if (err) rej(err);
-      else res([name, fd]);
-    });
-  });
+export function tmpFilename(): string {
+  const filename = path.join(os.tmpdir(), randomBase16(20));
+  return filename;
 }
 
 /**
- * Create a temporary directory
+ * Create a random tmp directory
+ *
+ * @returns
  */
-export function tmpDir(
-  options: tmp.FileOptions
-): Promise<[dirname: string, rm: tmp.DirCallback]> {
-  return new Promise((res, rej) => {
-    tmp.dir(options, (err, name, rm) => {
-      if (err) rej(err);
-      else res([name, rm]);
-    });
-  });
+export async function tmpDir(): Promise<string> {
+  const dirname = path.join(os.tmpdir(), randomBase16(20));
+  await fs.promises.mkdir(dirname, { recursive: true });
+  return dirname;
 }
 
 /**
@@ -604,4 +598,14 @@ export function randomBase16(length: number): string {
     str += Math.floor(16 * Math.random()).toString(16);
   }
   return str;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function sortKeys<T extends Record<any, any>>(object: T): T {
+  const out: T = {} as T;
+  Object
+    .keys(object)
+    .sort()
+    .forEach(key => { out[key as keyof T] = object[key] });
+  return object;
 }

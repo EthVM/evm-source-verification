@@ -1,5 +1,6 @@
 # evm-source-verification
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Known Vulnerabilities](https://snyk.io/test/github/EthVM/evm-source-verification/badge.svg)](https://snyk.io/test/github/EthVM/evm-source-verification/)
 [![Main Branch Integrity](https://github.com/EthVM/evm-source-verification/actions/workflows/build-test.yml/badge.svg)](https://github.com/EthVM/evm-source-verification/actions/workflows/build-test.yml)
 
@@ -30,6 +31,9 @@ Special thanks to [Sourcify](https://sourcify.dev/) and [Etherscan](https://ethe
     - [Verify mainnet contracts](#verify)
     - [Verify contract in a directory](#verify-contract-in-a-directory)
     - [Verify contracts in many directories](#verify-contracts-in-many-directories)
+  - [summarise](#summarise)
+  - [pull-contracts](#pull-contracts)
+  - [rebuild-tests](#rebuild-tests)
 
 ## Contract Files
 
@@ -151,7 +155,7 @@ To execute commands, first download and build the project. For steps, see [Getti
 
 ### Verify
 
-The verify command takes takes directories with `input.json` and `configs.json` files and compiles and verifies them against the blockchain.
+The `verify` command takes takes directories with `input.json` and `configs.json` files and compiles and verifies them against the blockchain.
 
 For additional information on the `verify` command, use `node dist/bin.js verify --help`.
 
@@ -175,10 +179,6 @@ Positionals:
   --jump         Jump past this many contracts before starting to verify[number]
   --concurrency  Number of contracts to verify in parallel. Defaults to the
                  number of CPUs.                          [number] [default: 16]
-
-Options:
-  --help     Show help                                                 [boolean]
-  --version  Show version number                                       [boolean]
 ```
 
 
@@ -223,3 +223,30 @@ find ~/my-contracts/ -mindepth 1 -maxdepth 1 -type d \
 ```
 
 ![verify 3](./assets/verify--3.gif)
+
+### Summarise
+
+The `summarise` command collects hashes, used compilers, and addresses from all verified addresses and saves them to the `./summary/<chainId>/<output type>`.
+- **summary/`<chainId>`/hash.runtime.json**: JSON object whose keys are the runtime hashes of contracts and values are an array of contracts with that runtime hash.
+- **summary/`<chainId>`/hash.opcodes.json**: JSON object whose keys are the opcode hashes of contracts and values are an array of contracts with that opcode hash.
+- **summary/`<chainId>`/hash.metaless.json**: JSON object whose keys are the metaless hashes of contracts and values are an array of contracts with that metaless hash.
+- **summary/`<chainId>`/verified.json**: JSON array of with all the verified addresses.
+- **summary/`<chainId>`/compilres.json**: JSON object whose keys are the metaless hashes of contracts and values are arrays of contracts with that metaless hash.
+
+```sh
+bin.js summarise
+
+rebuild the summary of all verified contracts
+```
+
+![summarise 1](./assets/summarise--1.gif)
+
+![summarise 2](./assets/summarise--2.gif)
+
+### Pull Contracts
+
+Used by CI to verify contracts added in a pull request [Submitting contracts by pull request](#by-pull-request) for more.
+
+### Rebuild Tests
+
+Cleans and rebuilds contracts used for testing.

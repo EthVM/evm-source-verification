@@ -16,6 +16,8 @@ const log = logger.child({});
  * @param args
  */
 export async function handleVerifyCommand(args: VerifyCliArgs): Promise<void> {
+  log.info('command: verify');
+
   // process cli args
   const {
     address,

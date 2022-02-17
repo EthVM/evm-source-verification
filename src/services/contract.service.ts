@@ -308,7 +308,7 @@ export class ContractService {
     let i = 0;
     const total = args.length;
 
-    logger.info(`loading ${eng(total)} contracts...`);
+    log.info(`loading ${eng(total)} contracts...`);
 
     const LOG_EVERY = 1000;
     for (const arg of args) {
@@ -319,7 +319,7 @@ export class ContractService {
       );
 
       if ((i % LOG_EVERY) === 0) {
-        logger.info(`loading contracts...` +
+        log.info(`loading contracts...` +
           `  ${eng(i)}/${eng(total)}` +
           `  ${toPercentage(i/total)}`);
       }

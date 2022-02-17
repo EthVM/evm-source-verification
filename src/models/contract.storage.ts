@@ -119,7 +119,7 @@ export class ContractStorage {
   /**
    * Get the contract's config
    *
-   * @returns contract's input
+   * @returns contract's config
    * @throws  if the contract's config does not exist
    */
   getConfig(): Promise<ContractConfig> {
@@ -163,7 +163,7 @@ export class ContractStorage {
    *
    * @returns contract's absolute dirname
    */
-  public getDirname(): string {
+  getDirname(): string {
     return fabs(this.dirname);
   }
 
@@ -172,7 +172,7 @@ export class ContractStorage {
    *
    * @returns contract's absolute config filename
    */
-  public getConfigFilename(): string {
+  getConfigFilename(): string {
     return path.join(
       this.getDirname(),
       this.configBasename,
@@ -184,7 +184,7 @@ export class ContractStorage {
    *
    * @returns contract's absolute input filename
    */
-  public getInputFilename(): string {
+  getInputFilename(): string {
     return path.join(
       this.getDirname(),
       this.inputBasename,
@@ -196,7 +196,7 @@ export class ContractStorage {
    *
    * @returns contract's absolute metadata filename
    */
-  public getMetadataFilename(): string {
+  getMetadataFilename(): string {
     return path.join(
       this.getDirname(),
       this.metadataBasename,

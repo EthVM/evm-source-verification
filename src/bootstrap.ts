@@ -16,36 +16,32 @@ import {
   SolidityServiceOptions
 } from "./compilers/solidity.compiler";
 import {
-  IStateService,
-  StateService,
-  StateServiceOptions
-} from "./services/state.service";
-import {
   VerificationService,
   VerificationServiceOptions
 } from "./services/verification.service";
 import {
   ProcessorService
 } from "./services/processor.service";
-import { PullRequestService } from "./services/pull-request.service";
 import { DownloadService } from "./services/download.service";
+import { PullContractsService } from "./cli/pull-contracts/pull-contracts.service";
+import { SummariseService, SummariseServiceOptions } from "./cli/summarise/summarise.service";
 
 export interface IServices {
   contractService: ContractService;
   nodeService: INodeService;
-  stateService: IStateService;
   compilerService: ICompilerService;
-  pullRequestService: PullRequestService;
+  pullContractsService: PullContractsService;
   verificationService: VerificationService;
   processorService: ProcessorService;
+  buildStateService: SummariseService;
 }
 
 export interface BootstrapOptions {
   contracts?: ContractServiceOptions;
   nodes?: NodeServiceOptions;
-  state?: StateServiceOptions;
   solidity?: SolidityServiceOptions;
   verification?: VerificationServiceOptions;
+  buildState?: SummariseServiceOptions;
 }
 
 /**
@@ -58,7 +54,6 @@ export interface BootstrapOptions {
 export async function bootstrap(options?: BootstrapOptions): Promise<IServices> {
   const contractService = new ContractService(options?.contracts);
   const nodeService = new NodeService(options?.nodes);
-  const stateService = new StateService(options?.state);
   const solidity = new SolidityCompiler(options?.solidity);
   const compilerService = new CompilerService(solidity);
   const verificationService = new VerificationService(
@@ -66,24 +61,24 @@ export async function bootstrap(options?: BootstrapOptions): Promise<IServices> 
     options?.verification
   );
   const processorService = new ProcessorService(
-    stateService,
     compilerService,
     verificationService,
   );
-  const pullRequestService = new PullRequestService(
+  const pullContractsService = new PullContractsService(
     contractService,
     processorService,
     new DownloadService(),
   );
+  const buildStateService = new SummariseService(options?.buildState);
 
   const services: IServices = {
     contractService,
-    stateService,
     nodeService,
     compilerService,
     verificationService,
     processorService,
-    pullRequestService,
+    pullContractsService,
+    buildStateService,
   };
 
   return services;

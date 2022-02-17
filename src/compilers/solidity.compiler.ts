@@ -82,8 +82,6 @@ export class SolidityCompiler implements ICompiler {
     if (!isSafeFilename(compilername) || /\s/.test(compilername))
       throw new Error(`compilername "${compilername}" is not a safe filename`);
 
-    // TODO: remove use of `tmp`? seems to be causing file descriptor issues?
-    // const [tmp] = await tmpFile({ discardDescriptor: true });
     const tmpDirname = path.join(path.dirname(compilerFilename), 'downloads');
     const tmp = path.join(tmpDirname, path.basename(compilerFilename));
 

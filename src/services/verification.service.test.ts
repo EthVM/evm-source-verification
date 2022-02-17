@@ -1,8 +1,8 @@
-import { TestContract } from "../../tests/utils/test-contract";
-import { TestContractService } from "../../tests/utils/test-contract-service";
 import { getMetadata } from "../libs/metadata";
+import { TestContract } from "../models/contract.test.util";
 import { ICompilerService } from "./compiler.service";
 import { CompilerServiceMock } from "./compiler.service.mock";
+import { TestContractService } from "./contract.service.test.util";
 import { NodeService } from "./node.service";
 import { VerificationService } from "./verification.service";
 
@@ -25,9 +25,9 @@ describe('VerificationService', () => {
   it(`should verify test cases successfully`, async () => {
     for (const testCase of testCases) {
       const [config, input, expected] = await Promise.all([
-        testCase.storage.getConfig(),
-        testCase.storage.getInput(),
-        testCase.storage.getMetadata(),
+        testCase.getConfig(),
+        testCase.getInput(),
+        testCase.getMetadata(),
       ]);
       const out = await compilerService.compile(config, input);
       const verify = await verificationService.verify(out, config);

@@ -1,5 +1,5 @@
-import { TestContract } from "../../tests/utils/test-contract";
 import { toChainId } from "../libs/utils";
+import { TestContract } from "../models/contract.test.util";
 import { ContractConfig, CompiledOutput } from "../types";
 import { ICompilerService } from "./compiler.service";
 

@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import os from 'node:os';
 import { performance } from 'node:perf_hooks';
 import { toPercentage } from "@nkp/percentage";
@@ -5,14 +7,100 @@ import { Result } from "@nkp/result";
 import chalk from 'chalk';
 import { asyncQueue, ResultHandler, WorkCtx, WorkHandler } from "../libs/async-queue";
 import { getMetadata } from "../libs/metadata";
-import { eng, interpolateColor } from "../libs/utils";
+import { eng, interpolateColor, ymdhms } from "../libs/utils";
 import { Contract } from "../models/contract";
-import { IStateService } from "./state.service";
 import { VerificationService, VerifyContractResult } from "./verification.service";
 import { ICompilerService } from './compiler.service';
-import { logger } from '../logger';
+import { logger, LOGS_DIRNAME } from '../logger';
+import { isSupported } from '../libs/support';
 
 const log = logger.child({});
+
+/**
+ * Report an contract whose compiler is unsupported
+ *
+ * @param contract    contract that faile verification
+ * @param idx         index of the contract among all those being verified
+ * @returns
+ */
+async function reportUnsupported(contract: Contract, idx = 0) {
+  const { chainId, address, name } = contract;
+  const filename = path.join(LOGS_DIRNAME, `${chainId}.unsupported.log`);
+  const config = await contract.getConfig();
+  const { compiler } = config;
+  await fs
+    .promises
+    .appendFile(
+      filename,
+      `[${ymdhms()}] unsupported`
+        + `  idx=${idx}`
+        + `  chainId=${chainId}`
+        + `  address=${address}`
+        + `  name=${name}`
+        + `  compiler=${compiler}`
+        + '\n'
+      ,
+      'utf-8'
+    );
+}
+
+/**
+ * Report an contract that failed to verify
+ *
+ * @param contract    contract that faile verification
+ * @param idx         index of the contract among all those being verified
+ * @returns
+ */
+async function reportUnverified(contract: Contract, idx = 0) {
+  const { chainId, address, name } = contract;
+  const filename = path.join(LOGS_DIRNAME, `${chainId}.unverified.log`);
+  const config = await contract.getConfig();
+  const { compiler } = config;
+  await fs
+    .promises
+    .appendFile(
+      filename,
+      `[${ymdhms()}] unverified`
+        + `  idx=${idx}`
+        + `  chainId=${chainId}`
+        + `  address=${address}`
+        + `  name=${name}`
+        + `  compiler=${compiler}`
+        + '\n'
+      ,
+      'utf-8'
+    );
+}
+
+/**
+ * Report an contract that threw during processing
+ *
+ * @param contract    contract that threw
+ * @param err         error that was thrown
+ * @param idx         index of the contract among all those being verified
+ * @returns
+ */
+async function reportErrored(contract: Contract, err: Error, idx = 0) {
+  const { chainId, address, name } = contract;
+  const filename = path.join(LOGS_DIRNAME, `${chainId}.errored.log`);
+  const config = await contract.getConfig();
+  const { compiler } = config;
+  await fs
+    .promises
+    .appendFile(
+      filename,
+      `[${ymdhms()}] errored`
+        + `  idx=${idx}`
+        + `  chainId=${chainId}`
+        + `  address=${address}`
+        + `  name=${name}`
+        + `  compiler=${compiler}`
+        // ensure string ends with newline
+        + `  err=${err.toString().replace(/\n$/m, '')}\n`
+      ,
+      'utf-8'
+    );
+}
 
 export interface IProcesorService {
   /**
@@ -50,7 +138,6 @@ export interface ParallelProcessorOptions extends
  */
 export class ProcessorService implements IProcesorService {
   constructor(
-    private stateService: IStateService,
     private compilerService: ICompilerService,
     private verificationService: VerificationService,
   ) {
@@ -155,15 +242,19 @@ export class ProcessorService implements IProcesorService {
     // skip
     if (skip) {
       // check if metadata already exists
-      const hasMetadata = await contract.storage.hasMetadata();
+      const hasMetadata = await contract.hasMetadata();
       // skip this contract
       if (hasMetadata) return ProcessResult.skipped();
     }
 
     const [config, input] = await Promise.all([
-      await contract.storage.getConfig(),
-      await contract.storage.getInput(),
+      await contract.getConfig(),
+      await contract.getInput(),
     ]);
+
+    if (!isSupported(config.compiler)) {
+      return ProcessResult.unsupported();
+    }
 
     const out = await this
       .compilerService
@@ -193,6 +284,7 @@ export class ProcessorService implements IProcesorService {
    * @param options   options
    * @returns         error if the queue should stop
    */
+  // eslint-disable-next-line class-methods-use-this
   private async handleResult(
     result: Result<ProcessResult, Error>,
     ctx: WorkCtx<Contract>,
@@ -237,10 +329,22 @@ export class ProcessorService implements IProcesorService {
       else if (ProcessResult.isUnverified(output)) {
         // handle unverified
         const msg = `${chalk.red('x unverified')}  ${idCtx}`;
-        await this
-          .stateService
-          .addLog(contract, 'unverified', msg);
-        if (failFast) return new Error(msg);
+        await reportUnverified(contract, index);
+        if (failFast) return new Error('failed to verify' +
+          `  chainId=${contract.chainId}` +
+          `  address=${contract.address}` +
+          `  index=${index}`);
+        log.warn(msg);
+      }
+
+      else if (ProcessResult.isUnsupported(output)) {
+        // handle unverified
+        const msg = `${chalk.red('x unsupported')}  ${idCtx}`;
+        await reportUnsupported(contract, index);
+        if (failFast) return new Error('unsupported compiler' +
+          `  chainId=${contract.chainId}` +
+          `  address=${contract.address}` +
+          `  index=${index}`);
         log.warn(msg);
       }
 
@@ -251,7 +355,7 @@ export class ProcessorService implements IProcesorService {
         log.info(msg);
         if (save) {
           const metadata = getMetadata(output.verification);
-          await contract.storage.saveMetadata(metadata);
+          await contract.saveMetadata(metadata);
         }
       }
     }
@@ -259,11 +363,15 @@ export class ProcessorService implements IProcesorService {
     else {
       // handle error
       const err = result.value;
-      const msg = `${chalk.red('x err')}` +
+      const msg = `${chalk.red('x error')}` +
         `  ${idCtx}` +
         `  ${err.toString()}`;
-      await this.stateService.addLog(contract, 'error', msg);
-      if (failFast) return new Error(msg);
+      await reportErrored(contract, err, index);
+      if (failFast) return new Error('errored' +
+        `  chainId=${contract.chainId}` +
+        `  address=${contract.address}` +
+        `  index=${index}` +
+        `  err=${err.toString()}`)
       log.warn(msg);
     }
   }
@@ -274,11 +382,12 @@ export type ProcessResult =
   | ProcessResult.Jump
   | ProcessResult.Verified
   | ProcessResult.Unverified
+  | ProcessResult.Unsupported
 ;
 
 export namespace ProcessResult {
   // eslint-disable-next-line no-shadow
-  export enum Type { Skipped, Jump, Verified, Unverified, }
+  export enum Type { Skipped, Jump, Verified, Unverified, Unsupported }
 
   /**
    * Skipped result
@@ -309,6 +418,14 @@ export namespace ProcessResult {
    */
   export interface Unverified {
     type: Type.Unverified;
+    verification: null;
+  }
+
+  /**
+   * Unsupported compiler result
+   */
+  export interface Unsupported {
+    type: Type.Unsupported;
     verification: null;
   }
 
@@ -345,6 +462,14 @@ export namespace ProcessResult {
   }
 
   /**
+   * Create a new Unsupported compiler result
+   * @returns Unsupported compiler result
+   */
+  export function unsupported(): Unsupported {
+    return { type: Type.Unsupported, verification: null, };
+  }
+
+  /**
    * was contract verification skipped?
    * @returns whether contract verification was skipped
    */
@@ -374,6 +499,14 @@ export namespace ProcessResult {
    */
   export function isUnverified(result: ProcessResult): result is Unverified {
     return result.type === Type.Unverified;
+  }
+
+  /**
+   * is the contract's compiler unsupported??
+   * @returns whether contract verification was unsuccessful
+   */
+  export function isUnsupported(result: ProcessResult): result is Unsupported {
+    return result.type === Type.Unsupported;
   }
 }
 

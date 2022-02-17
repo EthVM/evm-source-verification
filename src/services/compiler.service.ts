@@ -1,3 +1,4 @@
+import { CompilerType, getCompilerType, isSupported } from "../libs/support";
 import { CompiledOutput, ContractConfig, ContractInput, ICompiler } from "../types";
 
 /**
@@ -17,13 +18,6 @@ export interface ICompilerService {
     config: ContractConfig,
     input: ContractInput,
   ): Promise<CompiledOutput>;
-}
-
-// eslint-disable-next-line no-shadow
-export enum CompilerType {
-  Solidity,
-  Vyper,
-  Unknown,
 }
 
 /**
@@ -53,9 +47,9 @@ export class CompilerService implements ICompilerService {
   ): Promise<CompiledOutput> {
     const { compiler, } = config;
 
-    const type = this.getCompilerType(compiler);
+    const type = getCompilerType(compiler);
 
-    if (!this.isSupported(compiler)) {
+    if (!isSupported(compiler)) {
       throw new Error(`unsupported compiler ${compiler}`);
     }
     
@@ -71,33 +65,6 @@ export class CompilerService implements ICompilerService {
       default:
         throw new Error('something went wrong');
     }
-  }
-
-  /**
-   * Is this compiler supported?
-   *
-   * @param compilername    name of the compiler
-   * @returns               whether this compiler is supported
-   */
-  private isSupported(compilername: string): boolean {
-    const type = this.getCompilerType(compilername);
-    if (type === CompilerType.Solidity) return true;
-    return false;
-  }
-
-  /**
-   * Get the type of the compiler
-   *
-   * @param compilername    name of the compiler
-   * @returns               type of the compiler
-   */
-  // eslint-disable-next-line class-methods-use-this
-  private getCompilerType(compilername: string): CompilerType {
-    // TODO: improve this
-    const type = compilername.includes('vyper')
-      ? CompilerType.Vyper
-      : CompilerType.Solidity;
-    return type;
   }
 
 }

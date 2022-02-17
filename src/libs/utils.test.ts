@@ -1,11 +1,9 @@
 // eslint-disable-next-line import/no-extraneous-dependencies
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import {
   arrObjPush,
   arrPush,
-  tmpFile,
   hasOwn,
   randomAddress,
   readJSONFile,
@@ -16,6 +14,7 @@ import {
   fexists,
   HOME_DIR,
   frel,
+  tmpFilename,
 } from './utils';
 
 describe('utils', () => {
@@ -38,7 +37,7 @@ describe('utils', () => {
 
   describe('readJsonFile', () => {
     it('should read and parse JSON from a JSON formatted file', async () => {
-      const [filename] = await tmpFile({ discardDescriptor: true });
+      const filename = await tmpFilename();
       try {
         const data = { hello: 'world' };
         await fs.promises.writeFile(filename, JSON.stringify(data), 'utf-8');
@@ -50,7 +49,7 @@ describe('utils', () => {
     });
 
     it('should throw if the file is not JSON formatted', async () => {
-      const [filename] = await tmpFile({ discardDescriptor: true });
+      const filename = await tmpFilename();
       try {
         await fs.promises.writeFile(filename, 'not a json file', 'utf-8');
         await expect(() => readJSONFile(filename)).rejects.toThrow();
@@ -60,20 +59,15 @@ describe('utils', () => {
     });
 
     it('should return undefined if the file does not exist', async () => {
-      const [filename] = await tmpFile({ discardDescriptor: true });
-      try {
-        await fs.promises.rm(filename);
-        const out = await readJSONFile(filename);
-        expect(out).toBeUndefined();
-      } finally {
-        //
-      }
+      const filename = await tmpFilename();
+      const out = await readJSONFile(filename);
+      expect(out).toBeUndefined();
     });
   });
 
   describe('writeJsonFile', () => {
     it('should write JSON format to a file', async () => {
-      const [filename] = await tmpFile({ discardDescriptor: true });
+      const filename = await tmpFilename();
       try {
         const data = { hello: 'world' };
         await writeJSONFile(filename, data);
@@ -85,7 +79,7 @@ describe('utils', () => {
     });
 
     it('should respect options.pretty', async () => {
-      const [filename] = await tmpFile({ discardDescriptor: true });
+      const filename = await tmpFilename();
       try {
         const data = { hello: 'world' };
         await writeJSONFile(filename, data, { pretty: true });
@@ -152,7 +146,8 @@ describe('utils', () => {
 
   describe('fexists', () => {
     it('should return true if a file exists', async () => {
-      const [filename] = await tmpFile({ discardDescriptor: true });
+      const filename = await tmpFilename();
+      await fs.promises.writeFile(filename, '', 'utf-8');
       try {
         expect(await fexists(filename)).toBeTruthy();
       } finally {
@@ -161,7 +156,7 @@ describe('utils', () => {
     });
 
     it('should return true the file is a directory', async () => {
-      const [dirname] = await tmpDir({ discardDescriptor: true });
+      const dirname = await tmpDir();
       try {
         expect(await fexists(dirname)).toBeTruthy();
       } finally {
@@ -170,9 +165,8 @@ describe('utils', () => {
     });
 
     it('should return false if a file does not exist', async () => {
-      const [dirname] = await tmpFile({ discardDescriptor: true });
-      await fs.promises.rm(dirname);
-      expect(await fexists(dirname)).toBeFalsy();
+      const filename = await tmpFilename();
+      expect(await fexists(filename)).toBeFalsy();
     });
   });
 
