@@ -1,14 +1,16 @@
 # evm-source-verification
 
+![Ethereum](./assets/ethereum-logo-landscape-purple.png)
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Known Vulnerabilities](https://snyk.io/test/github/EthVM/evm-source-verification/badge.svg)](https://snyk.io/test/github/EthVM/evm-source-verification/)
 [![Main Branch Integrity](https://github.com/EthVM/evm-source-verification/actions/workflows/build-test.yml/badge.svg)](https://github.com/EthVM/evm-source-verification/actions/workflows/build-test.yml)
+[![Known Vulnerabilities](https://snyk.io/test/github/EthVM/evm-source-verification/badge.svg)](https://snyk.io/test/github/EthVM/evm-source-verification/)
 
 Ethereum smart contract source code verification.
 
 Verifies contract source code and saves the output metadata to `contracts/<chainId>/<contractAddress>`.
 
-With `evm-source-verification` you can
+With `evm-source-verification` you can:
 
 1. Submit your own smart contracts for verification. See [Submitting a contract](#submitting-a-contract)
 2. Verify contracts locally. See [Commands](#commands)
