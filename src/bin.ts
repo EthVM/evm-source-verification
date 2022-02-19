@@ -6,8 +6,6 @@ import { registerPullContractsCommand } from './cli/pull-contracts/pull-contract
 import { registerSummariseCommand } from './cli/summarise/summarise.command';
 import { registerRebuildTestsCommand } from './cli/rebuild-tests/rebuild-tests.command';
 
-console.log('que$?');
-
 const argv = yargs(hideBin(process.argv)).usage('Usage $0 <cmd> [args]');
 
 // load environment variables from .env file
