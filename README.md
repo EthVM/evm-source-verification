@@ -4,7 +4,6 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Main Branch Integrity](https://github.com/EthVM/evm-source-verification/actions/workflows/build-test.yml/badge.svg)](https://github.com/EthVM/evm-source-verification/actions/workflows/build-test.yml)
-[![Known Vulnerabilities](https://snyk.io/test/github/EthVM/evm-source-verification/badge.svg)](https://snyk.io/test/github/EthVM/evm-source-verification/)
 
 Ethereum smart contract source code verification.
 
