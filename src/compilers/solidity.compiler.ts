@@ -1,10 +1,12 @@
 import fs from 'node:fs';
 import path from "node:path";
 import https from "node:https";
-import { delay } from '@nkp/delay';
-import { fexists, mapGetOrCreate, tmpFile, frel, isSafeFilename, pexecPipe, fabs } from "../libs/utils";
+import { fexists, mapGetOrCreate, frel, isSafeFilename, pexecPipe, fabs } from "../libs/utils";
 import { ContractInput, CompiledOutput, ICompiler } from "../types";
 import { SOLIDITY_COMPILE_TIMEOUT, SOLIDITY_MAX_OUTPUT_BUFFER_SIZE } from '../constants';
+import { logger } from '../logger';
+
+const log = logger.child({});
 
 /**
  * Configuration options for the SolidityService
@@ -37,11 +39,18 @@ export class SolidityCompiler implements ICompiler {
   private downloads: Map<string, Promise<void>> = new Map();
 
 
-  /** {@link ICompiler.compile} */
+  /**
+   * Compile a contract with solidity
+   *
+   * @param compilername        compiler name to use
+   * @param input               input for the compiler
+   * @returns                   compiled output
+   */
   async compile(
     compilername: string,
     input: ContractInput,
   ): Promise<CompiledOutput> {
+    // TODO: mutlithread safe concurrent downloading
     // wait for the compiler to download
     const compilerFilename = this.getFilename(compilername);
     if (!(await fexists(compilerFilename))) {
@@ -73,8 +82,6 @@ export class SolidityCompiler implements ICompiler {
     if (!isSafeFilename(compilername) || /\s/.test(compilername))
       throw new Error(`compilername "${compilername}" is not a safe filename`);
 
-    // TODO: remove use of `tmp`? seems to be causing file descriptor issues?
-    // const [tmp] = await tmpFile({ discardDescriptor: true });
     const tmpDirname = path.join(path.dirname(compilerFilename), 'downloads');
     const tmp = path.join(tmpDirname, path.basename(compilerFilename));
 
@@ -82,7 +89,7 @@ export class SolidityCompiler implements ICompiler {
     await fs.promises.mkdir(tmpDirname, { recursive: true });
 
     const url = `https://raw.githubusercontent.com/ethereum/solc-bin/gh-pages/linux-amd64/solc-linux-amd64-${compilername}`;
-    console.debug(`downloading compiler "${compilername}" -> "${tmp}"`);
+    log.info(`downloading compiler "${compilername}" -> "${tmp}"`);
     await new Promise<void>((res, rej) => https.get(url, (hres) => {
       const cws = fs.createWriteStream(tmp);
       hres.pipe(cws);
@@ -93,20 +100,20 @@ export class SolidityCompiler implements ICompiler {
     // ensure compilers dir exists
     const dirname = path.dirname(compilerFilename);
     if (!(await fexists(dirname))) {
-      console.debug(`creating ${frel(dirname)}`);
+      log.info(`creating ${frel(dirname)}`);
       await fs.promises.mkdir(dirname, { recursive: true });
     }
 
     // make the compiler executable
-    console.debug(`chmod +x "${tmp}"`);
+    log.info(`chmod +x "${tmp}"`);
     await fs.promises.chmod(tmp, 0o700);
 
     // mv to compiler to proper location
-    console.debug(`mv "${tmp}" -> "${frel(compilerFilename)}"`);
+    log.info(`mv "${tmp}" -> "${frel(compilerFilename)}"`);
     await fs.promises.rename(tmp, compilerFilename);
 
     // compiler ready to use
-    console.debug(`compiler "${compilername}" ("${compilerFilename}") is ready`);
+    log.info(`compiler "${compilername}" ("${compilerFilename}") is ready`);
   }
 
 
@@ -150,7 +157,7 @@ async function solidityCompile(
   if (stderr) {
     const msg = 'WARNING: stderr from solidity:' +
       ` "${compilerFilename}": ${stderr}`;
-    console.warn(msg);
+    log.warn(msg);
   }
 
   const json: CompiledOutput = JSON.parse(stdout);

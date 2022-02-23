@@ -1,21 +1,47 @@
-import { CompilerService, ICompilerService } from "./services/compiler.service";
-import { ContractService, IContractService } from "./services/contract.service";
-import { INodeService, NodeService } from "./services/node.service";
-import { SolidityCompiler } from "./compilers/solidity.compiler";
-import { IStateService, StateService } from "./services/state.service";
-import { ICompiler } from "./types";
-import { IVerificationService, VerificationService } from "./services/verification.service";
-import { ContractProcessorService, IContractProcessorService } from "./services/contract-processor.service";
-import { IParallelProcessorService, ParallelProcessorService } from "./services/parallel-processor.service";
+import {
+  CompilerService,
+  ICompilerService
+} from "./services/compiler.service";
+import {
+  ContractService,
+  ContractServiceOptions,
+} from "./services/contract.service";
+import {
+  INodeService,
+  NodeService,
+  NodeServiceOptions
+} from "./services/node.service";
+import {
+  SolidityCompiler,
+  SolidityServiceOptions
+} from "./compilers/solidity.compiler";
+import {
+  VerificationService,
+  VerificationServiceOptions
+} from "./services/verification.service";
+import {
+  ProcessorService
+} from "./services/processor.service";
+import { DownloadService } from "./services/download.service";
+import { PullContractsService } from "./cli/pull-contracts/pull-contracts.service";
+import { SummariseService, SummariseServiceOptions } from "./cli/summarise/summarise.service";
 
 export interface IServices {
-  contractService: IContractService;
+  contractService: ContractService;
   nodeService: INodeService;
-  stateService: IStateService;
   compilerService: ICompilerService;
-  verificationService: IVerificationService;
-  contractProcessorService: IContractProcessorService;
-  parallelProcessorService: IParallelProcessorService;
+  pullContractsService: PullContractsService;
+  verificationService: VerificationService;
+  processorService: ProcessorService;
+  buildStateService: SummariseService;
+}
+
+export interface BootstrapOptions {
+  contracts?: ContractServiceOptions;
+  nodes?: NodeServiceOptions;
+  solidity?: SolidityServiceOptions;
+  verification?: VerificationServiceOptions;
+  buildState?: SummariseServiceOptions;
 }
 
 /**
@@ -25,30 +51,34 @@ export interface IServices {
  *
  * @returns   application services
  */
-export async function bootstrap(): Promise<IServices> {
-  const contractService: IContractService = new ContractService();
-  const nodeService: INodeService = new NodeService();
-  const stateService: IStateService = new StateService();
-  const solidity: ICompiler = new SolidityCompiler();
-  const compilerService: ICompilerService = new CompilerService(solidity);
-  const verificationService: IVerificationService = new VerificationService(nodeService);
-  const contractProcessorService: IContractProcessorService = new ContractProcessorService(
+export async function bootstrap(options?: BootstrapOptions): Promise<IServices> {
+  const contractService = new ContractService(options?.contracts);
+  const nodeService = new NodeService(options?.nodes);
+  const solidity = new SolidityCompiler(options?.solidity);
+  const compilerService = new CompilerService(solidity);
+  const verificationService = new VerificationService(
+    nodeService,
+    options?.verification
+  );
+  const processorService = new ProcessorService(
     compilerService,
     verificationService,
   );
-  const parallelProcessorService: IParallelProcessorService = new ParallelProcessorService(
-    contractProcessorService,
-    stateService,
+  const pullContractsService = new PullContractsService(
+    contractService,
+    processorService,
+    new DownloadService(),
   );
+  const buildStateService = new SummariseService(options?.buildState);
 
   const services: IServices = {
     contractService,
-    stateService,
     nodeService,
     compilerService,
     verificationService,
-    contractProcessorService,
-    parallelProcessorService,
+    processorService,
+    pullContractsService,
+    buildStateService,
   };
 
   return services;

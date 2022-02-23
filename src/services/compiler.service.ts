@@ -1,4 +1,4 @@
-import { Result } from "@nkp/result";
+import { CompilerType, getCompilerType, isSupported } from "../libs/support";
 import { CompiledOutput, ContractConfig, ContractInput, ICompiler } from "../types";
 
 /**
@@ -18,29 +18,6 @@ export interface ICompilerService {
     config: ContractConfig,
     input: ContractInput,
   ): Promise<CompiledOutput>;
-
-  /**
-   * Is this compiler supported?
-   *
-   * @param compilername    name of the compiler
-   * @returns               whether this compiler is supported
-   */
-  isSupported(compilername: string): boolean;
-
-  /**
-   * Get the type of the compiler
-   *
-   * @param compilername    name of the compiler
-   * @returns               type of the compiler
-   */
-  getCompilerType(compilername: string): CompilerType;
-}
-
-// eslint-disable-next-line no-shadow
-export enum CompilerType {
-  Solidity,
-  Vyper,
-  Unknown,
 }
 
 /**
@@ -57,35 +34,22 @@ export class CompilerService implements ICompilerService {
     this.solidity = solidity;
   }
 
-  /** {@link ICompilerService.isSupported} */
-  // eslint-disable-next-line class-methods-use-this
-  isSupported(compilername: string): boolean {
-    const type = this.getCompilerType(compilername);
-    if (type === CompilerType.Solidity) return true;
-    return false;
-  }
-
-  /** {@link ICompilerService.getCompilerType} */
-  // eslint-disable-next-line class-methods-use-this
-  getCompilerType(compilername: string): CompilerType {
-    // TODO: improve this
-    const type = compilername.includes('vyper')
-      ? CompilerType.Vyper
-      : CompilerType.Solidity;
-    return type;
-  }
-
-
-  /** {@link ICompilerService.compile} */
+  /**
+   * Compile a contract
+   *
+   * @param config    contract config
+   * @param input     contract compilation input
+   * @returns         compiled output
+   */
   async compile(
     config: ContractConfig,
     input: ContractInput,
   ): Promise<CompiledOutput> {
     const { compiler, } = config;
 
-    const type = this.getCompilerType(compiler);
+    const type = getCompilerType(compiler);
 
-    if (!this.isSupported(compiler)) {
+    if (!isSupported(compiler)) {
       throw new Error(`unsupported compiler ${compiler}`);
     }
     
@@ -102,4 +66,5 @@ export class CompilerService implements ICompilerService {
         throw new Error('something went wrong');
     }
   }
+
 }

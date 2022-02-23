@@ -1,10 +1,14 @@
 import fs from "node:fs";
+import chalk from "chalk";
 import { VerifyCliArgs } from "./verify.types";
 import { bootstrap, IServices } from "../../bootstrap";
 import { Address, ChainId } from "../../types";
 import { toBN } from "../../libs/utils";
 import { Contract } from "../../models/contract";
-import { ParallelProcessorOptions } from "../../services/parallel-processor.service";
+import { ParallelProcessorOptions } from "../../services/processor.service";
+import { logger } from "../../logger";
+
+const log = logger.child({});
 
 /**
  * Execution the `verify` command
@@ -12,16 +16,17 @@ import { ParallelProcessorOptions } from "../../services/parallel-processor.serv
  * @param args
  */
 export async function handleVerifyCommand(args: VerifyCliArgs): Promise<void> {
+  log.info('command: verify');
+
   // process cli args
   const {
     address,
     chainId,
-    file,
     skip,
     save,
     failFast,
     jump,
-    dir,
+    dirs,
     concurrency,
   } = args;
 
@@ -45,21 +50,17 @@ export async function handleVerifyCommand(args: VerifyCliArgs): Promise<void> {
     await handleChainId(services, nchainId, address, options);
   }
 
-  else if (file) {
-    await handleFile(services, file, options);
-  }
-
-  else if (dir) {
-    await handleDir(services, dir, options);
+  else if (dirs) {
+    await handleDirs(services, dirs, options);
   }
 
   else {
-    const msg = 'You must provide either --chainId or --file';
+    const msg = 'You must provide either --chainId or --dirs';
     throw new Error(msg);
   }
 
   // success
-  console.info('✔ success: verification complete');
+  log.info(`${chalk.green('✔')} success: verification complete`);
 }
 
 
@@ -90,25 +91,25 @@ async function handleChainId(
   }
 
   await services
-    .parallelProcessorService
+    .processorService
     .process(contracts, options);
 }
 
 /**
  * Verify all contract directories specified
  *
- * @param services
- * @param dir
- * @param skip
+ * @param services  application services
+ * @param dirs      directories with contracts
+ * @param options   processing options
  */
-async function handleDir(
+async function handleDirs(
   services: IServices,
-  dir: string,
+  dirs: string,
   options: ParallelProcessorOptions,
 ): Promise<void> {
   let dirnames: string[];
 
-  if (dir === '-') {
+  if (dirs === '-') {
     // read from stdsin
     dirnames = fs
       .readFileSync(0, 'utf-8',)
@@ -117,7 +118,7 @@ async function handleDir(
       .filter(Boolean); // remove empty lines
   } else {
     // new-line separated directories
-    dirnames = dir.split('\n').filter(Boolean);
+    dirnames = dirs.split('\n').filter(Boolean);
   }
 
   const contracts = await services
@@ -125,37 +126,6 @@ async function handleDir(
     .hydrateContracts(dirnames.map(dirname => ({ dirname })));
 
   await services
-    .parallelProcessorService
-    .process(contracts, options);
-}
-
-
-/**
- * Verify all contracts specified in a file
- *
- * @param services
- * @param file
- * @param skip
- */
-async function handleFile(
-  services: IServices,
-  file: string,
-  options: ParallelProcessorOptions,
-): Promise<void> {
-  // '-' -> stdin file descriptor
-  const useFile = file === '-' ? 0 : file
-
-  const dirnames = fs
-    .readFileSync(useFile, 'utf-8',)
-    .trim()           // remove trailing whitespace
-    .split('\n')      // split new lines
-    .filter(Boolean); // remove empty lines
-
-  const contracts = await services
-    .contractService
-    .hydrateContracts(dirnames.map(dirname => ({ dirname })));
-
-  await services
-    .parallelProcessorService
+    .processorService
     .process(contracts, options);
 }

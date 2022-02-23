@@ -1,27 +1,13 @@
-import { hasOwn, toBN } from "../libs/utils";
+import chalk from 'chalk';
+import { performance } from 'node:perf_hooks';
+import { eng, hasOwn, toChainId } from "../libs/utils";
 import { directVerification, opCodeCodeVerification, runtimeCodeVerification } from "../libs/verifications";
+import { logger } from '../logger';
 import { CompiledOutput, ContractConfig, ContractSourceFile, ContractSourceObject } from "../types";
 import { INodeService } from "./node.service";
 
 
-/**
- * Provides contract verification between compiled output and code stored
- * on the blockchain
- */
-export interface IVerificationService {
-  /**
-   * Verify the compiled output against the Web3 node
-   *
-   * @param output    compiled output
-   * @param config    compiler config
-   * @returns         verified output if successful
-   */
-  verify(
-    output: CompiledOutput,
-    config: ContractConfig,
-  ): Promise<VerifyContractResult>;
-}
-
+const log = logger.child({});
 
 /**
  * Output from contract verification
@@ -36,10 +22,31 @@ export interface VerifyContractResult {
   compiler: string;
 }
 
+/**
+ * Configuration options for the VerificationService
+ */
+export interface VerificationServiceOptions {
+  ignoreWarnings?: boolean;
+}
 
-export class VerificationService implements IVerificationService {
-  constructor(private readonly nodeService: INodeService) {
-    //
+
+/**
+ * Provides contract verification between compiled output and code stored
+ * on the blockchain
+ */
+export class VerificationService {
+  static readonly DEFAULTS = {
+    IGNORE_WARNINGS: false,
+  }
+
+  private readonly ignoreWarnings: boolean;
+
+  constructor(
+    private readonly nodeService: INodeService,
+    options?: VerificationServiceOptions,
+  ) {
+    this.ignoreWarnings = options?.ignoreWarnings
+      ?? VerificationService.DEFAULTS.IGNORE_WARNINGS;
   }
 
 
@@ -56,7 +63,7 @@ export class VerificationService implements IVerificationService {
   ): Promise<VerifyContractResult> {
     const { address, chainId: cChainId, name } = config;
 
-    const chainId = toBN(cChainId).toNumber();
+    const chainId = toChainId(cChainId);
 
     const web3 = await this.nodeService.getWeb3({ chainId });
 
@@ -80,8 +87,32 @@ export class VerificationService implements IVerificationService {
     const mainSrcObj = mainSrcFile[name];
     const compiledCode = mainSrcObj.evm.deployedBytecode.object;
 
-    // TODO: handle liveCode = 0x (contract has already self destructed)
-    const liveCode = await web3.eth.getCode(address);
+    const start = performance.now();
+    const liveCode = await web3
+      .eth
+      .getCode(address)
+      .catch(err => {
+        const end = performance.now();
+        const delta = Math.round(end - start);
+        const msg = 'eth_getCode errored' +
+          `  took=${delta}ms` +
+          `  chainId=${chalk.green(chainId)}` +
+          `  address=${chalk.green(address)}` +
+          `  err=${err.toString()}`
+        log.warn(msg);
+        throw err;
+      });
+    const end = performance.now();
+    const delta = Math.round(end - start);
+
+    if (!this.ignoreWarnings && delta > 5_000) {
+      // detect slow node...
+      const msg = `WARNING eth_getCode took ${chalk.red(eng(delta))}ms` +
+        `  chainId=${chalk.green(chainId)}` +
+        `  address=${chalk.green(address)}`;
+      log.warn(msg);
+    }
+
 
     if (liveCode === '0x') {
       const msg = `liveCode is "0x". The contract has probably self destructed` +

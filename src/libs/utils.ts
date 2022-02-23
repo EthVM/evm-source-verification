@@ -1,7 +1,8 @@
-import cbor from "cbor";
 import https from "node:https";
-import tmp from 'tmp';
+import os from 'node:os';
 import cp from 'node:child_process';
+import cbor from "cbor";
+import chalk from "chalk";
 import { toB58String } from "multihashes";
 import Web3 from "web3";
 import fs from 'fs';
@@ -15,31 +16,26 @@ import { Address, CborDataType, CborDecodedType, HexString } from "../types";
 export const pexec = promisify(cp.exec);
 
 /**
- * Create a temporary file
+ * Create a random filename in the tmp directory
+ * 
+ * Does not actually create the file
+ * 
+ * @returns 
  */
-export function tmpFile(
-  options: tmp.FileOptions,
-): Promise<[filename: string, fd: number]> {
-  return new Promise((res, rej) => {
-    tmp.file(options, (err, name, fd) => {
-      if (err) rej(err);
-      else res([name, fd]);
-    });
-  });
+export function tmpFilename(): string {
+  const filename = path.join(os.tmpdir(), randomBase16(20));
+  return filename;
 }
 
 /**
- * Create a temporary directory
+ * Create a random tmp directory
+ *
+ * @returns
  */
-export function tmpDir(
-  options: tmp.FileOptions
-): Promise<[dirname: string, rm: tmp.DirCallback]> {
-  return new Promise((res, rej) => {
-    tmp.dir(options, (err, name, rm) => {
-      if (err) rej(err);
-      else res([name, rm]);
-    });
-  });
+export async function tmpDir(): Promise<string> {
+  const dirname = path.join(os.tmpdir(), randomBase16(20));
+  await fs.promises.mkdir(dirname, { recursive: true });
+  return dirname;
 }
 
 /**
@@ -362,6 +358,7 @@ export function frel(filename: string): string {
     : filename);
 }
 
+export const HOME_DIR = new RegExp(`^~(\\${path.sep}|$)`);
 
 /**
  * Get the absolute file destination assuming it's relatively based at the
@@ -375,6 +372,12 @@ export function frel(filename: string): string {
  * @returns           absolute normalised filename
  */
 export function fabs(filename: string): string {
+  // is targetting the home directory with ~?
+  if (HOME_DIR.test(filename)) {
+    // replace ^~ with the actual litereal home directory
+    return filename.replace(HOME_DIR, `${os.homedir()}$1`);
+  }
+
   return path.normalize(path.isAbsolute(filename)
     ? filename
     : path.join(process.cwd(), filename))
@@ -382,12 +385,13 @@ export function fabs(filename: string): string {
 
 
 /**
- * Does the file exist?
+ * Does the file exist (and is a file?)?
  * 
  * @param filename  relative or absolute filename
  *                  if the filename is relative it will be treated as relative
  *                  to the cwd
  * @returns         whether the file exists
+ * @throws          if the file is a directory
  */
 export async function fexists(filename: string): Promise<boolean> {
   try {
@@ -549,4 +553,59 @@ export function toChainId(raw: string | number): number {
 
 export function eng(number: number): string {
   return number.toLocaleString('en-US');
+}
+
+export function clamp(min: number, value: number, max: number): number {
+  return Math.min(Math.max(min, value), max);
+}
+
+/**
+ * interpolate the color from low (cyan) to high (red)
+ * to apply to the string
+ * 
+ * @param low       green value
+ * @param value     actual value
+ * @param high      red value
+ * @param string    string to color
+ * @returns         colored string
+ */
+export function interpolateColor(
+  low: number,
+  value: number,
+  high: number,
+  string: string,
+): string {
+  const interpolation = (value - low) / (high - low);
+  if (interpolation <= 0) return chalk.cyan(string);
+  if (interpolation >= 1) return chalk.red(string);
+  const between = ['green', 'yellow'] as const;
+  const idxMax = between.length - 1;
+  const idx = clamp(0, Math.round(idxMax * interpolation), idxMax);
+  const color = between[idx];
+  return chalk[color](string);
+}
+
+
+/**
+ * Create a random base 16 string of the desired length
+ *
+ * @param length      length of the string
+ * @returns           random string
+ */
+export function randomBase16(length: number): string {
+  let str = '';
+  for (let i = 0; i < length; i += 1) {
+    str += Math.floor(16 * Math.random()).toString(16);
+  }
+  return str;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function sortKeys<T extends Record<any, any>>(object: T): T {
+  const out: T = {} as T;
+  Object
+    .keys(object)
+    .sort()
+    .forEach(key => { out[key as keyof T] = object[key] });
+  return object;
 }

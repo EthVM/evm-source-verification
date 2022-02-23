@@ -1,18 +1,19 @@
-import { Result } from "@nkp/result";
-import { getTestCases } from "../../tests/utils/get-test-cases";
-import { TestCase } from "../../tests/utils/test-case";
 import { SolidityCompiler } from "../compilers/solidity.compiler";
 import { SOLIDITY_COMPILE_TIMEOUT } from "../constants";
+import { TestContract } from "../models/contract.test.util";
 import { ICompiler } from "../types";
 import { ICompilerService, CompilerService } from "./compiler.service";
+import { TestContractService } from "./contract.service.test.util";
 
 describe('CompilerService', () => {
-  let testCases: TestCase[] = [];
+  let tcontractService: TestContractService;
+  let testCases: TestContract[];
   let solidityCompiler: ICompiler;
   let compilerService: ICompilerService;
 
   beforeAll(async () => {
-    testCases = await getTestCases();
+    tcontractService = new TestContractService();
+    testCases = await tcontractService.getTestCases();
   });
 
   beforeEach(async () => {
@@ -20,7 +21,7 @@ describe('CompilerService', () => {
     compilerService = new CompilerService(solidityCompiler);
   })
 
-  const count = 1;
+  const count = 3;
 
   it(`should compile ${count} test cases successfully`, async () => {
     for (const testCase of testCases.slice(0, count)) {

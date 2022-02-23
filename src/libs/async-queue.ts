@@ -2,7 +2,9 @@ import { performance } from 'node:perf_hooks';
 import { LinkedList } from "@nkp/linked-list";
 import { Result } from "@nkp/result";
 import { Mutex } from "async-mutex";
-import { ymdhms } from "./utils";
+import { logger } from '../logger';
+
+const log = logger.child({});
 
 type Work<T, R> =
   | Work.Processing<T, R>
@@ -43,7 +45,7 @@ export interface ResultHandler<T, R> {
    * @param result    result of processing
    * @returns         true to continue, false to force stop
    */
-  (result: Result<R, Error>, ctx: WorkCtx<T>): Promise<undefined | Error>;
+  (result: Result<R, Error>, ctx: WorkCtx<T>): Promise<void | undefined | Error>;
 }
 
 /**
@@ -117,14 +119,17 @@ export function asyncQueue<T, R>(
 
     const enqueueMutex = new Mutex();
 
-    idleQueue.push(...workHandlers);
+    // effectively clone each work handler to ensure referentually inequality
+    // so we can identify handlers by their reference
+    idleQueue.push(...workHandlers
+      .map((wh): WorkHandler<T, R> => (...args) => wh(...args)));
 
     const concurrency = workHandlers.length;
 
     tick();
 
     function forceStop(err: Error) {
-      console.debug(`[${ymdhms()}] stopping... ${err.toString()}`);
+      log.info(`stopping... ${err.toString()}`);
       isStopping = { err };
       // empty the completed queuje
       while (completedQueue.size) { completedQueue.shift(); }
@@ -176,10 +181,10 @@ export function asyncQueue<T, R>(
         // wait for the workQueue to empty
         // before rejecting the outer promise empty
         if (!workQueue.size) {
-          console.debug(`[${ymdhms()}] queue empty... stopping`);
+          log.info(`queue empty... stopping`);
           return rej(isStopping.err);
         }
-        console.debug(`[${ymdhms()}] waiting for workQueue` +
+        log.info(`waiting for workQueue` +
           ` to empty before stopping...` +
           ` ${workQueue.size} items left`);
         return;
@@ -196,8 +201,6 @@ export function asyncQueue<T, R>(
       }
 
       if (!pendingQueue.size && !completedQueue.size && !workQueue.size) {
-        console.info(`[${ymdhms()}] tick:` +
-          ' finished!');
         res();
       }
     }

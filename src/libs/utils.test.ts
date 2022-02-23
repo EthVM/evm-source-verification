@@ -1,6 +1,21 @@
 // eslint-disable-next-line import/no-extraneous-dependencies
-import fs from 'fs';
-import { arrObjPush, arrPush, tmpFile, hasOwn, randomAddress, readJSONFile, writeJSONFile, isSafeFilename } from './utils';
+import fs from 'node:fs';
+import path from 'node:path';
+import {
+  arrObjPush,
+  arrPush,
+  hasOwn,
+  randomAddress,
+  readJSONFile,
+  writeJSONFile,
+  isSafeFilename,
+  randomChainId,
+  tmpDir,
+  fexists,
+  HOME_DIR,
+  frel,
+  tmpFilename,
+} from './utils';
 
 describe('utils', () => {
   describe('hasOwn', () => {
@@ -22,7 +37,7 @@ describe('utils', () => {
 
   describe('readJsonFile', () => {
     it('should read and parse JSON from a JSON formatted file', async () => {
-      const [filename] = await tmpFile({ discardDescriptor: true });
+      const filename = await tmpFilename();
       try {
         const data = { hello: 'world' };
         await fs.promises.writeFile(filename, JSON.stringify(data), 'utf-8');
@@ -34,7 +49,7 @@ describe('utils', () => {
     });
 
     it('should throw if the file is not JSON formatted', async () => {
-      const [filename] = await tmpFile({ discardDescriptor: true });
+      const filename = await tmpFilename();
       try {
         await fs.promises.writeFile(filename, 'not a json file', 'utf-8');
         await expect(() => readJSONFile(filename)).rejects.toThrow();
@@ -44,20 +59,15 @@ describe('utils', () => {
     });
 
     it('should return undefined if the file does not exist', async () => {
-      const [filename] = await tmpFile({ discardDescriptor: true });
-      try {
-        await fs.promises.rm(filename);
-        const out = await readJSONFile(filename);
-        expect(out).toBeUndefined();
-      } finally {
-        //
-      }
+      const filename = await tmpFilename();
+      const out = await readJSONFile(filename);
+      expect(out).toBeUndefined();
     });
   });
 
   describe('writeJsonFile', () => {
     it('should write JSON format to a file', async () => {
-      const [filename] = await tmpFile({ discardDescriptor: true });
+      const filename = await tmpFilename();
       try {
         const data = { hello: 'world' };
         await writeJSONFile(filename, data);
@@ -69,7 +79,7 @@ describe('utils', () => {
     });
 
     it('should respect options.pretty', async () => {
-      const [filename] = await tmpFile({ discardDescriptor: true });
+      const filename = await tmpFilename();
       try {
         const data = { hello: 'world' };
         await writeJSONFile(filename, data, { pretty: true });
@@ -126,9 +136,37 @@ describe('utils', () => {
     });
   });
 
+  describe('randomChainId', () => {
+    it('should create a random chain id', () => {
+      const chainId = randomChainId();
+      expect(typeof chainId).toBe('number');
+      expect(Number.isFinite(chainId)).toBeTruthy();
+    });
+  });
+
   describe('fexists', () => {
-    it('todo: should work', () => {
-      expect(true).toBeTruthy();
+    it('should return true if a file exists', async () => {
+      const filename = await tmpFilename();
+      await fs.promises.writeFile(filename, '', 'utf-8');
+      try {
+        expect(await fexists(filename)).toBeTruthy();
+      } finally {
+        await fs.promises.rm(filename);
+      }
+    });
+
+    it('should return true the file is a directory', async () => {
+      const dirname = await tmpDir();
+      try {
+        expect(await fexists(dirname)).toBeTruthy();
+      } finally {
+        await fs.promises.rmdir(dirname);
+      }
+    });
+
+    it('should return false if a file does not exist', async () => {
+      const filename = await tmpFilename();
+      expect(await fexists(filename)).toBeFalsy();
     });
   });
 
@@ -151,6 +189,72 @@ describe('utils', () => {
 
       const slashes = 'has/dashes';
       it(`name: ${slashes}`, () => expect(isSafeFilename(slashes)).toBeFalsy());
+    });
+  });
+
+  describe('HOME_DIR', () => {
+    it('should match ~', () => {
+      const match = '~'.match(HOME_DIR);
+      expect(match).toBeTruthy();
+      expect(match![0]).toBe('~');
+      expect(match![1]).toBe('');
+    });
+
+    it('should match ~/', () => {
+      const match = '~/'.match(HOME_DIR);
+      expect(match).toBeTruthy();
+      expect(match![0]).toBe('~/');
+      expect(match![1]).toBe('/');
+    });
+
+    it('should not match /~', () => {
+      const match = '/~'.match(HOME_DIR);
+      expect(match).toBeNull();
+    });
+
+    it('should not match ./~', () => {
+      const match = './~'.match(HOME_DIR);
+      expect(match).toBeNull();
+    });
+  });
+
+  describe('frel', () => {
+    it('should leave relative filenames unchanged', () => {
+      const relname = 'relative/file-name';
+      const actual = frel(relname);
+      const expected = relname;
+      expect(actual).toEqual(expected);
+      // const expected = path.join(os.homedir(), 'within-home');
+    });
+
+    describe('should leave change absolute filenames to relative filenames', () => {
+      it('/relative/file-name', () => {
+        const relname = '/relative/file-name';
+        const actual = frel(relname);
+        const expected = path.relative(process.cwd(), relname);
+        expect(actual).toEqual(expected);
+      });
+      it('./relative/file-name', () => {
+        const relname = './relative/file-name';
+        const actual = frel(relname);
+        const expected = path.relative(process.cwd(), relname);
+        expect(actual).toEqual(expected);
+      });
+    });
+  });
+
+  describe('fabs', () => {
+    // TODO
+    it('should leave absolute filenames unchanged', () => {
+      //
+    });
+
+    it('should leave change relative filenames to absolute filenames', () => {
+      //
+    });
+
+    it('should leave change relative filenames to absolute filenames', () => {
+      //
     });
   });
 });

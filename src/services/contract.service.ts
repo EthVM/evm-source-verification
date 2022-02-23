@@ -1,26 +1,25 @@
 import { toPercentage } from '@nkp/percentage';
 import fs from 'node:fs';
 import path from 'node:path';
-import { eng, mapGetOrCreate, toBN, toChainId, ymdhms } from "../libs/utils";
+import { eng, fabs, mapGetOrCreate, toChainId } from "../libs/utils";
+import { logger } from '../logger';
 import { Contract } from '../models/contract';
-import { FsContract, FsContractOptions } from '../models/contract.fs';
-import { IContractStorage } from '../models/contract.storage';
+import { ContractStorage, ContractStorageOptions } from '../models/contract.storage';
 import {
-  ContractConfig,
-  ContractInput,
   ContractIdentity,
   HasChainId,
   Address,
   ChainId,
 } from "../types";
 
+const log = logger.child({});
 
 /**
  * Result of matching a single contract filename
  */
 export interface ContractMatch {
   /**
-   * Original matched filename
+   * Absolute path of the original filename
    */
   filename: string;
 
@@ -35,7 +34,7 @@ export interface ContractMatch {
   address: string;
 
   /**
-   * Dirname of the matched contract
+   * Absolute dirname of the matched contract
    */
   dirname: string;
 
@@ -64,27 +63,27 @@ export interface ContractPath {
   address: Address;
 
   /**
-   * Directory of the contract
+   * Absolute directory of the contract
    */
   dirname: string;
 
   /**
-   * The config filename if it was matched
+   * The absolute config filename if it was matched
    */
   configFilename: null | string;
 
   /**
-   * The input filename if it was matched
+   * The absolute input filename if it was matched
    */
   inputFilename: null | string;
 
   /**
-   * The metadata filename if it was matched
+   * The absolute metadata filename if it was matched
    */
   metadataFilename: null | string;
 
   /**
-   * Unknown files found within the contract directory
+   * Unknown absolute filenames found within the contract directory
    */
   unknown: string[]
 }
@@ -115,106 +114,6 @@ export interface ContractPathMatches {
 export interface ChainPath {
   id: number;
   contracts: ContractPaths;
-}
-
-/**
- * Provides access to contracts
- */
-export interface IContractService {
-  /**
-   * Get all saved contracts
-   *
-   * @returns   all contracts for all chains
-   */
-  getContracts(): Promise<Contract[]>
-
-  /**
-   * Get all saved for the chain
-   *
-   * @param identity    identity of the chain
-   * @returns           all contracts the chain
-   */
-  getChainContracts(identity: HasChainId): Promise<Contract[]>
-
-  /**
-   * Get the contract of the address
-   *
-   * @param identity    identity of the contract
-   * @returns           the contract
-   * @throws            if the contract doesn't exist
-   */
-  getContract(identity: ContractIdentity): Promise<Contract>
-
-  /**
-   * Hydrate many contracts from the filesystem
-   *
-   * @param args      fs args
-   * @param options   globally shared options
-   * @returns         hydrated contracts
-   */
-  hydrateContracts(
-    args: {
-      dirname: string,
-      options?: Partial<FsContractOptions>,
-    }[],
-    options?: Partial<FsContractOptions>,
-  ): Promise<Contract[]>;
-
-  /**
-   * Hydrate a new contract from the filesystem
-   *
-   * @param dirname     dirname of the contract
-   * @param options     storage options
-   * @returns           filesystem based contract
-   */
-  hydrateContract(
-    dirname: string,
-    options?: Partial<FsContractOptions>,
-  ): Promise<Contract>;
-
-  /**
-   * Hydrate a new contract from the given storage
-   *
-   * @param storage     storage use to hydrate the contract
-   * @returns           filesystem based contract
-   */
-  hydrateContractFrom(storage: IContractStorage): Promise<Contract>;
-
-  /**
-   * Match a contract-like filename or dirname to get it's identifying info
-   * like chainId and address
-   *
-   * @param filename    contract-like filename or dirname
-   * @returns           contract info if match was successful
-   */
-  matchContractFilename(filename: string): null | ContractMatch;
-
-  /**
-   * Match many contract-like filenameas and dirnames to get their identifying info
-   * like chainId and address
-   *
-   * Groups results from similar chains and contracts together
-   * 
-   * @param filenames   contract-like filenames or dirnames
-   * @returns           matched chains and contracts, and unmatched files
-   */
-  matchContractFilenames(filenames: string[]): ContractPathMatches;
-
-  /**
-   * Assert that a contract config is valid
-   * 
-   * @param identity 
-   * @param config 
-   */
-  validateConfig(identity: ContractIdentity, config: ContractConfig): void;
-
-  /**
-   * Assert that a contract input is valid
-   * 
-   * @param identity 
-   * @param input 
-   */
-  validateInput(identity: ContractIdentity, input: ContractInput): void;
 }
 
 /**
@@ -251,9 +150,11 @@ export interface ContractServiceOptions {
 }
 
 /**
- * @inheritdoc
+ * Provides access to contracts in the filesystem
+ *
+ * Matches filesystem paths to extract contract data
  */
-export class ContractService implements IContractService {
+export class ContractService {
   public static DEFAULTS = {
     DIRNAME: 'contracts',
     CONFIG_BASENAME: 'configs.json',
@@ -262,7 +163,7 @@ export class ContractService implements IContractService {
   }
 
   /**
-   * directory with the application's contracts
+   * absolute directory with the application's contracts
    *
    * @example "contracts"
    */
@@ -295,8 +196,8 @@ export class ContractService implements IContractService {
    * @param options   configuration of the ContractService
    */
   constructor(options?: ContractServiceOptions) {
-    this.dirname = options?.dirname
-      ?? ContractService.DEFAULTS.DIRNAME;
+    this.dirname = fabs(options?.dirname
+      ?? ContractService.DEFAULTS.DIRNAME);
 
     this.configBasename = options?.configBasename
       ?? ContractService.DEFAULTS.CONFIG_BASENAME;
@@ -378,7 +279,7 @@ export class ContractService implements IContractService {
   }
 
   /**
-   * Get the contract of the address
+   * Get the contract of the address and chainId
    *
    * @param identity    identity of the contract
    * @returns           the contract
@@ -399,15 +300,15 @@ export class ContractService implements IContractService {
   async hydrateContracts(
     args: {
       dirname: string,
-      options?: Partial<FsContractOptions>,
+      options?: Partial<ContractStorageOptions>,
     }[],
-    options?: Partial<FsContractOptions>,
+    options?: Partial<ContractStorageOptions>,
   ): Promise<Contract[]> {
     const contracts: Contract[] = []
     let i = 0;
     const total = args.length;
 
-    console.log(`[${ymdhms()}] loading ${eng(total)} contracts...`);
+    log.info(`loading ${eng(total)} contracts...`);
 
     const LOG_EVERY = 1000;
     for (const arg of args) {
@@ -418,7 +319,7 @@ export class ContractService implements IContractService {
       );
 
       if ((i % LOG_EVERY) === 0) {
-        console.log(`[${ymdhms()}] loading contracts...` +
+        log.info(`loading contracts...` +
           `  ${eng(i)}/${eng(total)}` +
           `  ${toPercentage(i/total)}`);
       }
@@ -435,29 +336,16 @@ export class ContractService implements IContractService {
    * @param options     storage options
    * @returns           filesystem based contract
    */
-  hydrateContract(
+  async hydrateContract(
     dirname: string,
-    options?: Partial<FsContractOptions>,
+    options?: Partial<ContractStorageOptions>,
   ): Promise<Contract> {
-    const _options: FsContractOptions = {
+    const _options: ContractStorageOptions = {
       configBasename: options?.configBasename ?? this.configBasename,
       inputBasename: options?.inputBasename ?? this.inputBasename,
       metadataBasename: options?.metadataBasename ?? this.metadataBasename,
     }
-    const storage = new FsContract(dirname, _options);
-    return this.hydrateContractFrom(storage);
-  }
-
-  /**
-   * Hydrate a new contract from the given storage
-   *
-   * @param storage     storage use to hydrate the contract
-   * @returns           filesystem based contract
-   */
-  // eslint-disable-next-line class-methods-use-this
-  async hydrateContractFrom(
-    storage: IContractStorage,
-  ): Promise<Contract> {
+    const storage = new ContractStorage(dirname, _options);
     const config  = await storage.getConfig();
     const { chainId, address, name } = config;
     const contract = new Contract(toChainId(chainId), address, storage, name);
@@ -473,8 +361,10 @@ export class ContractService implements IContractService {
    */
   matchContractFilename(filename: string): null | ContractMatch {
     const { dirname } = this;
-    const regex = new RegExp(`^(${dirname}\\/([0-9]+)\\/(0x[a-f0-9]{40}))(\\/.*|$)`);
-    const rmatch = filename.match(regex);
+    // TODO: does this also work on windows?
+    const regex = new RegExp(`^(${dirname}\\${path.sep}([0-9]+)\\${path.sep}(0x[a-f0-9]{40}))(\\${path.sep}.*|$)`);
+    const filenameabs = fabs(filename);
+    const rmatch = filenameabs.match(regex);
     if (!rmatch) return null;
     const [, contractDirname, chainId, address, subpath] = rmatch;
     return {
@@ -560,68 +450,6 @@ export class ContractService implements IContractService {
     };
   }
 
-
-  /**
-   * Assert that a contract config is valid
-   * 
-   * @param identity 
-   * @param config 
-   */
-  // eslint-disable-next-line class-methods-use-this
-  validateConfig(identity: ContractIdentity, config: ContractConfig): void {
-    // TODO: better validation
-
-    const {
-      chainId,
-      address,
-    } = identity;
-
-    const {
-      chainId: cchainId,
-      address: caddress,
-      compiler: ccompiler,
-      name: cname,
-    } = config;
-
-    if (!cname)
-      throw new Error(`config of chainId=${chainId},` +
-        ` address=${address} has no name`);
-
-    if (!caddress)
-      throw new Error(`config of chainId=${chainId},` +
-        ` address=${address} has no address`);
-
-    if (!cchainId)
-      throw new Error(`config of chainId=${chainId},` +
-        ` address=${address} has no chainId`);
-
-    if (!ccompiler)
-      throw new Error(`config of chainId=${chainId},` +
-        ` address=${address} has no compiler`);
-
-    // validate identity
-
-    if (caddress !== address)
-      throw new Error(`addresses of chainId=${chainId},` +
-        ` address=${address} do not match`);
-
-    if (toBN(cchainId).toNumber() !== chainId)
-      throw new Error(`chainIds of of chainId=${chainId},` +
-        ` address=${address} do not match`);
-  }
-
-
-  /**
-   * Assert that a contract input is valid
-   * 
-   * @param identity 
-   * @param input 
-   */
-  // eslint-disable-next-line class-methods-use-this
-  validateInput(): void {
-    // TODO
-  }
-
   /**
    * Get the absolute fs directory location of a contract chain with the given
    * chainId
@@ -651,52 +479,6 @@ export class ContractService implements IContractService {
     return path.join(
       this.getChainDirname({ chainId: options.chainId }),
       options.address,
-    );
-  }
-
-  /**
-   * Get the absolute fs location of a contract's config.json
-   * 
-   * @param identity    contract identity
-   * @returns           contract's config filename
-   * 
-   * @private
-   */
-  private getConfigFilename(identity: ContractIdentity): string {
-    return path.join(
-      this.getAddressDirname(identity),
-      this.configBasename,
-    );
-  }
-
-  /**
-   * Get the absolute fs location of a contract's input.json
-   * 
-   * @param identity    contract identity
-   * @returns           contract's input filename
-   * 
-   * @private
-   */
-  private getInputFilename(identity: ContractIdentity): string {
-    return path.join(
-      this.getAddressDirname(identity),
-      this.inputBasename,
-    );
-  }
-
-
-  /**
-   * Get the absolute fs location of the contract's verified metadata file
-   *
-   * @param identity    contract identity
-   * @returns           contract's metadata filename
-   * 
-   * @private
-   */
-  private getMetadataFilename(identity: ContractIdentity): string {
-    return path.join(
-      this.getAddressDirname(identity),
-      this.metadataBasename,
     );
   }
 }
