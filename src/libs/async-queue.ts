@@ -129,7 +129,7 @@ export function asyncQueue<T, R>(
     tick();
 
     function forceStop(err: Error) {
-      log.info(`stopping... ${err.toString()}`);
+      log.warn(`stopping queue... ${err.toString()}`);
       isStopping = { err };
       // empty the completed queuje
       while (completedQueue.size) { completedQueue.shift(); }

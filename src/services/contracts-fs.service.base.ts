@@ -1,13 +1,14 @@
+/* eslint-disable max-classes-per-file */
 import { toPercentage } from '@nkp/percentage';
 import fs from 'node:fs';
 import path from 'node:path';
 import { eng, fabs, mapGetOrCreate, toChainId } from "../libs/utils";
 import { logger } from '../logger';
-import { Contract } from '../models/contract';
+import { IContract, ICreateContractOptions } from '../models/contract';
 import { ContractStorage, ContractStorageOptions } from '../models/contract.storage';
 import {
-  ContractIdentity,
-  HasChainId,
+  IContractIdentity,
+  IHasChainId,
   Address,
   ChainId,
 } from "../types";
@@ -150,11 +151,13 @@ export interface ContractServiceOptions {
 }
 
 /**
+ * Abstract base contract service
+ *
  * Provides access to contracts in the filesystem
  *
  * Matches filesystem paths to extract contract data
  */
-export class ContractService {
+export abstract class BaseContractsFsService<T extends IContract = IContract> {
   public static DEFAULTS = {
     DIRNAME: 'contracts',
     CONFIG_BASENAME: 'configs.json',
@@ -197,25 +200,29 @@ export class ContractService {
    */
   constructor(options?: ContractServiceOptions) {
     this.dirname = fabs(options?.dirname
-      ?? ContractService.DEFAULTS.DIRNAME);
+      ?? BaseContractsFsService.DEFAULTS.DIRNAME);
 
     this.configBasename = options?.configBasename
-      ?? ContractService.DEFAULTS.CONFIG_BASENAME;
+      ?? BaseContractsFsService.DEFAULTS.CONFIG_BASENAME;
 
     this.inputBasename = options?.inputBasename
-      ?? ContractService.DEFAULTS.INPUT_BASENAME;
+      ?? BaseContractsFsService.DEFAULTS.INPUT_BASENAME;
 
     this.metadataBasename = options?.metadataBasename
-      ?? ContractService.DEFAULTS.METADATA_BASENAME;
+      ?? BaseContractsFsService.DEFAULTS.METADATA_BASENAME;
   }
+
+  protected abstract createContract(options: ICreateContractOptions): T;
+
 
   /**
    * Get all saved contracts
    *
    * @returns   all contracts for all chains
    */
-  async getContracts(): Promise<Contract[]> {
+  async getContracts(): Promise<T[]> {
     const rootdir = this.dirname;
+    // note: this could be cleaned up using a glob library
 
     // get all chain directories
     const chainDirents: fs.Dirent[] = await fs
@@ -223,23 +230,25 @@ export class ContractService {
       .readdir(rootdir, { withFileTypes: true });
 
     const addressDirnames: string[] = await Promise
-      .all(chainDirents.map(async chainDir => {
-        // expand chain dirname
-        const chainDirname = path.join(rootdir, chainDir.name);
+      .all(chainDirents
+        .filter(dir => dir.isDirectory())
+          .map(async chainDir => {
+            // expand chain dirname
+            const chainDirname = path.join(rootdir, chainDir.name);
 
-        // get address dirents
-        const addrDirents = await fs
-          .promises
-          .readdir(chainDirname, { withFileTypes: true })
+            // get address dirents
+            const addrDirents = await fs
+              .promises
+              .readdir(chainDirname, { withFileTypes: true })
 
-        // expand address dirnames
-        const addrDirnames = addrDirents.map(addrDir => path.join(
-          chainDirname,
-          addrDir.name,
-        ));
+            // expand address dirnames
+            const addrDirnames = addrDirents.map(addrDir => path.join(
+              chainDirname,
+              addrDir.name,
+            ));
 
-        return addrDirnames;
-      }))
+            return addrDirnames;
+          }))
       // flatten 2d chainIds-addresses
       .then((chainAddrDirnames) => chainAddrDirnames.flat());
 
@@ -257,8 +266,8 @@ export class ContractService {
    * @returns           all contracts the chain
    */
   async getChainContracts(
-    identity: HasChainId,
-  ): Promise<Contract[]> {
+    identity: IHasChainId,
+  ): Promise<IContract[]> {
     const chainDirname = this.getChainDirname(identity);
     const dirs = await fs
       .promises
@@ -285,7 +294,7 @@ export class ContractService {
    * @returns           the contract
    * @throws            if the contract doesn't exist
    */
-  async getContract(identity: ContractIdentity): Promise<Contract> {
+  async getContract(identity: IContractIdentity): Promise<T> {
     const contract = await this.hydrateContract(this.getAddressDirname(identity));
     return contract;
   }
@@ -303,8 +312,8 @@ export class ContractService {
       options?: Partial<ContractStorageOptions>,
     }[],
     options?: Partial<ContractStorageOptions>,
-  ): Promise<Contract[]> {
-    const contracts: Contract[] = []
+  ): Promise<T[]> {
+    const contracts: T[] = []
     let i = 0;
     const total = args.length;
 
@@ -339,7 +348,7 @@ export class ContractService {
   async hydrateContract(
     dirname: string,
     options?: Partial<ContractStorageOptions>,
-  ): Promise<Contract> {
+  ): Promise<T> {
     const _options: ContractStorageOptions = {
       configBasename: options?.configBasename ?? this.configBasename,
       inputBasename: options?.inputBasename ?? this.inputBasename,
@@ -348,7 +357,13 @@ export class ContractService {
     const storage = new ContractStorage(dirname, _options);
     const config  = await storage.getConfig();
     const { chainId, address, name } = config;
-    const contract = new Contract(toChainId(chainId), address, storage, name);
+    const create: ICreateContractOptions = {
+      chainId: toChainId(chainId),
+      address,
+      storage,
+      name,
+    }
+    const contract = this.createContract(create);
     return contract;
   }
 
@@ -459,7 +474,7 @@ export class ContractService {
    * 
    * @private
    */
-  private getChainDirname(identity: HasChainId): string {
+  private getChainDirname(identity: IHasChainId): string {
     return path.join(
       this.dirname,
       identity.chainId.toString(),
@@ -475,7 +490,7 @@ export class ContractService {
    * 
    * @private
    */
-  private getAddressDirname(options: ContractIdentity): string {
+  private getAddressDirname(options: IContractIdentity): string {
     return path.join(
       this.getChainDirname({ chainId: options.chainId }),
       options.address,

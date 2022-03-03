@@ -3,7 +3,7 @@ import { performance } from 'node:perf_hooks';
 import { eng, hasOwn, toChainId } from "../libs/utils";
 import { directVerification, opCodeCodeVerification, runtimeCodeVerification } from "../libs/verifications";
 import { logger } from '../logger';
-import { CompiledOutput, ContractConfig, ContractSourceFile, ContractSourceObject } from "../types";
+import { CompilerOutputOk, ContractConfig, ContractSourceFile, ContractSourceObject } from "../types";
 import { INodeService } from "./node.service";
 
 
@@ -58,16 +58,16 @@ export class VerificationService {
    * @returns         verified output if successful
    */
   async verify(
-    output: CompiledOutput,
+    output: CompilerOutputOk,
     config: ContractConfig,
   ): Promise<VerifyContractResult> {
     const { address, chainId: cChainId, name } = config;
 
     const chainId = toChainId(cChainId);
 
-    const web3 = await this.nodeService.getWeb3({ chainId });
+    // const web3 = await this.nodeService.getWeb3({ chainId });
 
-    if (!web3) throw new Error(`unsupported chainId: ${chainId}`);
+    // assert.ok(web3, `unsupported chainId: ${chainId}`);
 
     // search the solidity compiled json output for the file containing the
     // main contract
@@ -88,9 +88,9 @@ export class VerificationService {
     const compiledCode = mainSrcObj.evm.deployedBytecode.object;
 
     const start = performance.now();
-    const liveCode = await web3
-      .eth
-      .getCode(address)
+    const liveCode = await this
+      .nodeService
+      .getCode({ chainId, address })
       .catch(err => {
         const end = performance.now();
         const delta = Math.round(end - start);

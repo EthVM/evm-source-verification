@@ -1,7 +1,7 @@
 import path from 'node:path';
 import fs from 'node:fs';
 import { fabs, fexists, writeJSONFile } from "../libs/utils";
-import { ContractConfig, ContractInput, ContractMetadata } from '../types';
+import { ContractConfig, CompilerInput, ContractMetadata } from '../types';
 
 /**
  * Filesystem contract configuration
@@ -136,7 +136,7 @@ export class ContractStorage {
    * @returns contract's input
    * @throws  if the contract's input does not exist
    */
-  getInput(): Promise<ContractInput> {
+  getInput(): Promise<CompilerInput> {
     return fs
       .promises
       .readFile(this.getInputFilename())
@@ -159,7 +159,7 @@ export class ContractStorage {
   }
 
   /**
-   * Get the absolute fs location of the contract's directory
+   * Get the absolute filesystem path of the contract's directory
    *
    * @returns contract's absolute dirname
    */
@@ -168,9 +168,9 @@ export class ContractStorage {
   }
 
   /**
-   * Get the absolute fs location of the contract's verified config file
+   * Get the absolute filesystem path of the contract's config file
    *
-   * @returns contract's absolute config filename
+   * @returns absolute path of the contract's config file
    */
   getConfigFilename(): string {
     return path.join(
@@ -180,9 +180,9 @@ export class ContractStorage {
   }
 
   /**
-   * Get the absolute fs location of the contract's verified input file
+   * Get the absolute filesystem path of the contract's input file
    *
-   * @returns contract's absolute input filename
+   * @returns absolute path of the contract's input file
    */
   getInputFilename(): string {
     return path.join(
@@ -192,9 +192,9 @@ export class ContractStorage {
   }
 
   /**
-   * Get the absolute fs location of the contract's verified metadata file
+   * Get the absolute filesystem path of the contract's verified metadata file
    *
-   * @returns contract's absolute metadata filename
+   * @returns absolute path of the contract's metadata file
    */
   getMetadataFilename(): string {
     return path.join(

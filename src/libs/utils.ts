@@ -1,4 +1,3 @@
-import https from "node:https";
 import os from 'node:os';
 import cp from 'node:child_process';
 import cbor from "cbor";
@@ -9,6 +8,11 @@ import fs from 'fs';
 import path from 'path';
 import { promisify } from 'util';
 import { Address, CborDataType, CborDecodedType, HexString } from "../types";
+
+/**
+ * miscillaneous helper functions
+ */
+
 
 /**
  * Execute a CLI command
@@ -194,7 +198,8 @@ export function getBytecodeMetadatas(bytecode: string): CborDataType[] {
  * @returns 
  */
 export function hasOwn(
-  object: Record<string, unknown>,
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  object: Record<string, unknown> | object,
   property: PropertyKey,
 ): boolean {
   return Object.prototype.hasOwnProperty.call(object, property);
@@ -476,63 +481,27 @@ export function mapGetOrCreate<K, V>(
   return value;
 }
 
-
 /**
- * TODO: docs
- * TODO: testing
- * 
- * @param uri 
- * @param filename 
- * @returns 
+ * Update or insert a new value into a map
+ *
+ * @param map           host map
+ * @param key           target key
+ * @param upsert        update function
+ * @param initialValue  initial value at the ey
+ * @returns             upserted value
  */
-export function downloadFile(uri: string, filename: string): Promise<void> {
-  return new Promise((res, rej) => _download(
-    uri,
-    filename,
-    (err) => err ? rej(err) : res())
-  );
-}
-
-
-/**
- * TODO: docs
- * TODO: testing
- * 
- * @param uri 
- * @param filename 
- * @param cb 
- */
-function _download(
-  uri: string,
-  filename: string,
-  cb: (err?: unknown) => void,
-  redirects = 0,
-) {
-  const url = new URL(uri);
-  // remove ending ":"" from protocool
-  const protocol = url.protocol.slice(0, -1);
-  if (protocol !== 'https' && protocol !== 'http') {
-    throw new Error(`unsupported protocol "${protocol}"`)
-  }
-  https.get(uri, (hres) => {
-    const code = hres.statusCode ?? 500;
-    if ((code >= 200) && (code < 300)) {
-      // response is the file
-      const fws = fs.createWriteStream(filename);
-      fws.on('finish', cb);
-      fws.on('error', cb);
-      hres.pipe(fws);
-    } else if (hres.headers.location) {
-      // response is redirect
-      // follow redirect
-      if (redirects >= 10) {
-        throw new Error(`too many redirects (${redirects})`);
-      }
-      _download(hres.headers.location, filename, cb, redirects += 1);
-    } else {
-      cb(new Error(`Unexpected response: ${code}, ${hres.statusMessage}`));
-    }
-  });
+export function mupsert<K, V>(
+  map: Map<K, V>,
+  key: K,
+  upsert: (prev: V) => V,
+  initialValue: V
+): V {
+  let initial: V;
+  if (map.has(key)) initial = map.get(key)!;
+  else initial = initialValue;
+  const next = upsert(initial);
+  map.set(key, next);
+  return next;
 }
 
 
@@ -600,6 +569,12 @@ export function randomBase16(length: number): string {
   return str;
 }
 
+/**
+ * Immutably sort the keys of an object
+ * 
+ * @param object 
+ * @returns 
+ */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function sortKeys<T extends Record<any, any>>(object: T): T {
   const out: T = {} as T;

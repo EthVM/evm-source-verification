@@ -1,38 +1,35 @@
-import { SolidityCompiler } from "../compilers/solidity.compiler";
-import { SOLIDITY_COMPILE_TIMEOUT } from "../constants";
-import { TestContract } from "../models/contract.test.util";
-import { ICompiler } from "../types";
-import { ICompilerService, CompilerService } from "./compiler.service";
-import { TestContractService } from "./contract.service.test.util";
+import { ICompilerService } from "../interfaces/compiler.service.interface";
+import { ILanguageService } from "../interfaces/language.service.interface";
+import { LanguageServiceMock } from "../interfaces/language.service.mock";
+import { VerifiedTestContract } from "../models/contract.verified.test.util";
+import { CompilerService } from "./compiler.service";
+import { VerifiedContractsFsTestService } from "./contracts-fs.service.test.util";
 
 describe('CompilerService', () => {
-  let tcontractService: TestContractService;
-  let testCases: TestContract[];
-  let solidityCompiler: ICompiler;
+  let verifiedContractsService: VerifiedContractsFsTestService;
+  let verifiedContracts: VerifiedTestContract[];
+  let langServiceMock: ILanguageService;
   let compilerService: ICompilerService;
 
   beforeAll(async () => {
-    tcontractService = new TestContractService();
-    testCases = await tcontractService.getTestCases();
+    verifiedContractsService = new VerifiedContractsFsTestService();
+    verifiedContracts = await verifiedContractsService.getContracts();
+    langServiceMock = new LanguageServiceMock(verifiedContracts);
+    compilerService = new CompilerService(langServiceMock);
   });
 
-  beforeEach(async () => {
-    solidityCompiler = new SolidityCompiler();
-    compilerService = new CompilerService(solidityCompiler);
+  describe('compile', () => {
+    it('should work', async () => {
+      for (const contract of verifiedContracts) {
+        const [config, input, expected] = await Promise.all([
+          contract.getConfig(),
+          contract.getInput(),
+          contract.getOutput(),
+        ]);
+
+        const out = await compilerService.compile(config, input);
+        expect(out).toEqual(expected);
+      }
+    }, 30_000);
   })
-
-  const count = 3;
-
-  it(`should compile ${count} test cases successfully`, async () => {
-    for (const testCase of testCases.slice(0, count)) {
-      const [config, input, expected] = await Promise.all([
-        testCase.getConfig(),
-        testCase.getInput(),
-        testCase.getOutput(),
-      ]);
-
-      const out = await compilerService.compile(config, input);
-      expect(out).toEqual(expected);
-    }
-  }, count * SOLIDITY_COMPILE_TIMEOUT);
 });

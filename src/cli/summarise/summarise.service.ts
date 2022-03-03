@@ -13,7 +13,7 @@ import {
 } from "../../libs/utils";
 import { logger } from "../../logger";
 import { Address, ChainId, HashList } from "../../types";
-import { Contract } from '../../models/contract';
+import { Contract, IContract } from '../../models/contract';
 
 const log = logger.child({});
 
@@ -161,7 +161,7 @@ export class SummariseService {
    * @returns             extracted state
    */
   // eslint-disable-next-line class-methods-use-this
-  async extract(contracts: Contract[]): Promise<ChainStates> {
+  async extract(contracts: IContract[]): Promise<ChainStates> {
     const chains = new Map<ChainId, ChainState>();
     const LOG_EVERY = 500;
     log.info('extracting metadata');

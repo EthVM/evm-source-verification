@@ -1,10 +1,10 @@
 import path from "node:path";
 import { randomAddress, randomChainId } from "../libs/utils";
-import { ChainPath, ChainPaths, ContractPath } from "./contract.service";
-import { TestContractService } from "./contract.service.test.util";
+import { ChainPaths, ChainPath, ContractPath } from "./contracts-fs.service.base";
+import { VerifiedContractsFsTestService } from "./contracts-fs.service.test.util";
 
-describe('ContractService', () => {
-  let tcontractService: TestContractService;
+describe('ContractFsService', () => {
+  let tcontractService: VerifiedContractsFsTestService;
 
   function nomatch(pathname: string) {
     expect(tcontractService
@@ -14,7 +14,7 @@ describe('ContractService', () => {
 
 
   beforeEach(() => {
-    tcontractService = new TestContractService();
+    tcontractService = new VerifiedContractsFsTestService();
   });
 
   describe('matchContractFilename', () => {

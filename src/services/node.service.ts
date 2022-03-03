@@ -1,24 +1,17 @@
+import assert from 'node:assert';
 import fs from 'node:fs';
 import Web3 from 'web3';
 import { fabs, mapGetOrCreate, toBN } from "../libs/utils";
-import { ChainId, HasChainId } from '../types';
+import { ChainId, IContractIdentity, IHasChainId } from '../types';
 
 export interface INodeService {
   /**
-   * Get a Web3 instance
-   * 
-   * @param opts
-   * @returns
+   * Get the blockchain code (eth_getCode) of a contract
+   *
+   * @param contract    contract to eth_getCode for
+   * @returns           contract's code
    */
-  getWeb3(opts: HasChainId): Promise<Web3 | null>;
-
-  /**
-   * Get an RPC url for the chain
-   * 
-   * @param opts
-   * @returns
-   */
-  getUrl(opts: HasChainId): Promise<string | null>;
+  getCode(contract: IContractIdentity): Promise<string>;
 }
 
 
@@ -67,7 +60,7 @@ export class NodeService implements INodeService {
   /**
    * Cached Web3 instances
    */
-  private web3s: Map<ChainId, Promise<null | Web3>> = new Map();
+  private web3s: Map<ChainId, Promise<Web3>> = new Map();
 
 
   /**
@@ -87,37 +80,54 @@ export class NodeService implements INodeService {
       ?? NodeService.DEFAULTS.FALLBACK_FILENAME);
   }
 
+  /**
+   * Get a contract's live code
+   * 
+   * @param contract  contract to get the code for
+   * @returns         code of the contract
+   */
+  async getCode(contract: IContractIdentity): Promise<string> {
+    const web3 = await this.getWeb3(contract);
+    const code = await web3.eth.getCode(contract.address);
+    return code;
+  }
 
-  /** @see INodeService.getWeb3 */
-  async getWeb3(opts: HasChainId): Promise<Web3 | null> {
+  /**
+   * Get a Web3 instance
+   * 
+   * @param opts    chain identity
+   * @returns       web3 instance
+   */
+  private async getWeb3(opts: IHasChainId): Promise<Web3> {
     // get & cache web3 providers
-    // TODO: REVISIT if this is still desirable
     return mapGetOrCreate(
       this.web3s,
       opts.chainId,
       async () => {
         const url = await this.getUrl(opts);
-        if (!url) return null;
         return new Web3(url);
       });
   }
 
-
-  /** @see INodeService.getUrl */
-  async getUrl(opts: HasChainId): Promise<string | null> {
+  /**
+   * Get an RPC url for the chain
+   * 
+   * @param opts    chain identity
+   * @returns       url of the chain
+   */
+  private async getUrl(opts: IHasChainId): Promise<string> {
     // get & cache chain urls
     return mapGetOrCreate(
       this.urls,
       opts.chainId,
       async () => {
         let matchedUrl = await this.getPrimaryProvider(opts);
-        if (matchedUrl != null) return matchedUrl;
-        matchedUrl = await this.getFallbackProvider(opts);
+        if (!matchedUrl) matchedUrl = await this.getFallbackProvider(opts);
+        assert.ok(matchedUrl, `chain "${opts.chainId}" is not supported`);
         return matchedUrl;
       }
     );
   }
-
 
   /**
    * Get a provider URL for the chain from the primary nodes files
@@ -125,7 +135,7 @@ export class NodeService implements INodeService {
    * @param opts
    * @returns
    */
-  private async getPrimaryProvider(opts: HasChainId): Promise<null | string> {
+  private async getPrimaryProvider(opts: IHasChainId): Promise<null | string> {
     const content = await fs
       .promises
       .readFile(this.primaryFilename, 'utf-8');
@@ -140,11 +150,11 @@ export class NodeService implements INodeService {
    * @param opts
    * @returns
    */
-  private async getFallbackProvider(opts: HasChainId): Promise<null | string> {
+  private async getFallbackProvider(opts: IHasChainId): Promise<null | string> {
     const content = await fs
       .promises
       .readFile(this.fallbackFilename, 'utf-8');
-    const match = NodeService.matchFallbackProvider(content, opts);
+    const match = NodeService.matchFallbackProvider(JSON.stringify(content), opts);
     return match;
   }
 }
@@ -160,7 +170,7 @@ export namespace NodeService {
    */
   export function matchPrimaryProvider(
     content: string,
-    options: HasChainId,
+    options: IHasChainId,
   ): null | string {
     const { chainId } = options;
     // find a provider for the chain
@@ -193,7 +203,7 @@ export namespace NodeService {
   export function matchFallbackProvider(
     // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types, @typescript-eslint/no-explicit-any
     json: any,
-    options: HasChainId,
+    options: IHasChainId,
   ): null | string {
     const { chainId } = options;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

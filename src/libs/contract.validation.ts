@@ -1,5 +1,5 @@
 import { toBN } from "web3-utils";
-import { ContractConfig, ContractIdentity, ContractInput } from "../types";
+import { ContractConfig, IContractIdentity, CompilerInput } from "../types";
 
 /**
  * Assert that a contract config is valid
@@ -7,7 +7,7 @@ import { ContractConfig, ContractIdentity, ContractInput } from "../types";
  * @param identity 
  * @param config 
  */
-export function validateConfig(identity: ContractIdentity, config: ContractConfig): void {
+export function validateConfig(identity: IContractIdentity, config: ContractConfig): void {
   // TODO: better validation
   const {
     chainId,
@@ -56,6 +56,6 @@ export function validateConfig(identity: ContractIdentity, config: ContractConfi
  * @param input 
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export function validateInput(identity: ContractIdentity, input: ContractInput): void {
+export function validateInput(identity: IContractIdentity, input: CompilerInput): void {
   // TODO
 }

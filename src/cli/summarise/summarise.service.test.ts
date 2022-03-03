@@ -1,19 +1,19 @@
 import fs from "node:fs";
 import { SummariseService } from "./summarise.service";
 import { tmpDir } from "../../libs/utils";
-import { TestContractService } from "../../services/contract.service.test.util";
-import { TestContract } from "../../models/contract.test.util";
+import { VerifiedContractsFsTestService } from "../../services/contracts-fs.service.test.util";
+import { VerifiedTestContract } from "../../models/contract.verified.test.util";
 
 describe('SummariseService', () => {
   let dirname: string;
   let buildStateService: SummariseService;
-  let tcontracts: TestContract[]
+  let verifiedContracts: VerifiedTestContract[]
 
   beforeAll(async () => {
     dirname = await tmpDir();
     await fs.promises.mkdir(dirname, { recursive: true });
-    const tcontractService = new TestContractService();
-    tcontracts = await tcontractService.getTestCases();
+    const verifiedContractsService = new VerifiedContractsFsTestService();
+    verifiedContracts = await verifiedContractsService.getContracts();
     buildStateService = new SummariseService({ dirname });
   });
 
@@ -24,10 +24,10 @@ describe('SummariseService', () => {
   describe('extract', () => {
     it('should match each chainId', async () => {
       // assert doesn't throw
-      const state = await buildStateService.extract(tcontracts);
+      const state = await buildStateService.extract(verifiedContracts);
 
       // assert all chainIds were matched / found
-      const chainIds = Array.from(new Set(tcontracts.map(tc => tc.chainId)));
+      const chainIds = Array.from(new Set(verifiedContracts.map(tc => tc.chainId)));
       expect(state.size).toEqual(chainIds.length);
       expect(Array.from(state.keys()).sort()).toEqual(chainIds.sort());
     });
@@ -35,7 +35,7 @@ describe('SummariseService', () => {
 
   describe('save', () => {
     it('should create a directory for each chainId', async () => {
-      const state = await buildStateService.extract(tcontracts);
+      const state = await buildStateService.extract(verifiedContracts);
 
       const dirsBefore = await fs
         .promises

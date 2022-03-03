@@ -1,20 +1,11 @@
 import {
   CompilerService,
-  ICompilerService
 } from "./services/compiler.service";
-import {
-  ContractService,
-  ContractServiceOptions,
-} from "./services/contract.service";
 import {
   INodeService,
   NodeService,
-  NodeServiceOptions
+  NodeServiceOptions,
 } from "./services/node.service";
-import {
-  SolidityCompiler,
-  SolidityServiceOptions
-} from "./compilers/solidity.compiler";
 import {
   VerificationService,
   VerificationServiceOptions
@@ -22,24 +13,37 @@ import {
 import {
   ProcessorService
 } from "./services/processor.service";
-import { DownloadService } from "./services/download.service";
+import { DownloadService, IDownloadService } from "./services/download.service";
 import { PullContractsService } from "./cli/pull-contracts/pull-contracts.service";
 import { SummariseService, SummariseServiceOptions } from "./cli/summarise/summarise.service";
+import { BaseContractsFsService, ContractServiceOptions } from "./services/contracts-fs.service.base";
+import { ContractsFsService } from "./services/contracts-fs.service";
+import { ISolidityReleaseProvider, SolidityReleaseProvider } from "./services/solidity-release.provider";
+import { CompilerFsService } from "./services/compiler-fs.service";
+import { SolidityExecutableProvider } from "./services/solidity-executable.provider";
+import { SolidityService } from "./services/solidity.service";
+import { SolidityArchProvider } from "./services/solidity-arch.provider";
+import { ICompilerService } from "./interfaces/compiler.service.interface";
+import { SolidityBuildProvider } from "./services/solidity-build.provider";
+import { ISolidityExecutableProvider } from "./interfaces/solidity-executable.provider.interface";
 
 export interface IServices {
-  contractService: ContractService;
+  contractFsService: BaseContractsFsService;
   nodeService: INodeService;
   compilerService: ICompilerService;
   pullContractsService: PullContractsService;
   verificationService: VerificationService;
   processorService: ProcessorService;
-  buildStateService: SummariseService;
+  summariseService: SummariseService;
+  compilerFsService: CompilerFsService;
+  solReleaseProvider: ISolidityReleaseProvider;
+  solExecProvider: ISolidityExecutableProvider;
+  downloadService: IDownloadService;
 }
 
 export interface BootstrapOptions {
   contracts?: ContractServiceOptions;
   nodes?: NodeServiceOptions;
-  solidity?: SolidityServiceOptions;
   verification?: VerificationServiceOptions;
   buildState?: SummariseServiceOptions;
 }
@@ -52,10 +56,18 @@ export interface BootstrapOptions {
  * @returns   application services
  */
 export async function bootstrap(options?: BootstrapOptions): Promise<IServices> {
-  const contractService = new ContractService(options?.contracts);
+  const contractFsService = new ContractsFsService(options?.contracts);
   const nodeService = new NodeService(options?.nodes);
-  const solidity = new SolidityCompiler(options?.solidity);
-  const compilerService = new CompilerService(solidity);
+  const downloadService = new DownloadService();
+  const compilerFsService = new CompilerFsService(downloadService);
+
+  const solReleaseProvider = new SolidityReleaseProvider(downloadService);
+  const solArchProvider = new SolidityArchProvider();
+  const solBuildProvider = new SolidityBuildProvider(solReleaseProvider);
+  const solExecProvider = new SolidityExecutableProvider(compilerFsService);
+  const solService = new SolidityService(solArchProvider, solBuildProvider, solExecProvider);
+
+  const compilerService = new CompilerService(solService);
   const verificationService = new VerificationService(
     nodeService,
     options?.verification
@@ -65,20 +77,24 @@ export async function bootstrap(options?: BootstrapOptions): Promise<IServices> 
     verificationService,
   );
   const pullContractsService = new PullContractsService(
-    contractService,
+    contractFsService,
     processorService,
     new DownloadService(),
   );
-  const buildStateService = new SummariseService(options?.buildState);
+  const summariseService = new SummariseService(options?.buildState);
 
   const services: IServices = {
-    contractService,
+    contractFsService,
     nodeService,
     compilerService,
     verificationService,
     processorService,
     pullContractsService,
-    buildStateService,
+    summariseService,
+    downloadService,
+    compilerFsService,
+    solReleaseProvider,
+    solExecProvider,
   };
 
   return services;

@@ -1,142 +1,79 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
+import { inspect } from 'node:util';
 import { performance } from 'node:perf_hooks';
 import { toPercentage } from "@nkp/percentage";
 import { Result } from "@nkp/result";
+import { kv } from '@nkp/kv';
 import chalk from 'chalk';
 import { asyncQueue, ResultHandler, WorkCtx, WorkHandler } from "../libs/async-queue";
 import { getMetadata } from "../libs/metadata";
-import { eng, interpolateColor, ymdhms } from "../libs/utils";
-import { Contract } from "../models/contract";
+import { eng, hasOwn, interpolateColor, ymdhms } from "../libs/utils";
+import { IContract } from "../models/contract";
 import { VerificationService, VerifyContractResult } from "./verification.service";
-import { ICompilerService } from './compiler.service';
 import { logger, LOGS_DIRNAME } from '../logger';
-import { isSupported } from '../libs/support';
+import { CompilationError } from '../errors/compilation.error';
+import { CompilerNotFoundError } from '../errors/compiler-not-found.error';
+import { CompilerNotSupportedError } from '../errors/compiler-not-supported.error';
+import { MAX_CONTRACT_WORKAHEAD } from '../constants';
+import { ICompilerService } from '../interfaces/compiler.service.interface';
+import { IProcesorService, ParallelProcessorOptions, ProcessorHandleOptions, ProcessorResultOptions, ProcessorStats } from '../interfaces/processor.service.interface';
 
 const log = logger.child({});
 
 /**
- * Report an contract whose compiler is unsupported
+ * Report the failure to verify a contract
  *
  * @param contract    contract that faile verification
  * @param idx         index of the contract among all those being verified
  * @returns
  */
-async function reportUnsupported(contract: Contract, idx = 0) {
+async function report(
+  type: string,
+  contract: IContract,
+  idx = 0,
+  rest?: {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    info?: any,
+    err?: Error,
+  },
+) {
   const { chainId, address, name } = contract;
-  const filename = path.join(LOGS_DIRNAME, `${chainId}.unsupported.log`);
+  const filename = path.join(LOGS_DIRNAME, `${chainId}.${type}.log`);
   const config = await contract.getConfig();
   const { compiler } = config;
+  let msg = `[${ymdhms()}]`
+    + `  ${type}`
+    + `  idx=${idx}`
+    + `  chainId=${chainId}`
+    + `  address=${address}`
+    + `  name=${name}`
+    + `  compiler=${compiler}`;
+
+  if (rest && hasOwn(rest, 'info'))
+    msg += `  ${inspect(rest.info, { depth: 4, colors: false })}`;
+
+  if (rest && hasOwn(rest, 'err'))
+    msg += `  err=${inspect(rest.err, { depth: 4, colors: false })}`
+
+  if (!msg.endsWith('\n')) msg += '\n';
+
   await fs
     .promises
-    .appendFile(
-      filename,
-      `[${ymdhms()}] unsupported`
-        + `  idx=${idx}`
-        + `  chainId=${chainId}`
-        + `  address=${address}`
-        + `  name=${name}`
-        + `  compiler=${compiler}`
-        + '\n'
-      ,
-      'utf-8'
-    );
-}
-
-/**
- * Report an contract that failed to verify
- *
- * @param contract    contract that faile verification
- * @param idx         index of the contract among all those being verified
- * @returns
- */
-async function reportUnverified(contract: Contract, idx = 0) {
-  const { chainId, address, name } = contract;
-  const filename = path.join(LOGS_DIRNAME, `${chainId}.unverified.log`);
-  const config = await contract.getConfig();
-  const { compiler } = config;
-  await fs
-    .promises
-    .appendFile(
-      filename,
-      `[${ymdhms()}] unverified`
-        + `  idx=${idx}`
-        + `  chainId=${chainId}`
-        + `  address=${address}`
-        + `  name=${name}`
-        + `  compiler=${compiler}`
-        + '\n'
-      ,
-      'utf-8'
-    );
-}
-
-/**
- * Report an contract that threw during processing
- *
- * @param contract    contract that threw
- * @param err         error that was thrown
- * @param idx         index of the contract among all those being verified
- * @returns
- */
-async function reportErrored(contract: Contract, err: Error, idx = 0) {
-  const { chainId, address, name } = contract;
-  const filename = path.join(LOGS_DIRNAME, `${chainId}.errored.log`);
-  const config = await contract.getConfig();
-  const { compiler } = config;
-  await fs
-    .promises
-    .appendFile(
-      filename,
-      `[${ymdhms()}] errored`
-        + `  idx=${idx}`
-        + `  chainId=${chainId}`
-        + `  address=${address}`
-        + `  name=${name}`
-        + `  compiler=${compiler}`
-        // ensure string ends with newline
-        + `  err=${err.toString().replace(/\n$/m, '')}\n`
-      ,
-      'utf-8'
-    );
-}
-
-export interface IProcesorService {
-  /**
-   * Compile, validate and optionally save metadata for all contracts
-   * in parallel
-   *
-   * @param contracts   contracts to process
-   * @param options     processing options
-   * @returns           resolves after completion
-   */
-  process(
-    contracts: Contract[],
-    options: ParallelProcessorOptions,
-  ): Promise<void>;
-}
-
-export interface ParallelProcessorProcessOptions {
-  skip?: boolean;
-  jump?: number;
-}
-
-export interface ParallelProcessorResultOptions {
-  failFast?: boolean;
-  save?: boolean;
-}
-
-export interface ParallelProcessorOptions extends
-  ParallelProcessorProcessOptions,
-  ParallelProcessorResultOptions {
-  concurrency?: number;
+    .appendFile(filename, msg, 'utf-8');
 }
 
 /**
  * Coordinates processing of contracts
  */
 export class ProcessorService implements IProcesorService {
+  /**
+   * Create a new ProcessorService
+   * 
+   * @param compilerService         handles compilation of a contract
+   * @param verificationService     handles verification of a compile contract
+   */
   constructor(
     private compilerService: ICompilerService,
     private verificationService: VerificationService,
@@ -153,9 +90,9 @@ export class ProcessorService implements IProcesorService {
    * @returns           resolves after completion
    */
   async process(
-    contracts: Contract[],
+    contracts: IContract[],
     options: ParallelProcessorOptions,
-  ): Promise<void> {
+  ): Promise<ProcessorStats> {
     const {
       concurrency,
       failFast,
@@ -190,33 +127,60 @@ export class ProcessorService implements IProcesorService {
       `  skip=${chalk.green(skip ?? false)}` +
       `  concurrency=${chalk.green(_concurrency)}`);
 
-    // does work in the queue
-    const handlers: WorkHandler<Contract, ProcessResult>[] = [];
+    const stats: ProcessorStats = {
+      ok: {
+        jumped: [],
+        skipped: [],
+        verified: [],
+      },
+      err: {
+        errored: [],
+        failed: [],
+        noCompiler: [],
+        unsupported: [],
+        unverified: [],
+      },
+    };
+
+    // create queue item handlers
+    const handlers: WorkHandler<IContract, ProcessResult>[] = [];
     for (let i = 0; i < _concurrency; i += 1) {
       handlers.push((ctx) => this.handleContract(ctx, options))
     }
 
-    // receives results from the queue
-    const resultHandler: ResultHandler<Contract, ProcessResult> = (
-      result,
-      ctx
-    ) => this.handleResult(result, ctx, options);
+    // create queue result handler
+    const resultHandler: ResultHandler<IContract, ProcessResult> =
+      createResultHandler(stats, options);
 
+    // begin work
     const start = performance.now();
-
-    await asyncQueue<Contract, ProcessResult>(
+    await asyncQueue<IContract, ProcessResult>(
       contracts,
       handlers,
       resultHandler,
+      MAX_CONTRACT_WORKAHEAD,
     )
-
     const end = performance.now();
     const delta = Math.round(end - start);
 
+
+    // report on queue results
+    const statsReport: string[] = [];
+    for (const [name, count] of Object.entries(stats.ok)) {
+      if (!count) continue;
+      statsReport.push(`${chalk.green(name)}=${count}`);
+    }
+    for (const [name, count] of Object.entries(stats.err)) {
+      if (!count) continue;
+      statsReport.push(`${chalk.red(name)}=${count}`);
+    }
     log.info(`finished processing` +
       ` ${eng(contracts.length)} contracts` +
-      ` ${eng(delta)}ms`
-    );
+      ` in ${eng(delta)}ms` +
+      ` @ ${eng(1000 * contracts.length / delta)} contracts per second`)
+    log.info(`results  ${statsReport.join('  ')}`);
+
+    return stats;
   }
 
   /**
@@ -227,11 +191,13 @@ export class ProcessorService implements IProcesorService {
    * @returns         result of processing
    */
   private async handleContract(
-    ctx: WorkCtx<Contract>,
-    options?: ParallelProcessorProcessOptions,
+    ctx: WorkCtx<IContract>,
+    options?: ProcessorHandleOptions,
   ): Promise<ProcessResult> {
     const { index, item: contract } = ctx;
     const { skip, jump } = options ?? {};
+
+    // log.info(`processing  chainId=${ctx.item.chainId}  address=${ctx.item.address}`);
 
     // jump over
     if (jump != null && index < jump) {
@@ -244,17 +210,15 @@ export class ProcessorService implements IProcesorService {
       // check if metadata already exists
       const hasMetadata = await contract.hasMetadata();
       // skip this contract
-      if (hasMetadata) return ProcessResult.skipped();
+      if (hasMetadata) {
+        return ProcessResult.skipped();
+      }
     }
 
     const [config, input] = await Promise.all([
       await contract.getConfig(),
       await contract.getInput(),
     ]);
-
-    if (!isSupported(config.compiler)) {
-      return ProcessResult.unsupported();
-    }
 
     const out = await this
       .compilerService
@@ -275,24 +239,37 @@ export class ProcessorService implements IProcesorService {
 
     return ProcessResult.verified(verification);
   }
+}
 
+/**
+ * Create a result handler to receive results from the queue
+ * 
+ * @param result    result of contract processing
+ * @param ctx       queue context
+ * @param options   options
+ * @returns         error if the queue should stop
+ */
+// eslint-disable-next-line class-methods-use-this
+function createResultHandler(
+  stats: ProcessorStats,
+  options: ProcessorResultOptions,
+): ResultHandler<IContract, ProcessResult> {
   /**
-   * Process contract results
-   * 
-   * @param result    result of contract processing
-   * @param ctx       queue context
-   * @param options   options
-   * @returns         error if the queue should stop
+   * Handle a result from the queue
+   *
+   * @param result  result from the queue
+   * @param ctx     queue context
+   * @returns       resolves after the item is finished being processed
    */
-  // eslint-disable-next-line class-methods-use-this
-  private async handleResult(
+  return async function resultHandler (
     result: Result<ProcessResult, Error>,
-    ctx: WorkCtx<Contract>,
-    options: ParallelProcessorResultOptions,
-  ): Promise<undefined | Error> {
+    ctx: WorkCtx<IContract>,
+  ): Promise<void | undefined | Error> {
     const { failFast, save, } = options;
 
-    const { index, total, item: contract } = ctx;
+    const { index: idx, total, item: contract } = ctx;
+
+    const { chainId, address } = contract;
 
     const duration = Math.round(ctx.end! - ctx.start);
 
@@ -305,52 +282,41 @@ export class ProcessorService implements IProcesorService {
           5_000,
           eng(duration).padStart(5, ' ')
         )}ms` +
-      `  ${`${eng(index)}/${eng(total)}`}` +
-      `  ${toPercentage(index / total)}` +
+      `  ${`${eng(idx)}/${eng(total)}`}` +
+      `  ${toPercentage(idx / total)}` +
       `  ${contract.name}`
     ;
 
-    if (Result.isSuccess(result)) {
-      // handle success
+    const errCtx = () => kv({ chainId, address, idx });
 
+    const errMsg = (msg?: string) => {
+      const info = errCtx();
+      if (msg) return `${msg}  ${info}`;
+      return info;
+    }
+
+    // handle non-error results
+    if (Result.isSuccess(result)) {
       const output = result.value;
+
       if (ProcessResult.isSkipped(output)) {
         // handle skipped
+        stats.ok.skipped.push(contract);
         const msg = `${chalk.magenta('⇢ skipped')}  ${idCtx}`;
         log.info(msg);
       }
 
       else if (ProcessResult.isJump(output)) {
         // handle skipped
+        stats.ok.jumped.push(contract);
         const msg = `${chalk.magenta('↷ jumped')}  ${idCtx}`;
         log.info(msg);
       }
 
-      else if (ProcessResult.isUnverified(output)) {
-        // handle unverified
-        const msg = `${chalk.red('x unverified')}  ${idCtx}`;
-        await reportUnverified(contract, index);
-        if (failFast) return new Error('failed to verify' +
-          `  chainId=${contract.chainId}` +
-          `  address=${contract.address}` +
-          `  index=${index}`);
-        log.warn(msg);
-      }
-
-      else if (ProcessResult.isUnsupported(output)) {
-        // handle unverified
-        const msg = `${chalk.red('x unsupported')}  ${idCtx}`;
-        await reportUnsupported(contract, index);
-        if (failFast) return new Error('unsupported compiler' +
-          `  chainId=${contract.chainId}` +
-          `  address=${contract.address}` +
-          `  index=${index}`);
-        log.warn(msg);
-      }
-
       else if (ProcessResult.isVerified(output)) {
         // handle verified
-        const msg = `${chalk.green('✔')}  ${idCtx}`;
+        stats.ok.verified.push(contract);
+        const msg = `${chalk.green('✔ verified')}  ${idCtx}`;
         // success
         log.info(msg);
         if (save) {
@@ -358,21 +324,75 @@ export class ProcessorService implements IProcesorService {
           await contract.saveMetadata(metadata);
         }
       }
+
+      else if (ProcessResult.isUnverified(output)) {
+        stats.err.unverified.push(contract);
+        // handle unverified
+        const msg = `${chalk.red('x unverified')}  ${idCtx}`;
+        await report('unverified', contract, idx);
+        if (failFast) {
+          const emsg = errMsg('failed to verify');
+          return new Error(emsg);
+        }
+        log.error(msg);
+      }
+
+      else {
+        // catchall
+        stats.err.errored.push(contract);
+        const msg = `unhandled result ${inspect(output, { colors: false })}`;
+        return new Error(msg);
+      }
     }
 
+    // handle non-error results
     else {
-      // handle error
-      const err = result.value;
-      const msg = `${chalk.red('x error')}` +
-        `  ${idCtx}` +
-        `  ${err.toString()}`;
-      await reportErrored(contract, err, index);
-      if (failFast) return new Error('errored' +
-        `  chainId=${contract.chainId}` +
-        `  address=${contract.address}` +
-        `  index=${index}` +
-        `  err=${err.toString()}`)
-      log.warn(msg);
+      // processing errored
+      const err = result.value as Error;
+
+      if (err instanceof CompilationError) {
+        stats.err.failed.push(contract);
+        const msg = `${chalk.red('x failed')}  ${idCtx}`;
+        log.error(msg);
+        await report('failed', contract, idx, { err });
+        if (failFast) {
+          err.message += `  ${errCtx()}`;
+          return err;
+        }
+      }
+
+      else if (err instanceof CompilerNotFoundError) {
+        stats.err.noCompiler.push(contract);
+        const msg = `${chalk.red('x no-compiler')}  ${idCtx}`;
+        log.error(msg);
+        await report('no-compiler', contract, idx, { err });
+        if (failFast) {
+          err.message += `  ${errCtx()}`;
+          return err;
+        }
+      }
+
+      else if (err instanceof CompilerNotSupportedError) {
+        stats.err.unsupported.push(contract);
+        const msg = `${chalk.red('x unsupported')}  ${idCtx}`;
+        log.error(msg);
+        await report('unsupported', contract, idx, { err });
+        if (failFast) {
+          err.message += `  ${errCtx()}`;
+          return err;
+        }
+      }
+
+      else {
+        stats.err.errored.push(contract);
+        const msg = `${chalk.red('x error')}  ${idCtx}  ${err.toString()}`;
+        await report('error', contract, idx, { err });
+        log.error(msg);
+        if (failFast) {
+          err.message += `  ${errCtx()}`;
+          return err;
+        }
+      }
     }
   }
 }
@@ -382,12 +402,16 @@ export type ProcessResult =
   | ProcessResult.Jump
   | ProcessResult.Verified
   | ProcessResult.Unverified
-  | ProcessResult.Unsupported
 ;
 
 export namespace ProcessResult {
   // eslint-disable-next-line no-shadow
-  export enum Type { Skipped, Jump, Verified, Unverified, Unsupported }
+  export enum Type {
+    Skipped,
+    Jump,
+    Verified,
+    Unverified,
+  }
 
   /**
    * Skipped result
@@ -418,14 +442,6 @@ export namespace ProcessResult {
    */
   export interface Unverified {
     type: Type.Unverified;
-    verification: null;
-  }
-
-  /**
-   * Unsupported compiler result
-   */
-  export interface Unsupported {
-    type: Type.Unsupported;
     verification: null;
   }
 
@@ -462,14 +478,6 @@ export namespace ProcessResult {
   }
 
   /**
-   * Create a new Unsupported compiler result
-   * @returns Unsupported compiler result
-   */
-  export function unsupported(): Unsupported {
-    return { type: Type.Unsupported, verification: null, };
-  }
-
-  /**
    * was contract verification skipped?
    * @returns whether contract verification was skipped
    */
@@ -499,14 +507,6 @@ export namespace ProcessResult {
    */
   export function isUnverified(result: ProcessResult): result is Unverified {
     return result.type === Type.Unverified;
-  }
-
-  /**
-   * is the contract's compiler unsupported??
-   * @returns whether contract verification was unsuccessful
-   */
-  export function isUnsupported(result: ProcessResult): result is Unsupported {
-    return result.type === Type.Unsupported;
   }
 }
 

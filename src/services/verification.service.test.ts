@@ -1,21 +1,21 @@
 import { getMetadata } from "../libs/metadata";
-import { TestContract } from "../models/contract.test.util";
-import { ICompilerService } from "./compiler.service";
-import { CompilerServiceMock } from "./compiler.service.mock";
-import { TestContractService } from "./contract.service.test.util";
+import { VerifiedTestContract } from "../models/contract.verified.test.util";
+import { CompilerServiceMock } from "../interfaces/compiler.service.mock";
+import { VerifiedContractsFsTestService } from "./contracts-fs.service.test.util";
 import { NodeService } from "./node.service";
 import { VerificationService } from "./verification.service";
+import { ICompilerService } from "../interfaces/compiler.service.interface";
 
 describe('VerificationService', () => {
-  let tcontractService: TestContractService;
-  let testCases: TestContract[];
+  let verifiedContractsService: VerifiedContractsFsTestService;
+  let verifiedContracts: VerifiedTestContract[];
   let compilerService: ICompilerService;
   let verificationService: VerificationService;
 
   beforeAll(async () => {
-    tcontractService = new TestContractService();
-    testCases = await tcontractService.getTestCases();
-    compilerService = new CompilerServiceMock(testCases);
+    verifiedContractsService = new VerifiedContractsFsTestService();
+    verifiedContracts = await verifiedContractsService.getContracts();
+    compilerService = new CompilerServiceMock(verifiedContracts);
   });
 
   beforeEach(async () => {
@@ -23,7 +23,7 @@ describe('VerificationService', () => {
   })
 
   it(`should verify test cases successfully`, async () => {
-    for (const testCase of testCases) {
+    for (const testCase of verifiedContracts) {
       const [config, input, expected] = await Promise.all([
         testCase.getConfig(),
         testCase.getInput(),
