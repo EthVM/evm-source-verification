@@ -143,7 +143,7 @@ This will build the project into the `dist` folder
 
 ```sh
 # from within the project's root directory
-npm run build
+npm run build:prod
 ```
 
 You can now run develop on the project, execute [Commands](#commands), and run tests.
