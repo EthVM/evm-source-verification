@@ -5,7 +5,7 @@ import path from 'node:path';
 import assert from 'node:assert';
 import { CompilerInput, CompilerOutput } from "../types";
 import { ISolidityExecutable } from "./solidity.executable.interface";
-import { SolidityCompilerNameDetails, solidityCompileWasmRaw, solidityCompileWasmSolc } from '../libs/solidity';
+import { SolidityCompilerNameDetails, solidityCompileWasmSolc } from '../libs/solidity';
 import { fabs, randomBase16 } from '../libs/utils';
 
 /**

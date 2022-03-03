@@ -15,7 +15,7 @@ import { InitialOptionsTsJest } from 'ts-jest/dist/types';
 const config: InitialOptionsTsJest = {
   // give tests 300 seconds
   // tests can run long if the computer is slow or has to use wasm
-  testTimeout: 300,
+  testTimeout: 300_1000,
   // preset: "ts-jest",
   rootDir: "../dist.tests",
   testEnvironment: "node",
