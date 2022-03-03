@@ -1,5 +1,7 @@
+import os from 'node:os';
 import assert from 'node:assert';
 import fs from 'node:fs';
+import path from 'node:path';
 import Web3 from 'web3';
 import { fabs, mapGetOrCreate, toBN } from "../libs/utils";
 import { ChainId, IContractIdentity, IHasChainId } from '../types';
@@ -36,8 +38,8 @@ export interface NodeServiceOptions {
  */
 export class NodeService implements INodeService {
   public static DEFAULTS = {
-    PRIMARY_FILENAME: 'config/nodes',
-    FALLBACK_FILENAME: 'config/nodes-fallback.json',
+    PRIMARY_FILENAME: path.join('config', 'nodes'),
+    FALLBACK_FILENAME: path.join('config', 'nodes-fallback.json'),
   }
 
 
@@ -174,7 +176,7 @@ export namespace NodeService {
   ): null | string {
     const { chainId } = options;
     // find a provider for the chain
-    for (const line of content.split('\n')) {
+    for (const line of content.split(os.EOL)) {
       const match = line.match(/^([0-9]+):[^:]+:(.*)$/);
 
       // no regex match

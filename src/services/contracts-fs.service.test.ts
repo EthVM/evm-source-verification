@@ -27,12 +27,12 @@ describe('ContractFsService', () => {
     }[];
     beforeEach(() => {
       const subpaths = [
-        '/input.json',
-        '/config.json',
-        '/metadata.json',
-        '/output.json',
-        '/illegal.json',
-        '/illegal/illegal.json',
+        'input.json',
+        'config.json',
+        'metadata.json',
+        'output.json',
+        'illegal.json',
+        path.join('illegal', 'illegal.json'),
         '',
       ]
       const addresses = Array.from({ length: 40 }, randomAddress);
@@ -44,7 +44,7 @@ describe('ContractFsService', () => {
           address,
         );
         const subpath = subpaths[i % subpaths.length];
-        const original = dirname + subpath;
+        const original = path.join(dirname, subpath);
         return {
           address,
           chainId,

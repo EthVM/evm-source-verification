@@ -1,3 +1,4 @@
+import os from 'node:os';
 import fs from "node:fs";
 import { VerifyCliArgs } from "./verify.types";
 import { bootstrap, IServices } from "../../bootstrap";
@@ -115,11 +116,11 @@ async function handleDirs(
     dirnames = fs
       .readFileSync(0, 'utf-8',)
       .trim()           // remove trailing whitespace
-      .split('\n')      // split new lines
+      .split(os.EOL)    // split new lines
       .filter(Boolean); // remove empty lines
   } else {
     // new-line separated directories
-    dirnames = dirs.split('\n').filter(Boolean);
+    dirnames = dirs.split(os.EOL).filter(Boolean);
   }
 
   const contracts = await services

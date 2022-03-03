@@ -20,7 +20,7 @@ import { SolidityReleaseProvider } from "../services/solidity-release.provider";
 import { SolidityService } from "../services/solidity.service";
 import { VerificationService } from "../services/verification.service";
 
-describe('solidity e2e', () => {
+describe('e2e', () => {
   let processorService: IProcesorService;
 
   let verifiedContractsService: VerifiedContractsFsTestService;
@@ -56,7 +56,7 @@ describe('solidity e2e', () => {
     processorService = new ProcessorService(compilerService, verificationService)
   });
 
-  describe('compile', () => {
+  describe('verification', () => {
     const offset = 0;
     const count = 10;
     it(`should process ${count} verified contracts`, async () => {

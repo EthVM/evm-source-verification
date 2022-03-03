@@ -200,8 +200,15 @@ describe('utils', () => {
       expect(match![1]).toBe('');
     });
 
+    it('should match ~\\', () => {
+      const match = `~\\`.match(HOME_DIR);
+      expect(match).toBeTruthy();
+      expect(match![0]).toBe('~\\');
+      expect(match![1]).toBe('\\');
+    });
+
     it('should match ~/', () => {
-      const match = '~/'.match(HOME_DIR);
+      const match = `~/`.match(HOME_DIR);
       expect(match).toBeTruthy();
       expect(match![0]).toBe('~/');
       expect(match![1]).toBe('/');
@@ -220,7 +227,7 @@ describe('utils', () => {
 
   describe('frel', () => {
     it('should leave relative filenames unchanged', () => {
-      const relname = 'relative/file-name';
+      const relname = path.join('relative', 'file-name');
       const actual = frel(relname);
       const expected = relname;
       expect(actual).toEqual(expected);

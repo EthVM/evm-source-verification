@@ -5,7 +5,7 @@ import chalk from "chalk";
 import { toB58String } from "multihashes";
 import Web3 from "web3";
 import fs from 'fs';
-import path from 'path';
+import path from 'node:path';
 import { promisify } from 'util';
 import { Address, CborDataType, CborDecodedType, HexString } from "../types";
 
@@ -363,7 +363,8 @@ export function frel(filename: string): string {
     : filename);
 }
 
-export const HOME_DIR = new RegExp(`^~(\\${path.sep}|$)`);
+// compatible with linux, macos (/) and windows (\)
+export const HOME_DIR = new RegExp(`^~([\\\\/]|$)`);
 
 /**
  * Get the absolute file destination assuming it's relatively based at the

@@ -6,6 +6,7 @@ import { eng, fabs, mapGetOrCreate, toChainId } from "../libs/utils";
 import { logger } from '../logger';
 import { IContract, ICreateContractOptions } from '../models/contract';
 import { ContractStorage, ContractStorageOptions } from '../models/contract.storage';
+import regExpEscape from 'escape-string-regexp';
 import {
   IContractIdentity,
   IHasChainId,
@@ -376,12 +377,34 @@ export abstract class BaseContractsFsService<T extends IContract = IContract> {
    */
   matchContractFilename(filename: string): null | ContractMatch {
     const { dirname } = this;
-    // TODO: does this also work on windows?
-    const regex = new RegExp(`^(${dirname}\\${path.sep}([0-9]+)\\${path.sep}(0x[a-f0-9]{40}))(\\${path.sep}.*|$)`);
+    // this should work for paths on Windows, Linux and MacOS
+
+    // create the regex source to match absolute contract-like filenames / dirnames
+    const sourceSegs = [
+      // contracts directory
+      ...`^(${dirname}`.split(path.sep),
+      // chainId
+      '([0-9]+)',
+      // address
+      '(0x[a-f0-9]{40}))',
+    ];
+
+    const source = sourceSegs.join(regExpEscape(path.sep))
+      // optional subpath capture groups
+      + `(?:${regExpEscape(path.sep)}(.*))?$`;
+
+    const regex = new RegExp(source);
+
     const filenameabs = fabs(filename);
     const rmatch = filenameabs.match(regex);
+
     if (!rmatch) return null;
-    const [, contractDirname, chainId, address, subpath] = rmatch;
+
+    const [, contractDirname, chainId, address, _subpath] = rmatch;
+    // if there is no subpath it will be undefined because the subpath capture group
+    // is within an optional non-capture group "?:"
+    const subpath = _subpath ?? '';
+
     return {
       filename,
       dirname: contractDirname,
