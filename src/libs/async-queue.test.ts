@@ -35,7 +35,7 @@ describe('async-queue', () => {
     expect(handled).toEqual(items);
 
     // expect: all results are successful
-    expect(results.every(Result.isSuccess)).toBeTruthy();
+    expect(results.every(Result.isOk)).toBeTruthy();
 
     // expect: received all the results in insertion order
     expect(results.map(result => (result.value as number) - 1)).toEqual(items);
@@ -80,7 +80,7 @@ describe('async-queue', () => {
     expect(afterWork).toEqual(Array.from(items).sort((a, b) => a - b));
 
     // expect: all results are successful
-    expect(results.every(Result.isSuccess)).toBeTruthy();
+    expect(results.every(Result.isOk)).toBeTruthy();
 
     // expect: received all the results in insertion order
     expect(results.map(result => (result.value as number) - 1)).toEqual(items);

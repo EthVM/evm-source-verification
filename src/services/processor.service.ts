@@ -256,7 +256,7 @@ function createResultHandler(
     }
 
     // handle non-error results
-    if (Result.isSuccess(result)) {
+    if (Result.isOk(result)) {
       const output = result.value;
 
       if (ProcessResult.isSkipped(output)) {
