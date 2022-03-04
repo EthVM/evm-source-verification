@@ -1,3 +1,4 @@
+import chalk from 'chalk';
 import {
   SolidityCompilerNameDetails,
   SolidityArchConfig,
@@ -97,7 +98,25 @@ export class SolidityBuildProvider implements ISolidityBuildProvider {
       nativeArchConfig ? this.getNativeBuildInfo(nameDetail, nativeArchConfig) : null,
     ]);
 
-    const build = nativeBuild ?? wasmBuild;
+    const { major, minor, patch, } = nameDetail; 
+
+    let build: SolidityBuildInfo | null;
+    if (nativeBuild && major === 0 && minor <= 4 && patch < 11) {
+      /**
+       * the --standard-json option only became supported in release v0.4.11
+       * [Release v0.4.11](https://github.com/ethereum/solidity/releases/tag/v0.4.11)
+       */
+      const msg = `solidity binary compiler ${chalk.magenta(longVersion)} does` +
+        ' not support option --standard-json which was added in v0.4.11' +
+        '\n  falling back to wasm compiler' +
+        '\n  see https://github.com/ethereum/solidity/releases/tag/v0.4.11';
+      // wasm seems to support standard json input, even at lower versions...
+      log.info(msg);
+      build = wasmBuild;
+    } else {
+      build = nativeBuild ?? wasmBuild;
+    }
+
 
     if (!build) {
       // no matching build
@@ -107,11 +126,11 @@ export class SolidityBuildProvider implements ISolidityBuildProvider {
 
     // notify if using a fallback build
     if (build.git.longVersion !== longVersion) {
-      const msg = `no build with longVersion=${longVersion}. Falling back to ` +
-        ` alternative=${build.git.longVersion}` +
-        ` platform=${build.archConfig.isWasm
-            ? 'wasm'
-            : getSolidityPlatformName(build.archConfig.platform)}`;
+      const msg = `no build matched exactly ${chalk.magenta(longVersion)}, switching to` +
+        `  ${chalk.green('alternative')}=${chalk.magenta(build.git.longVersion)}` +
+        (`  ${chalk.green('platform')}=${build.archConfig.isWasm
+          ? 'wasm'
+          : getSolidityPlatformName(build.archConfig.platform)}`);
       log.warn(msg);
     }
 

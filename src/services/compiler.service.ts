@@ -1,8 +1,9 @@
 import { ILanguageService } from "../interfaces/language.service.interface";
 import { CompilerNotSupportedError } from "../errors/compiler-not-supported.error";
-import { ContractLanguage, getLanguage, isSupported } from "../libs/support";
 import { ContractConfig, CompilerInput, CompilerOutputOk } from "../types";
 import { ICompilerService } from "../interfaces/compiler.service.interface";
+import { getLanguage, ContractLanguage, isLanguageSupported, getLanguageName } from "../libs/support";
+import { getCompilerName } from "../libs/solidity";
 
 /**
  * Provides access to contract compilation
@@ -26,21 +27,26 @@ export class CompilerService implements ICompilerService {
     config: ContractConfig,
     input: CompilerInput,
   ): Promise<CompilerOutputOk> {
-    const { compiler, } = config;
+    const compilerName = getCompilerName(config);
 
     // TODO: use `input` to get the language instead ?
-    const type = getLanguage(compiler);
+    const language = getLanguage(compilerName);
 
-    if (!isSupported(compiler)) {
-      const msg = `unsupported compiler: ${compiler}`;
+    if (language == null) {
+      const msg = `unknown compiler: ${compilerName}`;
       throw new CompilerNotSupportedError(msg);
     }
-    
+
+    if (!isLanguageSupported(language)) {
+      const msg = `unsupported language: ${getLanguageName(language)}`;
+      throw new CompilerNotSupportedError(msg);
+    }
+
     // is solidity compiler
-    switch (type) {
+    switch (language) {
       case ContractLanguage.Solidity: {
         const output = await this.solService.compile(
-          compiler,
+          compilerName,
           input,
         );
         return output;

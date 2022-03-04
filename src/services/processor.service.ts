@@ -9,7 +9,7 @@ import { kv } from '@nkp/kv';
 import chalk from 'chalk';
 import { asyncQueue, ResultHandler, WorkCtx, WorkHandler } from "../libs/async-queue";
 import { getMetadata } from "../libs/metadata";
-import { eng, hasOwn, interpolateColor, ymdhms } from "../libs/utils";
+import { eng, frel, hasOwn, interpolateColor, ymdhms } from "../libs/utils";
 import { IContract } from "../models/contract";
 import { VerificationService, VerifyContractResult } from "./verification.service";
 import { logger, LOGS_DIRNAME } from '../logger';
@@ -126,19 +126,22 @@ export class ProcessorService implements IProcesorService {
     const statsReport: string[] = [];
     for (const [name, okContracts] of Object.entries(stats.ok)) {
       if (!okContracts.length) continue;
-      statsReport.push(`${chalk.green(name)}=${okContracts}`);
+      statsReport.push(`${chalk.green(name)}=${okContracts.length}`);
     }
     for (const [name, errdContracts] of Object.entries(stats.err)) {
       if (!errdContracts.length) continue;
       statsReport.push(`${chalk.red(name)}=${errdContracts.length}`);
     }
     log.info(`finished processing` +
-      ` ${eng(contracts.length)} contracts` +
-      ` in ${eng(delta)}ms` +
-      ` @ ${eng(1000 * contracts.length / delta)} contracts per second` +
-      `, ${eng(delta / contracts.length)}ms per contract`
+      ` ${chalk.green(eng(contracts.length))} contracts` +
+      ` in ${chalk.green(`${eng(delta)}`)}ms` +
+      ` @ ${chalk.green(eng(1000 * contracts.length / delta))} contracts per second` +
+      `, ${chalk.green(`${eng(delta / contracts.length)}`)}ms per contract`
     )
     log.info(`results  ${statsReport.join('  ')}`);
+    if (Object.values(stats.err).some(errContracts => errContracts.length)) {
+      log.info(`for more information see "${['.', frel(LOGS_DIRNAME)].join(path.sep)}"`);
+    }
 
     return stats;
   }
@@ -379,7 +382,7 @@ async function report(
   const filename = path.join(LOGS_DIRNAME, `${chainId}.${type}.log`);
   const config = await contract.getConfig();
   const { compiler } = config;
-  let msg = `[${ymdhms()}]`
+  let msg = `${ymdhms()}`
     + `  ${type}`
     + `  idx=${idx}`
     + `  chainId=${chainId}`

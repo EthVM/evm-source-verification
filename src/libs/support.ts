@@ -1,3 +1,5 @@
+import { SolidityCompilerName } from "./solidity";
+
 // eslint-disable-next-line no-shadow
 export enum ContractLanguage {
   Solidity,
@@ -7,11 +9,13 @@ export enum ContractLanguage {
 /**
  * Is this compiler supported?
  *
- * @param compilername    name of the compiler
+ * @param compilerName    name of the compiler
  * @returns               whether this compiler is supported
  */
-export function isSupported(compilername: string): boolean {
-  const language = getLanguage(compilername);
+export function isCompilerSupported(
+  compilerName: SolidityCompilerName,
+): boolean {
+  const language = getLanguage(compilerName);
   if (language == null) return false;
   return isLanguageSupported(language);
 }

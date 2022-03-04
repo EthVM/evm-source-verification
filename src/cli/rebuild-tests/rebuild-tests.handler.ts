@@ -3,6 +3,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 import chalk from 'chalk';
 import assert from 'node:assert';
+import yargs from 'yargs';
 import { delay } from '@nkp/delay';
 import { toPercentage } from '@nkp/percentage';
 import { getMetadata } from '../../libs/metadata';
@@ -31,7 +32,6 @@ import { SolidityReleaseProvider } from '../../services/solidity-release.provide
 import { getCompilerName, getSolidityPlatformName, parseSolidityCompilerName, SolidityPlatform } from '../../libs/solidity';
 import { ICompilerService } from '../../interfaces/compiler.service.interface';
 import { SolidityBuildProvider } from '../../services/solidity-build.provider';
-import yargs from 'yargs';
 import { RebuildTestsCliArgs } from './rebuild-tests.types';
 
 const COOLOFF_DELAY = 250;

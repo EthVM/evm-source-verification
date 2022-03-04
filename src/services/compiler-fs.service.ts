@@ -2,6 +2,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 import assert from 'node:assert';
 import unzip from 'extract-zip';
+import chalk from 'chalk';
 import { fabs, fexists, frel, isSafeFilename, mapGetOrCreate } from "../libs/utils";
 import { IFileDownloader } from "./download.service";
 import { ContractLanguage, getLanguageName } from '../libs/support';
@@ -231,7 +232,8 @@ export class CompilerFsService implements ICompilerFsService {
     // ensure tmpDirname exists
     await fs.promises.mkdir(tmpDirname, { recursive: true });
 
-    log.info(`downloading compiler "${compilerBasename}" -> "${frel(tmp)}"`);
+    log.info(`${chalk.magenta('downloading')} compiler "${compilerBasename}"` +
+      ` -> "${frel(path.dirname(compilerFilename))}"`);
 
     // try to download the compiler
     // if the compiler was not found, throw CompilerNotFound error
@@ -294,8 +296,5 @@ export class CompilerFsService implements ICompilerFsService {
 
     // mv to compiler to proper location
     await fs.promises.rename(tmp, compilerFilename);
-
-    // compiler ready to use
-    log.info(`compiler "${compilerBasename}" is ready`);
   }
 }

@@ -336,13 +336,13 @@ export function randomChainId(): number {
  * @returns 
  */
 export function ymdhms(date: Date = new Date()): string {
-  const YYYY = date.getUTCFullYear().toString().padStart(4, '0');
-  const MM = (date.getUTCMonth() + 1).toString().padStart(2, '0');
-  const DD = date.getUTCDate().toString().padStart(2, '0');
+  const YYYY = date.getFullYear().toString().padStart(4, '0');
+  const MM = (date.getMonth() + 1).toString().padStart(2, '0');
+  const DD = date.getDate().toString().padStart(2, '0');
 
-  const hh = date.getUTCHours().toString().padStart(2, '0');
-  const mm = date.getUTCMinutes().toString().padStart(2, '0');
-  const ss = date.getUTCSeconds().toString().padStart(2, '0');
+  const hh = date.getHours().toString().padStart(2, '0');
+  const mm = date.getMinutes().toString().padStart(2, '0');
+  const ss = date.getSeconds().toString().padStart(2, '0');
 
   return `${YYYY}-${MM}-${DD} ${hh}:${mm}:${ss}`;
 }
@@ -364,7 +364,7 @@ export function frel(filename: string): string {
 }
 
 // compatible with linux, macos (/) and windows (\)
-export const HOME_DIR = new RegExp(`^~([\\\\/]|$)`);
+export const HOME_DIR = /^~([\\/]|$)`/;
 
 /**
  * Get the absolute file destination assuming it's relatively based at the
