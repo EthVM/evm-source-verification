@@ -1,6 +1,6 @@
 import assert from "node:assert";
 import { SOLIDITY_WASM_COMPILE_TIMEOUT } from "../constants";
-import { getCompilerName, parseSolidityCompilerName, solidityOutputRemoveAsts, SOLIDITY_WASM_ARCH } from "../libs/solidity";
+import { getCompilerName, parseSolidityCompilerName, SOLIDITY_WASM_ARCH } from "../libs/solidity";
 import { VerifiedTestContract } from "../models/contract.verified.test.util";
 import { TestCompilerFsService } from "../services/compiler-fs.service.test.util";
 import { TestVerifiedContractsFsService } from "../services/contracts-fs.service.test.util";
@@ -55,8 +55,8 @@ describe('SolidityWasmExecutable', () => {
         // execute
         const actual = await executable.compile(input);
 
-        expect(solidityOutputRemoveAsts(actual))
-          .toEqual(solidityOutputRemoveAsts(expected));
+        expect(actual)
+          .toEqual(expected);
       }
 
     }, SOLIDITY_WASM_COMPILE_TIMEOUT * count);

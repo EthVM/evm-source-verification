@@ -2,7 +2,7 @@
 import { SolidityBuildInfo } from '../libs/solidity';
 import { CompilerFsService } from './compiler-fs.service';
 import { ISolidityExecutable } from '../compilers/solidity.executable.interface';
-import { SolidityPosixExecutable } from '../compilers/solidity.posix.executable';
+import { SolidityBinaryExecutable } from '../compilers/solidity.binary.executable';
 import { SolidityWasmExecutable } from '../compilers/solidity.wasm.executable';
 import { ContractLanguage } from '../libs/support';
 import { ISolidityExecutableProvider } from '../interfaces/solidity-executable.provider.interface';
@@ -44,7 +44,7 @@ export class SolidityExecutableProvider implements ISolidityExecutableProvider {
     // return the compiler as an executable
     const executable: ISolidityExecutable = build.archConfig.isWasm
       ? new SolidityWasmExecutable(compilerFilename, build.nameDetail)
-      : new SolidityPosixExecutable(compilerFilename);
+      : new SolidityBinaryExecutable(compilerFilename);
 
     return executable
   }

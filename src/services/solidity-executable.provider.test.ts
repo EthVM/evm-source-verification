@@ -8,10 +8,10 @@ import { ISolidityReleaseProvider, SolidityReleaseProvider } from './solidity-re
 import { ISolidityArchProvider, SolidityArchProvider } from './solidity-arch.provider';
 import { TestCompilerFsService } from "./compiler-fs.service.test.util";
 import { ISolidityBuildProvider, SolidityBuildProvider } from "./solidity-build.provider";
-import { SolidityPosixExecutable } from '../compilers/solidity.posix.executable';
+import { SolidityBinaryExecutable } from '../compilers/solidity.binary.executable';
 import { SolidityWasmExecutable } from '../compilers/solidity.wasm.executable';
 
-describe('SOlidityWasmProvider', () => {
+describe('SolidityWasmProvider', () => {
   let verifiedContractsService: TestVerifiedContractsFsService;
   let verifiedContracts: VerifiedTestContract[];
   let solBuildProvider: ISolidityBuildProvider;
@@ -52,7 +52,7 @@ describe('SOlidityWasmProvider', () => {
       const build = await solBuildProvider.getNativeBuildInfo(nameDetail, arch);
       assert.ok(build);
       const executable = await solExecutableProvider.getExecutable(build);
-      expect(executable).toBeInstanceOf(SolidityPosixExecutable);
+      expect(executable).toBeInstanceOf(SolidityBinaryExecutable);
     }
   });
 
@@ -64,7 +64,7 @@ describe('SOlidityWasmProvider', () => {
       const build = await solBuildProvider.getNativeBuildInfo(nameDetail, arch);
       assert.ok(build);
       const executable = await solExecutableProvider.getExecutable(build);
-      expect(executable).toBeInstanceOf(SolidityPosixExecutable);
+      expect(executable).toBeInstanceOf(SolidityBinaryExecutable);
     }
   });
 });

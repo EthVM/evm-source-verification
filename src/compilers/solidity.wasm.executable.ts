@@ -5,7 +5,7 @@ import path from 'node:path';
 import assert from 'node:assert';
 import { CompilerInput, CompilerOutput } from "../types";
 import { ISolidityExecutable } from "./solidity.executable.interface";
-import { SolidityCompilerNameDetails, solidityCompileWasmSolc, solidityOutputRemoveAsts } from '../libs/solidity';
+import { SolidityCompilerNameDetails, solidityCompileWasmSolc, solidityNormaliseOutputs } from '../libs/solidity';
 import { fabs, randomBase16 } from '../libs/utils';
 
 /**
@@ -45,7 +45,7 @@ export class SolidityWasmExecutable implements ISolidityExecutable {
       input,
     });
 
-    const normalised = solidityOutputRemoveAsts(output);
+    const normalised = solidityNormaliseOutputs(output);
 
     return normalised;
   }

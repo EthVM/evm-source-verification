@@ -446,10 +446,11 @@ export function getCompilerName(config: ContractConfig): string {
 }
 
 /**
- * Immutably remove asts from the solidity compilation output
+ * Immutably remove sources from the solidity compilation output
  *
- * Sources have ast's which may be slightly different for different compiler
- * architectures for some reason
+ * Compilers can produce different values for internal-only parts of the output
+ * For exmaple, sources have ast's which may be slightly different for different
+ * compiler architectures for some reason
  * 
  * For example, on some contracts solidity binary compilers will seemingly overflow
  * on "referencedDeclaration" and "overloadDeclarations" values, whereas the wasm
@@ -459,16 +460,20 @@ export function getCompilerName(config: ContractConfig): string {
  * @param output    raw output from compiler
  * @returns         output with asts removed
  */
-export function solidityOutputRemoveAsts(
+export function solidityNormaliseOutputs(
   output: CompilerOutput,
 ): CompilerOutput {
-  // immutably remove "ast" from outputs
-  if (!hasOwn(output, 'contracts' as keyof CompilerOutput)) return output;
-  const ret: CompilerOutput = { ...output, };
-  ret.sources = { ...ret.sources };
-  for (const basename of Object.keys(ret.sources)) {
-    ret.sources[basename] = { ...ret.sources[basename] };
-    delete ret.sources[basename].ast;
-  }
+  // immutably remove "sources" from outputs
+  if (!hasOwn(output, 'sources' as keyof CompilerOutput)) return output;
+  const ret: CompilerOutput = { ...output };
+  delete ret.sources;
+  // if (!hasOwn(output, 'contracts' as keyof CompilerOutput)) return output;
+  // const ret: CompilerOutput = { ...output, };
+  // delete ret.sources;
+  // ret.sources = { ...ret.sources };
+  // for (const basename of Object.keys(ret.sources)) {
+  //   ret.sources[basename] = { ...ret.sources[basename] };
+  //   delete ret.sources[basename].ast;
+  // }
   return ret;
 }

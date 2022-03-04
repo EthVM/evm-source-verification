@@ -31,6 +31,8 @@ import { SolidityReleaseProvider } from '../../services/solidity-release.provide
 import { getCompilerName, getSolidityPlatformName, parseSolidityCompilerName, SolidityPlatform } from '../../libs/solidity';
 import { ICompilerService } from '../../interfaces/compiler.service.interface';
 import { SolidityBuildProvider } from '../../services/solidity-build.provider';
+import yargs from 'yargs';
+import { RebuildTestsCliArgs } from './rebuild-tests.types';
 
 const COOLOFF_DELAY = 250;
 const DOUBLE_CONFIRMATION_DELAY = 1_000;
@@ -40,9 +42,10 @@ const log = logger.child({});
 /**
  * Regenerate test cases
  */
-export async function handleRebuildTestsCommand(): Promise<void> {
-  log.info('command: rebuild test cases');
+export async function handleRebuildTestsCommand(args: yargs.Arguments<RebuildTestsCliArgs>): Promise<void> {
+  const { skipCompilers } = args;
 
+  log.info('command: rebuild test cases');
   log.info('you will be prompted to remove old or unknown files and regenerate new ones');
 
   const rl = readline.createInterface(process.stdin, process.stdout);
@@ -80,7 +83,10 @@ export async function handleRebuildTestsCommand(): Promise<void> {
     ...unverifiedContracts,
   ];
   
-  if (await fexists(compilersDirname)) rmFilenames.push(compilersDirname);
+  if (!skipCompilers) {
+    if (await fexists(compilersDirname)) rmFilenames.push(compilersDirname);
+  }
+
   rmFilenames.push(...(await getContractFilenamesToRemove(allContracts)));
 
 
@@ -133,71 +139,76 @@ export async function handleRebuildTestsCommand(): Promise<void> {
       await delay(COOLOFF_DELAY);
     }
 
-    log.info('regenerating contracts');
+    log.info('rebuilding test resources');
 
     let j = 0;
     let i = 0;
     const il = allContracts.length;
     let jl = allContracts.length;
-    for (const contract of allContracts) {
-      j += 1;
-      log.info(`=== ${chalk.magenta('downloading compilers')}` +
-        `  jdx=${chalk.green(j)}` +
-        `  chainId=${chalk.green(contract.chainId)}` +
-        `  address=${chalk.green(contract.address)}` +
-        `  ${j}/${jl}` +
-        `  ${toPercentage(j / jl)}`
-      );
+    if (skipCompilers) {
+      logger.info('skipping compilers');
+    }
+    else {
+      for (const contract of allContracts) {
+        j += 1;
+        log.info(`=== ${chalk.magenta('downloading compilers')}` +
+          `  jdx=${chalk.green(j)}` +
+          `  chainId=${chalk.green(contract.chainId)}` +
+          `  address=${chalk.green(contract.address)}` +
+          `  ${j}/${jl}` +
+          `  ${toPercentage(j / jl)}`
+        );
 
-      const config = await contract.getConfig();
-      const nameDetail = parseSolidityCompilerName(getCompilerName(config));
+        const config = await contract.getConfig();
+        const nameDetail = parseSolidityCompilerName(getCompilerName(config));
 
-      // download wasm
-      const wasmBuild = await solBuildProvider.getWasmBuildInfo(nameDetail, wasmArch);
-      assert.ok(wasmBuild);
-      log.info(`downloading compiler` +
-        `  chainId=${contract.chainId}` +
-        `  address=${contract.address}` +
-        `  longVersion=${wasmBuild.nameDetail.longVersion}` +
-        `  arch=wasm`);
-      await solExecutableProvider.getExecutable(wasmBuild);
-      await delay(COOLOFF_DELAY);
+        // download wasm
+        const wasmBuild = await solBuildProvider.getWasmBuildInfo(nameDetail, wasmArch);
+        assert.ok(wasmBuild);
+        log.info(`downloading compiler` +
+          `  chainId=${contract.chainId}` +
+          `  address=${contract.address}` +
+          `  longVersion=${wasmBuild.nameDetail.longVersion}` +
+          `  arch=wasm`);
+        await solExecutableProvider.getExecutable(wasmBuild);
+        await delay(COOLOFF_DELAY);
 
-      // download linuxamd64
-      log.info(`downloading compiler` +
-        `  chainId=${contract.chainId}` +
-        `  address=${contract.address}` +
-        `  longVersion=${wasmBuild.nameDetail.longVersion}` +
-        `  arch=linuxAmd64`);
-      const linuxAmd64Arch = solArchProvider.getPlatformArch(SolidityPlatform.LinuxAmd64);
-      const linuxAmd64Build = await solBuildProvider.getNativeBuildInfo(nameDetail, linuxAmd64Arch);
-      assert.ok(linuxAmd64Build);
-      await solExecutableProvider.getExecutable(linuxAmd64Build);
-      await delay(COOLOFF_DELAY);
+        // download linuxamd64
+        log.info(`downloading compiler` +
+          `  chainId=${contract.chainId}` +
+          `  address=${contract.address}` +
+          `  longVersion=${wasmBuild.nameDetail.longVersion}` +
+          `  arch=linuxAmd64`);
+        const linuxAmd64Arch = solArchProvider.getPlatformArch(SolidityPlatform.LinuxAmd64);
+        const linuxAmd64Build = await solBuildProvider.getNativeBuildInfo(nameDetail, linuxAmd64Arch);
+        assert.ok(linuxAmd64Build);
+        await solExecutableProvider.getExecutable(linuxAmd64Build);
+        await delay(COOLOFF_DELAY);
 
-      // download macosamd64
-      log.info(`downloading compiler` +
-        `  chainId=${contract.chainId}` +
-        `  address=${contract.address}` +
-        `  longVersion=${wasmBuild.nameDetail.longVersion}` +
-        `  arch=${getSolidityPlatformName(SolidityPlatform.MacosAmd64)}`);
-      const macosAmd64Arch = solArchProvider.getPlatformArch(SolidityPlatform.MacosAmd64);
-      const macosAmd64Build = await solBuildProvider.getNativeBuildInfo(nameDetail, macosAmd64Arch);
-      assert.ok(macosAmd64Build);
-      await solExecutableProvider.getExecutable(macosAmd64Build);
-      await delay(COOLOFF_DELAY);
+        // download macosamd64
+        log.info(`downloading compiler` +
+          `  chainId=${contract.chainId}` +
+          `  address=${contract.address}` +
+          `  longVersion=${wasmBuild.nameDetail.longVersion}` +
+          `  arch=${getSolidityPlatformName(SolidityPlatform.MacosAmd64)}`);
+        const macosAmd64Arch = solArchProvider.getPlatformArch(SolidityPlatform.MacosAmd64);
+        const macosAmd64Build = await solBuildProvider.getNativeBuildInfo(nameDetail, macosAmd64Arch);
+        assert.ok(macosAmd64Build);
+        await solExecutableProvider.getExecutable(macosAmd64Build);
+        await delay(COOLOFF_DELAY);
 
-      // download windowsamd64
-      log.info(`downloading compiler` +
-        `  chainId=${contract.chainId}` +
-        `  address=${contract.address}` +
-        `  longVersion=${wasmBuild.nameDetail.longVersion}` +
-        `  arch=${getSolidityPlatformName(SolidityPlatform.WindowsAmd64)}`);
-      const windowsAmd64Arch = solArchProvider.getPlatformArch(SolidityPlatform.WindowsAmd64);
-      const windowsAmd64Build = await solBuildProvider.getNativeBuildInfo(nameDetail, windowsAmd64Arch);
-      assert.ok(windowsAmd64Build);
-      await solExecutableProvider.getExecutable(windowsAmd64Build);
-      await delay(COOLOFF_DELAY);
+        // download windowsamd64
+        log.info(`downloading compiler` +
+          `  chainId=${contract.chainId}` +
+          `  address=${contract.address}` +
+          `  longVersion=${wasmBuild.nameDetail.longVersion}` +
+          `  arch=${getSolidityPlatformName(SolidityPlatform.WindowsAmd64)}`);
+        const windowsAmd64Arch = solArchProvider.getPlatformArch(SolidityPlatform.WindowsAmd64);
+        const windowsAmd64Build = await solBuildProvider.getNativeBuildInfo(nameDetail, windowsAmd64Arch);
+        assert.ok(windowsAmd64Build);
+        await solExecutableProvider.getExecutable(windowsAmd64Build);
+        await delay(COOLOFF_DELAY);
+      }
     }
 
     log.info('regenerating contracts');

@@ -13,7 +13,7 @@ import { SolidityService } from "./solidity.service";
 import { SolidityReleaseProvider } from "./solidity-release.provider";
 import { SolidityArchProvider } from "./solidity-arch.provider";
 import { SolidityBuildProvider } from "./solidity-build.provider";
-import { getCompilerName, SolidityCompilerName, solidityOutputRemoveAsts } from "../libs/solidity";
+import { getCompilerName, SolidityCompilerName } from "../libs/solidity";
 import { SolidityExecutableProviderMock } from "../interfaces/solidity-executable.provider.mock";
 
 describe('SolidityService', () => {
@@ -56,8 +56,7 @@ describe('SolidityService', () => {
         ]);
         const compilerName = getCompilerName(config);
         const out = await solService.compile(compilerName, input);
-        expect(solidityOutputRemoveAsts(out))
-          .toEqual(solidityOutputRemoveAsts(expected));
+        expect(out).toEqual(expected);
       }
     });
 
@@ -70,8 +69,7 @@ describe('SolidityService', () => {
         ]);
         const compilername = getCompilerName(config);
         const out = await solService.compile(compilername, input);
-        expect(solidityOutputRemoveAsts(out))
-          .toEqual(solidityOutputRemoveAsts(expected));
+        expect(out).toEqual(expected);
       }
     });
 

@@ -1,5 +1,6 @@
 import { Command } from '../../types';
 import { handleRebuildTestsCommand } from './rebuild-tests.handler';
+import { RebuildTestsCliArgs } from './rebuild-tests.types';
 
 /**
  * Register the `validate` command
@@ -7,10 +8,15 @@ import { handleRebuildTestsCommand } from './rebuild-tests.handler';
  * @param argv
  */
 export const registerRebuildTestsCommand: Command = (argv) => {
-  argv.command(
+  argv.command<RebuildTestsCliArgs>(
     "rebuild-tests",
     "rebuild test cases",
-    args => args,
-    () => handleRebuildTestsCommand(),
+    args => args
+      .positional('--skipCompilers', {
+        type: 'boolean',
+        describe: 'do not rebuild compilers',
+        default: false,
+      }),
+    (args) => handleRebuildTestsCommand(args),
   )
 }

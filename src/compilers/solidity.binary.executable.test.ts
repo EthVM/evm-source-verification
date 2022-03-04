@@ -1,20 +1,19 @@
 import assert from "node:assert";
-import { getCompilerName, SolidityArchConfigNative, parseSolidityCompilerName, solidityOutputRemoveAsts, SolidityPlatform } from "../libs/solidity";
+import { getCompilerName, SolidityArchConfigNative, parseSolidityCompilerName } from "../libs/solidity";
 import { fexists } from "../libs/utils";
 import { VerifiedTestContract } from "../models/contract.verified.test.util";
 import { TestCompilerFsService } from "../services/compiler-fs.service.test.util";
 import { TestErroredContractsFsService, TestUnverifiedContractsFsService, TestVerifiedContractsFsService } from "../services/contracts-fs.service.test.util";
 import { DownloadService } from "../services/download.service";
 import { ISolidityArchProvider, SolidityArchProvider } from '../services/solidity-arch.provider';
-import { logger } from "../logger";
-import { SolidityPosixExecutable } from "./solidity.posix.executable";
+import { SolidityBinaryExecutable } from "./solidity.binary.executable";
 import { UnverifiedTestContract } from "../models/contract.unverified.test.util";
 import { ErroredTestContract } from "../models/contract.errored.test.util";
 import { ContractLanguage } from "../libs/support";
 import { IContractWithOutput } from "../models/contract.test.util";
 import { SOLIDITY_BINARY_COMPILE_TIMEOUT } from "../constants";
 
-describe('SolidityPosixExecutable', () => {
+describe('SolidityBinaryExecutable', () => {
   let compilerFsService: TestCompilerFsService;
   let verifiedContracts: VerifiedTestContract[];
   let unverifiedContracts: UnverifiedTestContract[];
@@ -37,17 +36,8 @@ describe('SolidityPosixExecutable', () => {
     solArchProvider = new SolidityArchProvider();
   });
 
-  describe('should compile contracts on Linux', () => {
-    function getLinuxArchConfig(): void | SolidityArchConfigNative {
-      const archConfig = solArchProvider.getNativeArch();
-      if (archConfig?.platform === SolidityPlatform.LinuxAmd64) {
-        return archConfig;
-      }
-      logger.info('skipping linux-only test');
-      expect(true).toBeTruthy();
-    }
-
-    async function testPosixCompile(
+  describe('should compile contracts on a binary compatible platforms', () => {
+    async function testBinaryCompile(
       archConfig: SolidityArchConfigNative,
       contract: IContractWithOutput,
     ) {
@@ -72,39 +62,41 @@ describe('SolidityPosixExecutable', () => {
         `compiler "${compilerFilename}" should already be downloaded`);
 
       // get executable
-      const executable = new SolidityPosixExecutable(compilerFilename);
+      const executable = new SolidityBinaryExecutable(compilerFilename);
 
       // execute
       const actual = await executable.compile(input);
 
-      expect(solidityOutputRemoveAsts(actual))
-        .toEqual(solidityOutputRemoveAsts(expected));
+      expect(actual).toEqual(expected);
     }
 
     const offset = 0;
     const count = 15;
 
     it('for verified contracts', async () => {
-      const archConfig = getLinuxArchConfig();
+      const archConfig = solArchProvider.getNativeArch();
+      // architecture doesn't support solidity binaries, skip tests
       if (!archConfig) return;
       for (const contract of verifiedContracts.slice(offset, offset + count)) {
-        await testPosixCompile(archConfig, contract);
+        await testBinaryCompile(archConfig, contract);
       }
     }, count * SOLIDITY_BINARY_COMPILE_TIMEOUT);
 
     it('for unverified contracts', async () => {
-      const archConfig = getLinuxArchConfig();
+      const archConfig = solArchProvider.getNativeArch();
+      // architecture doesn't support solidity binaries, skip tests
       if (!archConfig) return;
       for (const contract of unverifiedContracts.slice(offset, offset + count)) {
-        await testPosixCompile(archConfig, contract);
+        await testBinaryCompile(archConfig, contract);
       }
     }, count * SOLIDITY_BINARY_COMPILE_TIMEOUT);
 
     it('for errored contracts', async () => {
-      const archConfig = getLinuxArchConfig();
+      const archConfig = solArchProvider.getNativeArch();
+      // architecture doesn't support solidity binaries, skip tests
       if (!archConfig) return;
       for (const contract of erroredContracts.slice(offset, offset + count)) {
-        await testPosixCompile(archConfig, contract);
+        await testBinaryCompile(archConfig, contract);
       }
     }, count * SOLIDITY_BINARY_COMPILE_TIMEOUT);
   });
