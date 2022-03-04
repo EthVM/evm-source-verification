@@ -13,7 +13,7 @@ const compilersPath = (cwd: string) => path.join(
  *
  * Compilers are pre downloaded to speed up tests
  */
-export class CompilerFsTestService extends CompilerFsService {
+export class TestCompilerFsService extends CompilerFsService {
   constructor(downloadService: IDownloadService) {
     super(downloadService, {
       dirname: compilersPath(process.cwd() ),

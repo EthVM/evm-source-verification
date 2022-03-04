@@ -1,17 +1,17 @@
 import { VerifiedTestContract } from "../models/contract.verified.test.util";
 import { CompilerServiceMock } from "../interfaces/compiler.service.mock";
-import { VerifiedContractsFsTestService } from "./contracts-fs.service.test.util";
+import { TestVerifiedContractsFsService } from "./contracts-fs.service.test.util";
 import { NodeService } from "./node.service";
 import { ProcessorService } from "./processor.service";
 import { VerificationService } from "./verification.service";
 
 describe('ProcessorService', () => {
-  let verifiedContractsService: VerifiedContractsFsTestService;
+  let verifiedContractsService: TestVerifiedContractsFsService;
   let verifiedContracts: VerifiedTestContract[];
   let processorService: ProcessorService;
 
   beforeEach(async () => {
-    verifiedContractsService = new VerifiedContractsFsTestService();
+    verifiedContractsService = new TestVerifiedContractsFsService();
     verifiedContracts = await verifiedContractsService.getContracts();
     processorService = new ProcessorService(
       new CompilerServiceMock(verifiedContracts),

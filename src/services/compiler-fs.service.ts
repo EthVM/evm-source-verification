@@ -6,7 +6,9 @@ import { ContractLanguage, getLanguageName } from '../libs/support';
 import { HttpError } from '../errors/http.error';
 import { logger } from '../logger';
 import { CompilerNotFoundError } from '../errors/compiler-not-found.error';
-import { getSolidityPlatformName, SolidityArchConfig, SolidityLongBuildVersion } from '../libs/solidity';
+import { getSolidityPlatformName, SolidityArchConfig, SolidityLongBuildVersion, SolidityPlatform } from '../libs/solidity';
+import unzip from 'extract-zip';
+import assert from 'node:assert';
 
 const log = logger.child({});
 
@@ -111,11 +113,13 @@ export class CompilerFsService implements ICompilerFsService {
    */
   getCompilerFilename(options: GetCompilerFilenameOptions): string {
     const { archConfig, longVersion } = options;
+
     const dirname = this.getCompilerDirname(options);
 
-    const compilerFilename = archConfig.isWasm
-      ? path.join(dirname, `soljson-${longVersion}.js`)
-      : path.join(dirname, `${longVersion}`);
+    const compilerFilename = path.join(
+      dirname,
+      archConfig.basename(options.longVersion),
+    );
 
     return compilerFilename;
   }
@@ -137,10 +141,10 @@ export class CompilerFsService implements ICompilerFsService {
    * @returns        absolute directory name for compilers of this platform
    */
   protected getPlatformDirname(options: GetPlatformDirnameOptions): string {
-    const { archConfig: arch } = options;
+    const { archConfig } = options;
     return path.join(
       this.getLanguageDirname(options),
-      arch.isWasm ? 'wasm' : getSolidityPlatformName(arch.platform),
+      archConfig.dirBasename,
     );
   }
 
@@ -236,6 +240,33 @@ export class CompilerFsService implements ICompilerFsService {
         throw new CompilerNotFoundError(msg);
       });
 
+    // TODO: make this nicer
+    if (uri.endsWith('.zip')) {
+      log.info('unzipping win32 compiler...');
+      // probably older windows version with a solc.exe within
+      // unzip
+      const unzippedDirname = `${tmp}.unzipped`;
+      log.info(`unzipping "${frel(tmp)}" -> "${frel(unzippedDirname)}"`);
+      await unzip(tmp, { dir: unzippedDirname, });
+      const unzippedWin32Filename = path.join(unzippedDirname, 'solc.exe');
+      const msg = 'failed to extract zipped executable:' +
+        ' expected a windows executable names solc.exe';
+      assert.ok(await fexists(unzippedWin32Filename), msg);
+      // remove executable from zipfile
+      const tmpWin32Filename = `${tmp}.ready`;
+      log.info(`unzipping "${frel(unzippedWin32Filename)}" -> "${frel(tmpWin32Filename)}"`);
+      await fs.promises.rename(unzippedWin32Filename, tmpWin32Filename);
+      // remove the zip file
+      log.info(`rm "${frel(tmp)}"`);
+      await fs.promises.rm(tmp, { force: true, recursive: true });
+      // remove the unzipped directory
+      log.info(`rm "${frel(unzippedDirname)}"`);
+      await fs.promises.rm(unzippedDirname, { force: true, recursive: true });
+      // rename the executable
+      log.info(`unzipping "${frel(tmpWin32Filename)}" -> "${frel(tmp)}"`);
+      await fs.promises.rename(tmpWin32Filename, tmp);
+    }
+
     // ensure compilers dir exists
     const compilerDirname = path.dirname(compilerFilename);
 
@@ -248,6 +279,7 @@ export class CompilerFsService implements ICompilerFsService {
       // make the compiler executable
       // log.info(`chmod +x "${frel(tmp)}"`);
       await fs.promises.chmod(tmp, 0o700);
+      fs.promises.lchmod
     }
 
     // mv to compiler to proper location

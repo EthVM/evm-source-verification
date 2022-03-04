@@ -103,7 +103,7 @@ export interface SolidityBuildInfo {
   archConfig: SolidityArchConfig;
 
   /**
-   * Build details
+   * Version control build details
    */
   git: SoliditiyGitBuildInfo;
 
@@ -120,6 +120,7 @@ export interface SolidityBuildInfo {
 export enum SolidityPlatform {
   LinuxAmd64,
   MacosAmd64,
+  WindowsAmd64,
 }
 
 /**
@@ -191,18 +192,13 @@ export function isSolidityOutputOk(
 }
 
 /**
- * Get the string filesystem safe name of a solidity platform
+ * Get the string name for a solidity platform
  *
  * @param platform  solidity platform
- * @returns         filesystem safe name of the platform
+ * @returns         platform name
  */
 export function getSolidityPlatformName(platform: SolidityPlatform): string {
-  switch (platform) {
-    case SolidityPlatform.LinuxAmd64: return 'linuxamd64';
-    case SolidityPlatform.MacosAmd64: return 'macosamd64';
-    default: throw new Error(`unexpected platform ${platform}`);
-  }
-  //
+  return SolidityPlatform[platform];
 }
 
 /**
@@ -222,6 +218,7 @@ export function getSolditiyPlatform(): null | SolidityPlatform {
     // TODO: will this work in cygwin?
     // macos
     case 'darwin': return SolidityPlatform.MacosAmd64;
+    case 'win32': return SolidityPlatform.WindowsAmd64;
     // case 'cygwin': return BUILD_LIST_URIS.WINDOWS_AMD_64;
     // // case 'win32': return BUILD_LIST_URIS.WINDOWS_AMD_64;
     default: return null;
@@ -320,8 +317,25 @@ export function solidityCompileWasmSolc(
 export interface ISolidityArchConfigBase {
   /**
    * Directory basename for compilers of this architecture
+   * 
+   * @example
+   * "windowsamd64"
+   * "linuxamd64"
+   * "macosamd64"
+   * "wasm"
    */
   dirBasename: string;
+
+  /**
+   * Get the basename of a compiler with this build
+   * 
+   * @example
+   * "solc-windows-amd64-v0.4.2+commit.af6afb04"
+   * "solc-linux-amd64-v0.4.2+commit.af6afb04"
+   * "solc-macos-amd64-v0.4.2+commit.af6afb04"
+   * "soljson-v0.4.2+commit.af6afb04.js"
+   */
+  basename: (longVersion: SolidityLongBuildVersion) => string;
 
   /**
    * URI to json list of releases for this platform
@@ -359,6 +373,7 @@ export type SolidityArchConfig =
  * @see [json](https://raw.githubusercontent.com/ethereum/solc-bin/gh-pages/wasm/list.json)
  */
 export const SOLIDITY_WASM_ARCH: SolidityArchConfigWasm = {
+  basename: (longVersion) => `soljson-${longVersion}.js`,
   dirBasename: 'wasm',
   listUri: () => 'https://binaries.soliditylang.org/wasm/list.json',
   buildUri: (build) => `https://binaries.soliditylang.org/wasm/${build.path}`,
@@ -378,6 +393,7 @@ export const SOLIDITY_PLATFORM_ARCHS: Record<SolidityPlatform, SolidityArchConfi
    * @see [json](https://raw.githubusercontent.com/ethereum/solc-bin/gh-pages/linux-amd64/list.json)
    */
   [SolidityPlatform.LinuxAmd64]: {
+    basename: (longVersion) => `solc-linux-amd64-${longVersion}`,
     dirBasename: 'linuxamd64',
     isWasm: false,
     platform: SolidityPlatform.LinuxAmd64,
@@ -393,11 +409,28 @@ export const SOLIDITY_PLATFORM_ARCHS: Record<SolidityPlatform, SolidityArchConfi
    * @see [json](https://raw.githubusercontent.com/ethereum/solc-bin/gh-pages/macosx-amd64/list.json)
    */
   [SolidityPlatform.MacosAmd64]: {
+    basename: (longVersion) => `solc-macos-amd64-${longVersion}`,
     dirBasename: 'macosamd64',
     isWasm: false,
     platform: SolidityPlatform.MacosAmd64,
     listUri:() =>  'https://binaries.soliditylang.org/macosx-amd64/list.json',
     buildUri: (build) => `https://binaries.soliditylang.org/macosx-amd64/${build.path}`,
+  },
+
+  /**
+   * Windows builds
+   *
+   * @see [GitHub](https://github.com/ethereum/solc-bin/tree/gh-pages/windows-amd64)
+   * 
+   * @see [json](https://raw.githubusercontent.com/ethereum/solc-bin/gh-pages/windows-amd64/list.json)
+   */
+  [SolidityPlatform.WindowsAmd64]: {
+    basename: (longVersion) => `solc-windows-amd64-${longVersion}.exe`,
+    dirBasename: 'windowsamd64',
+    isWasm: false,
+    platform: SolidityPlatform.WindowsAmd64,
+    listUri:() =>  'https://binaries.soliditylang.org/windows-amd64/list.json',
+    buildUri: (build) => `https://binaries.soliditylang.org/windows-amd64/${build.path}`,
   },
 }
 

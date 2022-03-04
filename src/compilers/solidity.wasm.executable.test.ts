@@ -2,22 +2,22 @@ import assert from "node:assert";
 import { SOLIDITY_WASM_COMPILE_TIMEOUT } from "../constants";
 import { getCompilerName, parseSolidityCompilerName, solidityOutputRemoveAsts, SOLIDITY_WASM_ARCH } from "../libs/solidity";
 import { VerifiedTestContract } from "../models/contract.verified.test.util";
-import { CompilerFsTestService } from "../services/compiler-fs.service.test.util";
-import { VerifiedContractsFsTestService } from "../services/contracts-fs.service.test.util";
+import { TestCompilerFsService } from "../services/compiler-fs.service.test.util";
+import { TestVerifiedContractsFsService } from "../services/contracts-fs.service.test.util";
 import { DownloadService } from "../services/download.service";
 import { SolidityWasmExecutable } from "./solidity.wasm.executable";
 import { ContractLanguage } from "../libs/support";
 import { fexists } from "../libs/utils";
 
 describe('SolidityWasmExecutable', () => {
-  let compilerFsService: CompilerFsTestService;
+  let compilerFsService: TestCompilerFsService;
   let verifiedContracts: VerifiedTestContract[];
 
   beforeAll(async () => {
     const downloadService = new DownloadService();
-    compilerFsService = new CompilerFsTestService(downloadService);
+    compilerFsService = new TestCompilerFsService(downloadService);
 
-    const verifiedContractService = new VerifiedContractsFsTestService()
+    const verifiedContractService = new TestVerifiedContractsFsService()
     verifiedContracts = await verifiedContractService.getContracts();
   });
 

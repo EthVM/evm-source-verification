@@ -1,18 +1,18 @@
 import assert from 'node:assert';
 import { getCompilerName, parseSolidityCompilerName, SolidityPlatform } from "../libs/solidity";
-import { VerifiedContractsFsTestService } from "./contracts-fs.service.test.util";
+import { TestVerifiedContractsFsService } from "./contracts-fs.service.test.util";
 import { SolidityExecutableProvider } from './solidity-executable.provider';
 import { VerifiedTestContract } from '../models/contract.verified.test.util';
 import { DownloadService } from './download.service';
 import { ISolidityReleaseProvider, SolidityReleaseProvider } from './solidity-release.provider';
 import { ISolidityArchProvider, SolidityArchProvider } from './solidity-arch.provider';
-import { CompilerFsTestService } from "./compiler-fs.service.test.util";
+import { TestCompilerFsService } from "./compiler-fs.service.test.util";
 import { ISolidityBuildProvider, SolidityBuildProvider } from "./solidity-build.provider";
 import { SolidityPosixExecutable } from '../compilers/solidity.posix.executable';
 import { SolidityWasmExecutable } from '../compilers/solidity.wasm.executable';
 
 describe('SOlidityWasmProvider', () => {
-  let verifiedContractsService: VerifiedContractsFsTestService;
+  let verifiedContractsService: TestVerifiedContractsFsService;
   let verifiedContracts: VerifiedTestContract[];
   let solBuildProvider: ISolidityBuildProvider;
   let solExecutableProvider: SolidityExecutableProvider;
@@ -21,14 +21,14 @@ describe('SOlidityWasmProvider', () => {
 
   beforeAll(async () => {
     const downloadService = new DownloadService();
-    const compilerFsService = new CompilerFsTestService(downloadService);
+    const compilerFsService = new TestCompilerFsService(downloadService);
     solExecutableProvider = new SolidityExecutableProvider(compilerFsService);
 
     solReleaseProvider = new SolidityReleaseProvider(downloadService);
     solArchProvider = new SolidityArchProvider();
     solBuildProvider = new SolidityBuildProvider(solReleaseProvider);
 
-    verifiedContractsService = new VerifiedContractsFsTestService();
+    verifiedContractsService = new TestVerifiedContractsFsService();
     verifiedContracts = await verifiedContractsService.getContracts();
   });
 

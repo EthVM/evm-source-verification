@@ -4,7 +4,7 @@ import { PullRequestFile, PullContractsService } from "./pull-contracts.service"
 import { IFileDownloader } from '../../services/download.service';
 import { fexists, tmpFilename } from "../../libs/utils";
 import { VerifiedTestContract } from "../../models/contract.verified.test.util";
-import { VerifiedContractsFsTestService } from "../../services/contracts-fs.service.test.util";
+import { TestVerifiedContractsFsService } from "../../services/contracts-fs.service.test.util";
 import { ProcessorServiceMock } from "../../interfaces/processor.service.mock";
 
 describe('PullContractsService', () => {
@@ -23,7 +23,7 @@ describe('PullContractsService', () => {
       async file() {},
     };
 
-    const contractsFsService = new VerifiedContractsFsTestService();
+    const contractsFsService = new TestVerifiedContractsFsService();
 
     contracts = await contractsFsService.getContracts();
 

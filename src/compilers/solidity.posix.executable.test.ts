@@ -2,8 +2,8 @@ import assert from "node:assert";
 import { getCompilerName, SolidityArchConfigNative, parseSolidityCompilerName, solidityOutputRemoveAsts, SolidityPlatform } from "../libs/solidity";
 import { fexists } from "../libs/utils";
 import { VerifiedTestContract } from "../models/contract.verified.test.util";
-import { CompilerFsTestService } from "../services/compiler-fs.service.test.util";
-import { ErroredContractsFsTestService, UnverifiedContractsFsTestService, VerifiedContractsFsTestService } from "../services/contracts-fs.service.test.util";
+import { TestCompilerFsService } from "../services/compiler-fs.service.test.util";
+import { TestErroredContractsFsService, TestUnverifiedContractsFsService, TestVerifiedContractsFsService } from "../services/contracts-fs.service.test.util";
 import { DownloadService } from "../services/download.service";
 import { ISolidityArchProvider, SolidityArchProvider } from '../services/solidity-arch.provider';
 import { logger } from "../logger";
@@ -15,7 +15,7 @@ import { IContractWithOutput } from "../models/contract.test.util";
 import { SOLIDITY_BINARY_COMPILE_TIMEOUT } from "../constants";
 
 describe('SolidityPosixExecutable', () => {
-  let compilerFsService: CompilerFsTestService;
+  let compilerFsService: TestCompilerFsService;
   let verifiedContracts: VerifiedTestContract[];
   let unverifiedContracts: UnverifiedTestContract[];
   let erroredContracts: ErroredTestContract[];
@@ -23,15 +23,15 @@ describe('SolidityPosixExecutable', () => {
 
   beforeAll(async () => {
     const downloadService = new DownloadService();
-    compilerFsService = new CompilerFsTestService(downloadService);
+    compilerFsService = new TestCompilerFsService(downloadService);
 
-    const verifiedContractService = new VerifiedContractsFsTestService()
+    const verifiedContractService = new TestVerifiedContractsFsService()
     verifiedContracts = await verifiedContractService.getContracts();
 
-    const unverifiedContractService = new UnverifiedContractsFsTestService()
+    const unverifiedContractService = new TestUnverifiedContractsFsService()
     unverifiedContracts = await unverifiedContractService.getContracts();
 
-    const erroredContractService = new ErroredContractsFsTestService()
+    const erroredContractService = new TestErroredContractsFsService()
     erroredContracts = await erroredContractService.getContracts();
 
     solArchProvider = new SolidityArchProvider();

@@ -5,7 +5,7 @@ import path from 'node:path';
 import assert from 'node:assert';
 import { CompilerInput, CompilerOutput } from "../types";
 import { ISolidityExecutable } from "./solidity.executable.interface";
-import { SolidityCompilerNameDetails, solidityCompileWasmSolc } from '../libs/solidity';
+import { SolidityCompilerNameDetails, solidityCompileWasmSolc, solidityOutputRemoveAsts } from '../libs/solidity';
 import { fabs, randomBase16 } from '../libs/utils';
 
 /**
@@ -38,13 +38,16 @@ export class SolidityWasmExecutable implements ISolidityExecutable {
    */
   async compile(input: CompilerInput): Promise<CompilerOutput> {
     const { compilerFilename, name: info } = this;
-    // const result = await solidityCompileWasmWorker(filename, info, input);
-    const result = await primary({
+
+    const output = await primary({
       compilerFilename,
       info,
       input,
     });
-    return result;
+
+    const normalised = solidityOutputRemoveAsts(output);
+
+    return normalised;
   }
 }
 

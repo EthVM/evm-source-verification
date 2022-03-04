@@ -12,9 +12,9 @@ import { CompilerService } from '../../services/compiler.service';
 import { VerificationService } from '../../services/verification.service';
 import { VerifiedTestContract } from '../../models/contract.verified.test.util';
 import {
-  ErroredContractsFsTestService,
-  UnverifiedContractsFsTestService,
-  VerifiedContractsFsTestService,
+  TestErroredContractsFsService,
+  TestUnverifiedContractsFsService,
+  TestVerifiedContractsFsService,
 } from '../../services/contracts-fs.service.test.util';
 import { IContractWithEthCode, IContractWithOutput, ITestContract } from '../../models/contract.test.util';
 import { INodeService, NodeService } from '../../services/node.service';
@@ -22,13 +22,13 @@ import { ErroredTestContract } from '../../models/contract.errored.test.util';
 import { CompilationError } from '../../errors/compilation.error';
 import { UnverifiedTestContract } from '../../models/contract.unverified.test.util';
 import { CompilerOutput, ContractMetadata } from '../../types';
-import { CompilerFsTestService } from '../../services/compiler-fs.service.test.util';
+import { TestCompilerFsService } from '../../services/compiler-fs.service.test.util';
 import { DownloadService } from '../../services/download.service';
 import { SolidityService } from '../../services/solidity.service';
 import { SolidityExecutableProvider } from '../../services/solidity-executable.provider';
 import { SolidityArchProvider } from '../../services/solidity-arch.provider';
 import { SolidityReleaseProvider } from '../../services/solidity-release.provider';
-import { getCompilerName, parseSolidityCompilerName, SolidityPlatform } from '../../libs/solidity';
+import { getCompilerName, getSolidityPlatformName, parseSolidityCompilerName, SolidityPlatform } from '../../libs/solidity';
 import { ICompilerService } from '../../interfaces/compiler.service.interface';
 import { SolidityBuildProvider } from '../../services/solidity-build.provider';
 
@@ -48,9 +48,9 @@ export async function handleRebuildTestsCommand(): Promise<void> {
   const rl = readline.createInterface(process.stdin, process.stdout);
 
   // get all test cases
-  const verifiedContractService = new VerifiedContractsFsTestService();
-  const erroredContractService = new ErroredContractsFsTestService();
-  const unverifiedContractService = new UnverifiedContractsFsTestService();
+  const verifiedContractService = new TestVerifiedContractsFsService();
+  const erroredContractService = new TestErroredContractsFsService();
+  const unverifiedContractService = new TestUnverifiedContractsFsService();
 
   const verifiedContracts = await verifiedContractService.getContracts();
   const erroredContracts = await erroredContractService.getContracts();
@@ -59,11 +59,11 @@ export async function handleRebuildTestsCommand(): Promise<void> {
   // create services
   const downloadService = new DownloadService();
   // use the compiler test service to download compilres to the test directory
-  const compilerFsService = new CompilerFsTestService(downloadService);
+  const compilerFsService = new TestCompilerFsService(downloadService);
   const solArchProvider = new SolidityArchProvider();
   const solReleaseProvider = new SolidityReleaseProvider(downloadService)
   const solBuildProvider = new SolidityBuildProvider(solReleaseProvider);
-  const solExecutableProvider = new SolidityExecutableProvider(compilerFsService,);
+  const solExecutableProvider = new SolidityExecutableProvider(compilerFsService);
   const solService = new SolidityService(solArchProvider, solBuildProvider, solExecutableProvider)
   const compilerService = new CompilerService(solService);
   const nodeService = new NodeService();
@@ -180,11 +180,23 @@ export async function handleRebuildTestsCommand(): Promise<void> {
         `  chainId=${contract.chainId}` +
         `  address=${contract.address}` +
         `  longVersion=${wasmBuild.nameDetail.longVersion}` +
-        `  arch=macosAmd64`);
+        `  arch=${getSolidityPlatformName(SolidityPlatform.MacosAmd64)}`);
       const macosAmd64Arch = solArchProvider.getPlatformArch(SolidityPlatform.MacosAmd64);
       const macosAmd64Build = await solBuildProvider.getNativeBuildInfo(nameDetail, macosAmd64Arch);
       assert.ok(macosAmd64Build);
       await solExecutableProvider.getExecutable(macosAmd64Build);
+      await delay(COOLOFF_DELAY);
+
+      // download windowsamd64
+      log.info(`downloading compiler` +
+        `  chainId=${contract.chainId}` +
+        `  address=${contract.address}` +
+        `  longVersion=${wasmBuild.nameDetail.longVersion}` +
+        `  arch=${getSolidityPlatformName(SolidityPlatform.WindowsAmd64)}`);
+      const windowsAmd64Arch = solArchProvider.getPlatformArch(SolidityPlatform.WindowsAmd64);
+      const windowsAmd64Build = await solBuildProvider.getNativeBuildInfo(nameDetail, windowsAmd64Arch);
+      assert.ok(windowsAmd64Build);
+      await solExecutableProvider.getExecutable(windowsAmd64Build);
       await delay(COOLOFF_DELAY);
     }
 

@@ -3,12 +3,12 @@ import { IProcesorService, ProcessorStats } from "../interfaces/processor.servic
 import { ErroredTestContract } from "../models/contract.errored.test.util";
 import { UnverifiedTestContract } from "../models/contract.unverified.test.util";
 import { VerifiedTestContract } from "../models/contract.verified.test.util";
-import { CompilerFsTestService } from "../services/compiler-fs.service.test.util";
+import { TestCompilerFsService } from "../services/compiler-fs.service.test.util";
 import { CompilerService } from "../services/compiler.service";
 import {
-  VerifiedContractsFsTestService,
-  ErroredContractsFsTestService,
-  UnverifiedContractsFsTestService,
+  TestVerifiedContractsFsService,
+  TestErroredContractsFsService,
+  TestUnverifiedContractsFsService,
 } from "../services/contracts-fs.service.test.util";
 import { DownloadService } from "../services/download.service";
 import { NodeService } from "../services/node.service";
@@ -23,29 +23,29 @@ import { VerificationService } from "../services/verification.service";
 describe('e2e', () => {
   let processorService: IProcesorService;
 
-  let verifiedContractsService: VerifiedContractsFsTestService;
+  let verifiedContractsService: TestVerifiedContractsFsService;
   let verifiedContracts: VerifiedTestContract[];
 
-  let erroredContractsService: ErroredContractsFsTestService;
+  let erroredContractsService: TestErroredContractsFsService;
   let erroredContracts: ErroredTestContract[];
 
-  let unverifiedContractsService: UnverifiedContractsFsTestService;
+  let unverifiedContractsService: TestUnverifiedContractsFsService;
   let unverifiedContracts: UnverifiedTestContract[];
 
 
   beforeAll(async () => {
-    verifiedContractsService = new VerifiedContractsFsTestService();
+    verifiedContractsService = new TestVerifiedContractsFsService();
     verifiedContracts = await verifiedContractsService.getContracts();
 
-    erroredContractsService = new ErroredContractsFsTestService();
+    erroredContractsService = new TestErroredContractsFsService();
     erroredContracts = await erroredContractsService.getContracts();
 
-    unverifiedContractsService = new UnverifiedContractsFsTestService();
+    unverifiedContractsService = new TestUnverifiedContractsFsService();
     unverifiedContracts = await unverifiedContractsService.getContracts();
 
     const downloadService = new DownloadService();
     const releaseProvider = new SolidityReleaseProvider(downloadService);
-    const compilerFsService = new CompilerFsTestService(downloadService);
+    const compilerFsService = new TestCompilerFsService(downloadService);
     const solArchProvider = new SolidityArchProvider();
     const solBuildProvider = new SolidityBuildProvider(releaseProvider);
     const solExecProvider = new SolidityExecutableProvider(compilerFsService);

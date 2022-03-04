@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import { SummariseService } from "./summarise.service";
 import { tmpDir } from "../../libs/utils";
-import { VerifiedContractsFsTestService } from "../../services/contracts-fs.service.test.util";
+import { TestVerifiedContractsFsService } from "../../services/contracts-fs.service.test.util";
 import { VerifiedTestContract } from "../../models/contract.verified.test.util";
 
 describe('SummariseService', () => {
@@ -12,7 +12,7 @@ describe('SummariseService', () => {
   beforeAll(async () => {
     dirname = await tmpDir();
     await fs.promises.mkdir(dirname, { recursive: true });
-    const verifiedContractsService = new VerifiedContractsFsTestService();
+    const verifiedContractsService = new TestVerifiedContractsFsService();
     verifiedContracts = await verifiedContractsService.getContracts();
     buildStateService = new SummariseService({ dirname });
   });

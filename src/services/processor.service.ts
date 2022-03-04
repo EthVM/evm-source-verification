@@ -166,18 +166,20 @@ export class ProcessorService implements IProcesorService {
 
     // report on queue results
     const statsReport: string[] = [];
-    for (const [name, count] of Object.entries(stats.ok)) {
-      if (!count) continue;
-      statsReport.push(`${chalk.green(name)}=${count}`);
+    for (const [name, okContracts] of Object.entries(stats.ok)) {
+      if (!okContracts.length) continue;
+      statsReport.push(`${chalk.green(name)}=${okContracts}`);
     }
-    for (const [name, count] of Object.entries(stats.err)) {
-      if (!count) continue;
-      statsReport.push(`${chalk.red(name)}=${count}`);
+    for (const [name, errdContracts] of Object.entries(stats.err)) {
+      if (!errdContracts.length) continue;
+      statsReport.push(`${chalk.red(name)}=${errdContracts.length}`);
     }
     log.info(`finished processing` +
       ` ${eng(contracts.length)} contracts` +
       ` in ${eng(delta)}ms` +
-      ` @ ${eng(1000 * contracts.length / delta)} contracts per second`)
+      ` @ ${eng(1000 * contracts.length / delta)} contracts per second` +
+      `, ${eng(delta / contracts.length)}ms per contract`
+    )
     log.info(`results  ${statsReport.join('  ')}`);
 
     return stats;

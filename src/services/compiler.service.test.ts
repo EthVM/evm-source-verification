@@ -3,16 +3,16 @@ import { ILanguageService } from "../interfaces/language.service.interface";
 import { LanguageServiceMock } from "../interfaces/language.service.mock";
 import { VerifiedTestContract } from "../models/contract.verified.test.util";
 import { CompilerService } from "./compiler.service";
-import { VerifiedContractsFsTestService } from "./contracts-fs.service.test.util";
+import { TestVerifiedContractsFsService } from "./contracts-fs.service.test.util";
 
 describe('CompilerService', () => {
-  let verifiedContractsService: VerifiedContractsFsTestService;
+  let verifiedContractsService: TestVerifiedContractsFsService;
   let verifiedContracts: VerifiedTestContract[];
   let langServiceMock: ILanguageService;
   let compilerService: ICompilerService;
 
   beforeAll(async () => {
-    verifiedContractsService = new VerifiedContractsFsTestService();
+    verifiedContractsService = new TestVerifiedContractsFsService();
     verifiedContracts = await verifiedContractsService.getContracts();
     langServiceMock = new LanguageServiceMock(verifiedContracts);
     compilerService = new CompilerService(langServiceMock);

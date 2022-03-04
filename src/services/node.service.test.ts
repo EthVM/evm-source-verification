@@ -1,5 +1,5 @@
 import { IContractWithEthCode } from "../models/contract.test.util";
-import { UnverifiedContractsFsTestService, VerifiedContractsFsTestService } from "./contracts-fs.service.test.util";
+import { TestUnverifiedContractsFsService, TestVerifiedContractsFsService } from "./contracts-fs.service.test.util";
 import { NodeService } from "./node.service";
 
 describe('NodeService', () => {
@@ -7,8 +7,8 @@ describe('NodeService', () => {
   let nodeService: NodeService;
 
   beforeAll(async () => {
-    const verifiedService = new VerifiedContractsFsTestService();
-    const unverifiedService = new UnverifiedContractsFsTestService();
+    const verifiedService = new TestVerifiedContractsFsService();
+    const unverifiedService = new TestUnverifiedContractsFsService();
     const verified = await verifiedService.getContracts();
     const unverified = await unverifiedService.getContracts();
     contracts = [...verified, ...unverified];

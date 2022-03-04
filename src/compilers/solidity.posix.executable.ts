@@ -1,4 +1,5 @@
 import { SOLIDITY_MAX_OUTPUT_BUFFER_SIZE, SOLIDITY_BINARY_COMPILE_TIMEOUT } from "../constants";
+import { solidityOutputRemoveAsts } from "../libs/solidity";
 import { fabs, pexecPipe } from "../libs/utils";
 import { logger } from "../logger";
 import { CompilerInput, CompilerOutput } from "../types";
@@ -39,7 +40,7 @@ export class SolidityPosixExecutable implements ISolidityExecutable {
       JSON.stringify(input),
       {
         maxBuffer: SOLIDITY_MAX_OUTPUT_BUFFER_SIZE,
-        shell: 'bash',
+        // shell: 'bash',
         timeout: SOLIDITY_BINARY_COMPILE_TIMEOUT,
       },
     );
@@ -51,8 +52,10 @@ export class SolidityPosixExecutable implements ISolidityExecutable {
     }
 
     // solidity outputs errors to stdout in json
-    const output: CompilerOutput = JSON.parse(stdout);
+    const output = JSON.parse(stdout) as CompilerOutput;
 
-    return output;
+    const normalised = solidityOutputRemoveAsts(output);
+
+    return normalised;
   }
 }

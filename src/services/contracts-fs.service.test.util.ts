@@ -30,7 +30,7 @@ const unverifiedPath = (cwd: string) => path.join(
 /**
  * Provides access to verified contract test cases
  */
-export class VerifiedContractsFsTestService extends BaseContractsFsService<VerifiedTestContract> {
+export class TestVerifiedContractsFsService extends BaseContractsFsService<VerifiedTestContract> {
   constructor() {
     super({ dirname: verifiedPath(process.cwd()) });
   }
@@ -45,7 +45,7 @@ export class VerifiedContractsFsTestService extends BaseContractsFsService<Verif
 /**
  * Provides access to unverified contract test cases
  */
-export class UnverifiedContractsFsTestService extends BaseContractsFsService<UnverifiedTestContract> {
+export class TestUnverifiedContractsFsService extends BaseContractsFsService<UnverifiedTestContract> {
   constructor() {
     super({ dirname: unverifiedPath(process.cwd()) });
   }
@@ -60,7 +60,7 @@ export class UnverifiedContractsFsTestService extends BaseContractsFsService<Unv
 /**
  * Provides access to contracts that error compilation
  */
-export class ErroredContractsFsTestService extends BaseContractsFsService<ErroredTestContract> {
+export class TestErroredContractsFsService extends BaseContractsFsService<ErroredTestContract> {
   constructor() {
     super({ dirname: erroredPath(process.cwd()) });
   }

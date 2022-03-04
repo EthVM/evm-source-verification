@@ -4,9 +4,9 @@ import { ErroredTestContract } from "../models/contract.errored.test.util";
 import { UnverifiedTestContract } from "../models/contract.unverified.test.util";
 import { VerifiedTestContract } from "../models/contract.verified.test.util";
 import {
-  ErroredContractsFsTestService,
-  UnverifiedContractsFsTestService,
-  VerifiedContractsFsTestService,
+  TestErroredContractsFsService,
+  TestUnverifiedContractsFsService,
+  TestVerifiedContractsFsService,
 } from "./contracts-fs.service.test.util";
 import { DownloadService } from "./download.service";
 import { SolidityService } from "./solidity.service";
@@ -25,13 +25,13 @@ describe('SolidityService', () => {
 
   beforeAll(async () => {
 
-    const verifiedContractsService = new VerifiedContractsFsTestService();
+    const verifiedContractsService = new TestVerifiedContractsFsService();
     verifiedContracts = await verifiedContractsService.getContracts();
 
-    const erroredContractsService = new ErroredContractsFsTestService();
+    const erroredContractsService = new TestErroredContractsFsService();
     erroredContracts = await erroredContractsService.getContracts();
 
-    const unverifiedContractsService = new UnverifiedContractsFsTestService();
+    const unverifiedContractsService = new TestUnverifiedContractsFsService();
     unverifiedContracts = await unverifiedContractsService.getContracts();
 
     const downloadService = new DownloadService();
