@@ -6,7 +6,7 @@ import { ContractLanguage, getLanguageName } from '../libs/support';
 import { HttpError } from '../errors/http.error';
 import { logger } from '../logger';
 import { CompilerNotFoundError } from '../errors/compiler-not-found.error';
-import { getSolidityPlatformName, SolidityArchConfig, SolidityLongBuildVersion, SolidityPlatform } from '../libs/solidity';
+import { SolidityArchConfig, SolidityLongBuildVersion } from '../libs/solidity';
 import unzip from 'extract-zip';
 import assert from 'node:assert';
 
@@ -47,6 +47,9 @@ export interface GetCompilerFilenameOptions extends GetPlatformDirnameOptions {
   longVersion: SolidityLongBuildVersion;
 }
 
+/**
+ * Provides access to compilers on the filesystem
+ */
 export interface ICompilerFsService {
   /**
    * Get the filename of an executable
@@ -118,7 +121,7 @@ export class CompilerFsService implements ICompilerFsService {
 
     const compilerFilename = path.join(
       dirname,
-      archConfig.basename(options.longVersion),
+      archConfig.basename(longVersion),
     );
 
     return compilerFilename;
@@ -207,7 +210,15 @@ export class CompilerFsService implements ICompilerFsService {
 
     const compilerBasename = path.basename(compilerFilename);
 
-    if ((await fexists(compilerFilename))) return;
+    if (await fexists(compilerFilename)) {
+      // ensure the compiler is executable
+      // (necessary for example when the compiler was brought over from a
+      // windows filesystem, like is possible the test compilers)
+      if (makeExecutable) {
+        await fs.promises.chmod(compilerFilename, 0o700);
+      }
+      return;
+    }
 
     // try to protect against malicious input
     if (!isSafeFilename(compilerBasename) || /\s/.test(compilerBasename))
@@ -240,30 +251,32 @@ export class CompilerFsService implements ICompilerFsService {
         throw new CompilerNotFoundError(msg);
       });
 
-    // TODO: make this nicer
+    // TODO: make this much nicer...
+    //    eg consider not relying on the url ending with .zip...
     if (uri.endsWith('.zip')) {
       log.info('unzipping win32 compiler...');
       // probably older windows version with a solc.exe within
       // unzip
       const unzippedDirname = `${tmp}.unzipped`;
-      log.info(`unzipping "${frel(tmp)}" -> "${frel(unzippedDirname)}"`);
+
       await unzip(tmp, { dir: unzippedDirname, });
       const unzippedWin32Filename = path.join(unzippedDirname, 'solc.exe');
+
       const msg = 'failed to extract zipped executable:' +
         ' expected a windows executable names solc.exe';
       assert.ok(await fexists(unzippedWin32Filename), msg);
+
       // remove executable from zipfile
       const tmpWin32Filename = `${tmp}.ready`;
-      log.info(`unzipping "${frel(unzippedWin32Filename)}" -> "${frel(tmpWin32Filename)}"`);
       await fs.promises.rename(unzippedWin32Filename, tmpWin32Filename);
+
       // remove the zip file
-      log.info(`rm "${frel(tmp)}"`);
       await fs.promises.rm(tmp, { force: true, recursive: true });
+
       // remove the unzipped directory
-      log.info(`rm "${frel(unzippedDirname)}"`);
       await fs.promises.rm(unzippedDirname, { force: true, recursive: true });
+
       // rename the executable
-      log.info(`unzipping "${frel(tmpWin32Filename)}" -> "${frel(tmp)}"`);
       await fs.promises.rename(tmpWin32Filename, tmp);
     }
 
@@ -271,19 +284,16 @@ export class CompilerFsService implements ICompilerFsService {
     const compilerDirname = path.dirname(compilerFilename);
 
     if (!(await fexists(compilerDirname))) {
-      // log.info(`creating ${frel(compilerDirname)}`);
       await fs.promises.mkdir(compilerDirname, { recursive: true });
     }
 
     if (makeExecutable) {
       // make the compiler executable
-      // log.info(`chmod +x "${frel(tmp)}"`);
       await fs.promises.chmod(tmp, 0o700);
       fs.promises.lchmod
     }
 
     // mv to compiler to proper location
-    // log.info(`mv "${frel(tmp)}" -> "${frel(compilerFilename)}"`);
     await fs.promises.rename(tmp, compilerFilename);
 
     // compiler ready to use
