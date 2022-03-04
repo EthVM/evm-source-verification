@@ -364,7 +364,7 @@ export function frel(filename: string): string {
 }
 
 // compatible with linux, macos (/) and windows (\)
-export const HOME_DIR = /^~([\\/]|$)`/;
+export const HOME_DIR = /^~([\\/]|$)/;
 
 /**
  * Get the absolute file destination assuming it's relatively based at the
