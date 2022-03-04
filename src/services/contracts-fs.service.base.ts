@@ -2,11 +2,11 @@
 import { toPercentage } from '@nkp/percentage';
 import fs from 'node:fs';
 import path from 'node:path';
+import regExpEscape from 'escape-string-regexp';
 import { eng, fabs, mapGetOrCreate, toChainId } from "../libs/utils";
 import { logger } from '../logger';
 import { IContract, ICreateContractOptions } from '../models/contract';
 import { ContractStorage, ContractStorageOptions } from '../models/contract.storage';
-import regExpEscape from 'escape-string-regexp';
 import {
   IContractIdentity,
   IHasChainId,

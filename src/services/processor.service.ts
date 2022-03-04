@@ -23,48 +23,6 @@ import { IProcesorService, ParallelProcessorOptions, ProcessorHandleOptions, Pro
 const log = logger.child({});
 
 /**
- * Report the failure to verify a contract
- *
- * @param contract    contract that faile verification
- * @param idx         index of the contract among all those being verified
- * @returns
- */
-async function report(
-  type: string,
-  contract: IContract,
-  idx = 0,
-  rest?: {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    info?: any,
-    err?: Error,
-  },
-) {
-  const { chainId, address, name } = contract;
-  const filename = path.join(LOGS_DIRNAME, `${chainId}.${type}.log`);
-  const config = await contract.getConfig();
-  const { compiler } = config;
-  let msg = `[${ymdhms()}]`
-    + `  ${type}`
-    + `  idx=${idx}`
-    + `  chainId=${chainId}`
-    + `  address=${address}`
-    + `  name=${name}`
-    + `  compiler=${compiler}`;
-
-  if (rest && hasOwn(rest, 'info'))
-    msg += `  ${inspect(rest.info, { depth: 4, colors: false })}`;
-
-  if (rest && hasOwn(rest, 'err'))
-    msg += `  err=${inspect(rest.err, { depth: 4, colors: false })}`
-
-  if (!msg.endsWith('\n')) msg += '\n';
-
-  await fs
-    .promises
-    .appendFile(filename, msg, 'utf-8');
-}
-
-/**
  * Coordinates processing of contracts
  */
 export class ProcessorService implements IProcesorService {
@@ -397,6 +355,49 @@ function createResultHandler(
       }
     }
   }
+}
+
+/**
+ * Report the failure to verify a contract
+ *
+ * @param contract    contract that faile verification
+ * @param idx         index of the contract among all those being verified
+ * @returns
+ */
+async function report(
+  type: string,
+  contract: IContract,
+  // eslint-disable-next-line default-param-last
+  idx = 0,
+  rest?: {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    info?: any,
+    err?: Error,
+  },
+) {
+  const { chainId, address, name } = contract;
+  const filename = path.join(LOGS_DIRNAME, `${chainId}.${type}.log`);
+  const config = await contract.getConfig();
+  const { compiler } = config;
+  let msg = `[${ymdhms()}]`
+    + `  ${type}`
+    + `  idx=${idx}`
+    + `  chainId=${chainId}`
+    + `  address=${address}`
+    + `  name=${name}`
+    + `  compiler=${compiler}`;
+
+  if (rest && hasOwn(rest, 'info'))
+    msg += `  ${inspect(rest.info, { depth: 4, colors: false })}`;
+
+  if (rest && hasOwn(rest, 'err'))
+    msg += `  err=${inspect(rest.err, { depth: 4, colors: false })}`
+
+  if (!msg.endsWith('\n')) msg += '\n';
+
+  await fs
+    .promises
+    .appendFile(filename, msg, 'utf-8');
 }
 
 export type ProcessResult =

@@ -16,22 +16,9 @@ const config: InitialOptionsTsJest = {
   // give tests 300 seconds
   // tests can run long if the computer is slow or has to use wasm
   testTimeout: 300_1000,
-  // preset: "ts-jest",
   rootDir: "../dist.tests",
   testEnvironment: "node",
-  // testPathIgnorePatterns: ['<rootDir>/dist', '<rootDir>/contracts', '<rootDir>/compilers'],
-  // testPathIgnorePatterns: ['<rootDir>/dist/', '<rootDir>/src',],
-  // watchPathIgnorePatterns: ['<rootDir>/dist/', '<rootDir>/contracts', '<rootDir>/compilers'],
-  // moduleNameMapper: {
-  //   "^@src/(.*)$": "<rootDir>/src/$1",
-  // },
-  // setupFiles: ['<rootDir>/dist.tests/tests/jest.setup.js'],
   setupFiles: ['<rootDir>/tests/jest.setup.js'],
-  // globals: {
-  //   'ts-jest': {
-  //     tsconfig: '<rootDir>/config/tsconfig.test.json',
-  //   },
-  // },
 };
 
 export default config;

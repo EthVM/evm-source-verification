@@ -1,5 +1,7 @@
 import path from 'node:path';
 import fs from 'node:fs';
+import assert from 'node:assert';
+import unzip from 'extract-zip';
 import { fabs, fexists, frel, isSafeFilename, mapGetOrCreate } from "../libs/utils";
 import { IFileDownloader } from "./download.service";
 import { ContractLanguage, getLanguageName } from '../libs/support';
@@ -7,8 +9,6 @@ import { HttpError } from '../errors/http.error';
 import { logger } from '../logger';
 import { CompilerNotFoundError } from '../errors/compiler-not-found.error';
 import { SolidityArchConfig, SolidityLongBuildVersion } from '../libs/solidity';
-import unzip from 'extract-zip';
-import assert from 'node:assert';
 
 const log = logger.child({});
 
@@ -290,7 +290,6 @@ export class CompilerFsService implements ICompilerFsService {
     if (makeExecutable) {
       // make the compiler executable
       await fs.promises.chmod(tmp, 0o700);
-      fs.promises.lchmod
     }
 
     // mv to compiler to proper location
