@@ -109,10 +109,37 @@ export interface ContractSourceFile {
   [objectname: string]: ContractSourceObject;
 }
 
-export interface CompiledOutput {
-  contracts: { [filename: string]: ContractSourceFile };
+/**
+ * Solidity ouptut when compilation succeeds
+ */
+export interface CompilerOutputOk {
+  contracts: {
+    [filename: string]: ContractSourceFile;
+  };
+  sources: {
+    [filename: string]: {
+      ast?: ContractSourceFile
+    };
+  };
 }
 
+/**
+ * Solidity Output when compilation failed
+ */
+export interface CompilerOutputErr {
+  errors: SolidityError[],
+}
+
+/**
+ * Solidity compilation output
+ */
+export interface CompilerOutput extends
+  Partial<CompilerOutputOk>,
+  Partial<CompilerOutputErr> {}
+
+/**
+ * Configuration for a contract
+ */
 export interface ContractConfig {
   name: string;
   address: Address;
@@ -120,7 +147,10 @@ export interface ContractConfig {
   compiler: string;
 }
 
-export interface ContractInput {
+/**
+ * Compiler's standard input for a contract
+ */
+export interface CompilerInput {
   // TODO
 }
 
@@ -160,32 +190,42 @@ export interface AbiOutput {
 
 export type ChainId = number;
 
-export interface HasChainId { chainId: ChainId; }
-export interface HasAddress { address: Address; }
+/**
+ * Represents an object that belong to a chain
+ */
+export interface IHasChainId {
+  /**
+   * Id of the chain of this object
+   * 
+   * @see [ChainList](https://chainlist.org/)
+   *
+   * @example 1
+   */
+  readonly chainId: ChainId;
+}
 
 /**
- * Identity of the contract
- * 
- * ChainId and Address
+ * Represents an object that belong to an address
  */
-export interface ContractIdentity extends HasChainId, HasAddress {}
+export interface IHasAddress {
+  /**
+   * Lowercase address of the contract of this object
+   *
+   * @example "0x0a0bbc022542ebe87ab4f58b3960e7b6176f704d"
+   */
+  readonly address: Address;
+}
+
+/**
+ * Represents an object relating to a contract
+ */
+export interface IContractIdentity extends IHasChainId, IHasAddress {}
 
 /**
  * Define common filesystem locations & utilities for the project
  */
 
 /**
- * Contact compiler
+ * Solidity Error output type
  */
-export interface ICompiler {
-  /**
-   * Compile a contract
-   *
-   * @param compilername        compiler name to use
-   * @param input               input for the compiler
-   */
-  async compile(
-    compilername: string,
-    input: ContractInput,
-  ): Promise<CompiledOutput>;
-}
+export type SolidityError = Record<string, unknown>;

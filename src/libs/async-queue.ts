@@ -129,7 +129,7 @@ export function asyncQueue<T, R>(
     tick();
 
     function forceStop(err: Error) {
-      log.info(`stopping... ${err.toString()}`);
+      log.warn(`stopping queue... ${err.toString()}`);
       isStopping = { err };
       // empty the completed queuje
       while (completedQueue.size) { completedQueue.shift(); }
@@ -254,7 +254,7 @@ export function asyncQueue<T, R>(
           done: true,
           ctx: { ...prev.ctx, end: performance.now() },
           handler: null,
-          result: Result.success(result),
+          result: Result.ok(result),
         }),
       );
       if (!found) throw new Error('something went wrong');
@@ -275,7 +275,7 @@ export function asyncQueue<T, R>(
           done: true,
           ctx: { ...prev.ctx, end: performance.now() },
           handler: null,
-          result: Result.fail(err),
+          result: Result.err(err),
         }),
       );
       if (!found) throw new Error('something went wrong');

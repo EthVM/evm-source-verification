@@ -39,17 +39,17 @@ export const logger = winston.createLogger({
       maxsize: 10 * 1024 * 1024,
       dirname: LOGS_DIRNAME,
       filename: 'error.log',
-      level: 'error',
+      level: 'warn',
       format: nocolorFormat,
       handleExceptions: true,
     }),
   ],
 });
 
-// allow jest's --silent to avoid console logging
-if (!process.argv.includes('--silent')) {
+// if you need temporary logging in tests, consider temporarily
+// using console.log, or comment out the condition
+if (!['testing', 'test'].includes(process.env.NODE_ENV!)) {
   logger.add(
-    // console
     new winston.transports.Console({
       level: 'debug',
       format: colorFormat,
@@ -58,19 +58,19 @@ if (!process.argv.includes('--silent')) {
   );
 }
 
-if (process.env.LOG_INFO_FILE === 'true') {
-  logger.transports.push(
-    // info.log
-    new winston.transports.File({
-      // delete old files
-      maxFiles: 5,
-      // 10 MiB per file
-      maxsize: 10 * 1024 * 1024,
-      dirname: LOGS_DIRNAME,
-      filename: 'info.log',
-      level: 'debug',
-      format: nocolorFormat,
-      handleExceptions: true,
-    })
-  );
-}
+// if (process.env.LOG_INFO_FILE === 'true') {
+//   logger.transports.push(
+//     // info.log
+//     new winston.transports.File({
+//       // delete old files
+//       maxFiles: 5,
+//       // 10 MiB per file
+//       maxsize: 10 * 1024 * 1024,
+//       dirname: LOGS_DIRNAME,
+//       filename: 'info.log',
+//       level: 'debug',
+//       format: nocolorFormat,
+//       handleExceptions: true,
+//     })
+//   );
+// }

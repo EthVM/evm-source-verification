@@ -9,7 +9,9 @@
  */
 export const MAX_GIT_DIFF_FILES = 99;
 
-export const SOLIDITY_COMPILE_TIMEOUT = 30_000;
+export const SOLIDITY_WASM_COMPILE_TIMEOUT = 120_000;
+
+export const SOLIDITY_BINARY_COMPILE_TIMEOUT = 30_000;
 
 /**
  * Maximum buffer size for text returned from a compiler

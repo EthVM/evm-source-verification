@@ -1,12 +1,87 @@
-import { Address, ChainId, ContractConfig, ContractIdentity, ContractInput, ContractMetadata } from "../types";
+import {
+  Address,
+  ChainId,
+  ContractConfig,
+  IContractIdentity,
+  CompilerInput,
+  ContractMetadata,
+} from "../types";
 import { ContractStorage } from "./contract.storage";
+
+export interface ICreateContractOptions {
+  chainId: ChainId,
+  address: Address,
+  storage: ContractStorage,
+  name: string
+}
+
+/**
+ * Represents a smart contract
+ */
+export interface IContract extends IContractIdentity {
+  /**
+   * Name of the contract
+   */
+  readonly name: string;
+
+  /**
+   * Does the contract have a metadata file?
+   *
+   * @returns whether the contract has a metadata file
+   */
+  hasMetadata(): Promise<boolean>;
+
+  /**
+   * Does the contract have a config file?
+   *
+   * @returns whether the contract has a config file
+   */
+  hasConfig(): Promise<boolean>;
+
+  /**
+   * Does the contract have an input file?
+   *
+   * @returns whether the contract has an input file
+   */
+  hasInput(): Promise<boolean>;
+
+  /**
+   * Save the metadata to storage
+   * 
+   * @param metadata 
+   */
+  saveMetadata(metadata: ContractMetadata): Promise<void>;
+
+  /**
+   * Get the contract's config
+   *
+   * @returns contract's config
+   * @throws  if the contract's config does not exist
+   */
+  getConfig(): Promise<ContractConfig>;
+
+  /**
+   * Get the contract's input
+   *
+   * @returns contract's input
+   * @throws  if the contract's input does not exist
+   */
+  getInput(): Promise<CompilerInput>;
+
+  /**
+   * Get the contract's metadata
+   *
+   * @returns contract's metadata
+   * @throws  if the contract's metadata does not exist
+   */
+  getMetadata(): Promise<ContractMetadata>;
+}
 
 
 /**
  * Represents a contract
  */
-export class Contract implements ContractIdentity {
-
+export class Contract implements IContract {
   /**
    * ChainId of the contract
    *
@@ -29,26 +104,20 @@ export class Contract implements ContractIdentity {
   /**
    * Provides access to the contract's location and contents
    */
-  public readonly storage: ContractStorage;
+  private readonly storage: ContractStorage;
 
   /**
    * Create a new Contract
    * 
-   * @param chainId     chainId of the contract
-   * @param address     address of the contract
-   * @param storage     contract's storage mechanism
-   * @param name        name of the contract
+   * @param options     contract options
    */
   constructor(
-    chainId: ChainId,
-    address: Address,
-    storage: ContractStorage,
-    name: string
+    options: ICreateContractOptions,
   ) {
-    this.chainId = chainId;
-    this.address = address;
-    this.storage = storage;
-    this.name = name;
+    this.chainId = options.chainId;
+    this.address = options.address;
+    this.storage = options.storage;
+    this.name = options.name;
   }
 
   /**
@@ -103,7 +172,7 @@ export class Contract implements ContractIdentity {
    * @returns contract's input
    * @throws  if the contract's input does not exist
    */
-  getInput(): Promise<ContractInput> {
+  getInput(): Promise<CompilerInput> {
     return this.storage.getInput();
   }
 
@@ -120,36 +189,36 @@ export class Contract implements ContractIdentity {
   /**
    * Get the absolute fs location of the contract's directory
    *
-   * @returns contract's absolute dirname
+   * @returns absolute path of the contract contract's directory
    */
-  getDirname(): string {
+  protected getDirname(): string {
     return this.storage.getDirname();
   }
 
   /**
    * Get the absolute fs location of the contract's verified config file
    *
-   * @returns contract's absolute config filename
+   * @returns absolute path of the contract's config file
    */
-  getConfigFilename(): string {
+  protected getConfigFilename(): string {
     return this.storage.getConfigFilename();
   }
 
   /**
    * Get the absolute fs location of the contract's verified input file
    *
-   * @returns contract's absolute input filename
+   * @returns absolute path of the contract's input file
    */
-  getInputFilename(): string {
+  protected getInputFilename(): string {
     return this.storage.getInputFilename();
   }
 
   /**
    * Get the absolute fs location of the contract's verified metadata file
    *
-   * @returns contract's absolute metadata filename
+   * @returns absolute path of the contract's metadata file
    */
-  getMetadataFilename(): string {
+  protected getMetadataFilename(): string {
     return this.storage.getMetadataFilename();
   }
 }

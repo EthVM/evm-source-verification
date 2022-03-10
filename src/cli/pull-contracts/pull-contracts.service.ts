@@ -1,10 +1,10 @@
 import fs from 'node:fs';
+import { IProcesorService } from '../../interfaces/processor.service.interface';
 import { validateConfig, validateInput } from '../../libs/contract.validation';
 import { logger } from '../../logger';
-import { Contract } from '../../models/contract';
-import { ContractService, ContractPath } from '../../services/contract.service';
-import { IDownloadService } from '../../services/download.service';
-import { IProcesorService } from '../../services/processor.service';
+import { IContract } from '../../models/contract';
+import { BaseContractsFsService, ContractPath } from '../../services/contracts-fs.service.base';
+import { IFileDownloader } from '../../services/download.service';
 
 const log = logger.child({});
 
@@ -83,9 +83,9 @@ export interface PullContractsServiceOptions {
  */
 export class PullContractsService {
   constructor(
-    private readonly contractService: ContractService,
+    private readonly contractService: BaseContractsFsService,
     private readonly processorService: IProcesorService,
-    private readonly downloadService: IDownloadService,
+    private readonly downloadService: IFileDownloader,
   ) {
     //
   }
@@ -207,7 +207,7 @@ export class PullContractsService {
     }
 
     // download and validate each contract
-    const contracts: Contract[] = [];
+    const contracts: IContract[] = [];
     for (const chainMatch of chains.values()) {
       for (const contractMatch of chainMatch.contracts.values()) {
         // download the input and config files

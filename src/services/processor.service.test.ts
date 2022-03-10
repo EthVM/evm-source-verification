@@ -1,27 +1,27 @@
-import { TestContract } from "../models/contract.test.util";
-import { CompilerServiceMock } from "./compiler.service.mock";
-import { TestContractService } from "./contract.service.test.util";
+import { VerifiedTestContract } from "../models/contract.verified.test.util";
+import { CompilerServiceMock } from "../interfaces/compiler.service.mock";
+import { TestVerifiedContractsFsService } from "./contracts-fs.service.test.util";
 import { NodeService } from "./node.service";
 import { ProcessorService } from "./processor.service";
 import { VerificationService } from "./verification.service";
 
 describe('ProcessorService', () => {
-  let tcontractService: TestContractService;
-  let tcontracts: TestContract[];
+  let verifiedContractsService: TestVerifiedContractsFsService;
+  let verifiedContracts: VerifiedTestContract[];
   let processorService: ProcessorService;
 
   beforeEach(async () => {
-    tcontractService = new TestContractService();
-    tcontracts = await tcontractService.getTestCases();
+    verifiedContractsService = new TestVerifiedContractsFsService();
+    verifiedContracts = await verifiedContractsService.getContracts();
     processorService = new ProcessorService(
-      new CompilerServiceMock(tcontracts),
+      new CompilerServiceMock(verifiedContracts),
       new VerificationService(new NodeService())
     );
   });
 
   it('should work', async () => {
     await processorService.process(
-      tcontracts,
+      verifiedContracts,
       {
         concurrency: 5,
         failFast: true,
@@ -38,8 +38,4 @@ describe('ProcessorService', () => {
   }, 30_000);
 
   // TODO: test failure cases
-
-  // it('should work', () => {
-  //   processorService.process(tcontracts, { concurrency: 5, failFast})
-  // });
 });

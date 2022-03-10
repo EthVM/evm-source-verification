@@ -1,14 +1,14 @@
 import path from "node:path";
 import fs from "node:fs";
-import { IProcesorService } from "../../services/processor.service";
 import { PullRequestFile, PullContractsService } from "./pull-contracts.service";
-import { IDownloadService } from '../../services/download.service';
+import { IFileDownloader } from '../../services/download.service';
 import { fexists, tmpFilename } from "../../libs/utils";
-import { TestContract } from "../../models/contract.test.util";
-import { TestContractService } from "../../services/contract.service.test.util";
+import { VerifiedTestContract } from "../../models/contract.verified.test.util";
+import { TestVerifiedContractsFsService } from "../../services/contracts-fs.service.test.util";
+import { ProcessorServiceMock } from "../../interfaces/processor.service.mock";
 
 describe('PullContractsService', () => {
-  let tcontracts: TestContract[];
+  let contracts: VerifiedTestContract[];
   let pullContractsService: PullContractsService;
 
   beforeEach(async () => {
@@ -19,35 +19,39 @@ describe('PullContractsService', () => {
      * 
      * testCase contracts are already stored in filesystem
      */
-    const downloadService: IDownloadService = {
+    const downloadService: IFileDownloader = {
       async file() {},
     };
 
-    /**
-     * mock processor
-     *
-     * noop - no need to download
-     * 
-     * testCase contracts are already verified in filesystem
-     */
-    const processorService: IProcesorService = {
-      async process(): Promise<void> {},
-    }
+    const contractsFsService = new TestVerifiedContractsFsService();
 
-    const tcontractService = new TestContractService();
+    contracts = await contractsFsService.getContracts();
+
+    const processorService = new ProcessorServiceMock({
+      err: {
+        errored: [],
+        failed: [],
+        noCompiler: [],
+        unsupported: [],
+        unverified: [],
+      },
+      ok: {
+        jumped: [],
+        skipped: [],
+        verified: contracts,
+      },
+    });
 
     pullContractsService = new PullContractsService(
-      tcontractService,
+      contractsFsService,
       processorService,
       downloadService,
     );
-
-    tcontracts = await tcontractService.getTestCases();
   });
 
   describe('process', () => {
     it(`should work`, async () => {
-      const files = tcontracts.flatMap((contract): PullRequestFile[] => ([
+      const files = contracts.flatMap((contract): PullRequestFile[] => ([
         {
           filename: contract.getConfigFilename(),
           raw_url: '<url>',
@@ -67,7 +71,7 @@ describe('PullContractsService', () => {
     });
 
     it('should throw if contract configs are missing', async () => {
-      const files = tcontracts.flatMap((contract): PullRequestFile[] => ([
+      const files = contracts.flatMap((contract): PullRequestFile[] => ([
         {
           filename: contract.getInputFilename(),
           raw_url: '<url>',
@@ -85,7 +89,7 @@ describe('PullContractsService', () => {
   });
 
     it('should throw if contract inputs are missing', async () => {
-      const files = tcontracts.flatMap((contract): PullRequestFile[] => ([
+      const files = contracts.flatMap((contract): PullRequestFile[] => ([
         {
           filename: contract.getConfigFilename(),
           raw_url: '<url>',
@@ -103,7 +107,7 @@ describe('PullContractsService', () => {
     });
 
     it('should throw if non-contract files were added', async () => {
-      const files = tcontracts.flatMap((contract): PullRequestFile[] => ([
+      const files = contracts.flatMap((contract): PullRequestFile[] => ([
         {
           filename: contract.getConfigFilename(),
           raw_url: '<url>',
@@ -131,7 +135,7 @@ describe('PullContractsService', () => {
     });
 
     it('should throw if unknown contract-like files were added', async () => {
-      const files = tcontracts.flatMap((contract): PullRequestFile[] => ([
+      const files = contracts.flatMap((contract): PullRequestFile[] => ([
         {
           filename: contract.getInputFilename(),
           raw_url: '<url>',
@@ -159,7 +163,7 @@ describe('PullContractsService', () => {
     });
 
     it('should throw if any files were was mutated (other than added)', async () => {
-      const files = tcontracts.flatMap((contract): PullRequestFile[] => ([
+      const files = contracts.flatMap((contract): PullRequestFile[] => ([
         {
           filename: contract.getInputFilename(),
           raw_url: '<url>',
@@ -182,7 +186,7 @@ describe('PullContractsService', () => {
     });
 
     it('should save pull-request name, commit name, branch name, body', async () => {
-      const files = tcontracts.flatMap((contract): PullRequestFile[] => ([
+      const files = contracts.flatMap((contract): PullRequestFile[] => ([
         {
           filename: contract.getConfigFilename(),
           raw_url: '<url>',

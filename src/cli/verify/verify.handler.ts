@@ -1,12 +1,12 @@
+import os from 'node:os';
 import fs from "node:fs";
-import chalk from "chalk";
 import { VerifyCliArgs } from "./verify.types";
 import { bootstrap, IServices } from "../../bootstrap";
 import { Address, ChainId } from "../../types";
 import { toBN } from "../../libs/utils";
-import { Contract } from "../../models/contract";
-import { ParallelProcessorOptions } from "../../services/processor.service";
+import { IContract } from "../../models/contract";
 import { logger } from "../../logger";
+import { ParallelProcessorOptions } from "../../interfaces/processor.service.interface";
 
 const log = logger.child({});
 
@@ -60,7 +60,7 @@ export async function handleVerifyCommand(args: VerifyCliArgs): Promise<void> {
   }
 
   // success
-  log.info(`${chalk.green('✔')} success: verification complete`);
+  log.info('verification finished');
 }
 
 
@@ -79,14 +79,16 @@ async function handleChainId(
   options: ParallelProcessorOptions,
 ): Promise<void> {
 
-  const contracts: Contract[] = [];
+  const contracts: IContract[] = [];
+
   if (address) {
     contracts.push(await services
-      .contractService
+      .contractFsService
       .getContract({ chainId, address }));
-  } else {
+  }
+  else {
     contracts.push(...await services
-      .contractService
+      .contractFsService
       .getChainContracts({ chainId }));
   }
 
@@ -114,15 +116,15 @@ async function handleDirs(
     dirnames = fs
       .readFileSync(0, 'utf-8',)
       .trim()           // remove trailing whitespace
-      .split('\n')      // split new lines
+      .split(os.EOL)    // split new lines
       .filter(Boolean); // remove empty lines
   } else {
     // new-line separated directories
-    dirnames = dirs.split('\n').filter(Boolean);
+    dirnames = dirs.split(os.EOL).filter(Boolean);
   }
 
   const contracts = await services
-    .contractService
+    .contractFsService
     .hydrateContracts(dirnames.map(dirname => ({ dirname })));
 
   await services

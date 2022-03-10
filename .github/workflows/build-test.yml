@@ -4,21 +4,16 @@ on:
   push:
     branches:
       - main
-  pull_request:
-    branches:
-      - main
-    types:
-      - opened
-      - synchronize
-      - reopened
-      - edited
-    paths-ignore:
-      # if contracts/** has changed, let the PR be handled by the `pull_contracts` action
-      - 'contracts/**'
+      - devop/*
 
 jobs:
-  Validate:
-    runs-on: ubuntu-18.04
+  e2e:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # https://github.com/actions/virtual-environments
+        os: [ubuntu-20.04, macos-11, windows-2022]
     steps:
       # https://github.com/actions/checkout
       - name: checkout
@@ -34,7 +29,8 @@ jobs:
       - name: "install, build, test"
         run: |
           npm ci
-          npm run test:ci
-          npm run build
+          npm run build:prod
+          npm run build:test
+          npm run test
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

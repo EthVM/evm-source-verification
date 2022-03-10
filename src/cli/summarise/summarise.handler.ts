@@ -17,12 +17,12 @@ export async function handleSummariseCommand(): Promise<void> {
 
   const services = await bootstrap();
 
-  const { buildStateService } = services;
+  const { summariseService } = services;
 
   log.info('summarising verified contracts to directory:' +
-    ` "${frel(buildStateService.dirname)}"`);
+    ` "${frel(summariseService.dirname)}"`);
 
-  if (!(await fexists(buildStateService.dirname))) {
+  if (!(await fexists(summariseService.dirname))) {
     work(services);
     return;
   }
@@ -30,7 +30,7 @@ export async function handleSummariseCommand(): Promise<void> {
   // check if state directory is empty
   const rootDirs = await fs
     .promises
-    .readdir(buildStateService.dirname, { withFileTypes: true });
+    .readdir(summariseService.dirname, { withFileTypes: true });
 
   if (!rootDirs.length) {
     // is empty
@@ -42,14 +42,14 @@ export async function handleSummariseCommand(): Promise<void> {
   // ask before deleting it
   const rl = readline.createInterface(process.stdin, process.stdout);
 
-  log.warn(`"${frel(buildStateService.dirname)}" has ${rootDirs.length} files:`
+  log.warn(`"${frel(summariseService.dirname)}" has ${rootDirs.length} files:`
     + `\n  ${rootDirs
-      .map((rootDir) => frel(path.join(buildStateService.dirname, rootDir.name)))
+      .map((rootDir) => frel(path.join(summariseService.dirname, rootDir.name)))
       .map((rmfile, i) => `${i + 1}. ${rmfile}`)
       .join('\n  ')}`);
 
   rl.question(
-    `do you want to delete "${frel(buildStateService.dirname)}"` +
+    `do you want to delete "${frel(summariseService.dirname)}"` +
     ` and all of its contents to continue? (y/n): `,
     askDelete,
   );
@@ -64,8 +64,8 @@ export async function handleSummariseCommand(): Promise<void> {
     }
     // continue
     rl.close();
-    log.info(`removing ${buildStateService.dirname}`);
-    await fs.promises.rm(buildStateService.dirname, { force: true, recursive: true });
+    log.info(`removing ${summariseService.dirname}`);
+    await fs.promises.rm(summariseService.dirname, { force: true, recursive: true });
     work(services);
   }
 }
@@ -73,8 +73,8 @@ export async function handleSummariseCommand(): Promise<void> {
 
 async function work(services: IServices) {
   const {
-    contractService,
-    buildStateService,
+    contractFsService: contractService,
+    summariseService: buildStateService,
   } = services;
 
   const contracts = await contractService.getContracts();
